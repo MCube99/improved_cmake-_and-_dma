@@ -57,8 +57,10 @@
 typedef struct {
     PIO pio;
     uint sm;
-    int dma_chan; // DMA channel for PIO transfers
-    dma_channel_config pio_dma_chan_config; // DMA channel configuration for PIO transfers
+    int data_dma_chan; // DMA channel for PIO transfers
+    int control_dma_chan; // DMA channel for control transfers to reset the data DMA channel
+    dma_channel_config pio_dma_chan_data_config; // DMA channel configuration for PIO transfers
+    dma_channel_config pio_dma_chan_control_config; // DMA channel configuration for control transfers to reset the data DMA channel
 } pio_spi_t;
 
 static pio_spi_t pio_spi; 
@@ -73,10 +75,12 @@ PRIVATE void gpio_clear_events(uint gpio, uint32_t events) {
 
 PRIVATE void myIRQHandler(uint gpio, uint32_t events) 
 {
+     int count = 2;
+     BYTE *check;
 
     if(events & GPIO_IRQ_EDGE_FALL)
     {
-        dma_init(); // Set up DMA to transfer data from PIO to memory when CSN goes low, indicating the start of an SPI transaction
+        dma_start_channel_mask(1u << pio_spi.control_dma_chan); // Set the ping pong in motion by starting the control DMA channel, which will trigger the data DMA channel to start the first SPI data transfer
         uint32_t status = save_and_disable_interrupts(); // Disable interrupts to ensure atomic access to shared resources
         csn_high = true; // Set flag to indicate that CSN is active (low)
         restore_interrupts(status); // Restore previous interrupt state
@@ -84,14 +88,19 @@ PRIVATE void myIRQHandler(uint gpio, uint32_t events)
 
     if(events & GPIO_IRQ_EDGE_RISE)
     {
-        dma_channel_unclaim(pio_spi.dma_chan); // Unclaim the DMA channel to free it up for future use when CSN goes high, indicating the end of an SPI transaction
+        dma_hw->ints0 = 1u << pio_spi.data_dma_chan; // Clear the interrupt request for the data DMA channel to acknowledge that the SPI transaction is complete and allow for future transactions to be detected
         uint32_t status = save_and_disable_interrupts();
         csn_high = false; // Set flag to indicate that CSN is high (inactive) 
-        restore_interrupts(status); // Restore previous interrupt state
+        restore_interrupts(status); // Restore previous interrupt state; // Update the queue size based on the number of bytes received, which may be used to manage the data buffer and ensure that it does not overflow or to trigger processing of the received data once a complete message has been received.
+        
+        // dma_channel_unclaim(pio_spi.dma_chan); // Unclaim the DMA channel to free it up for future use when CSN goes high, indicating the end of an SPI transaction    
     }
 }
 
 
+
+
+// Need to set up two DMA cahnnels. One shiffles data off to the  buffer while the other resets the first one.
 PUBLIC void pio_dma_setup(void)
 {
     pio_spi.pio = pio0;
@@ -99,31 +108,72 @@ PUBLIC void pio_dma_setup(void)
     pio_spi.sm = pio_claim_unused_sm(pio_spi.pio, true);
     clocked_input_program_init(pio_spi.pio, pio_spi.sm, offset,PICO_DEFAULT_SPI_RX_PIN,PICO_DEFAULT_SPI_CSN_PIN  );
 
+    // Select DMA channels 
+    pio_spi.control_dma_chan = dma_claim_unused_channel(true);
+    pio_spi.data_dma_chan = dma_claim_unused_channel(true);
 
-    pio_spi.dma_chan = dma_claim_unused_channel(true);
-    pio_spi.pio_dma_chan_config = dma_channel_get_default_config(pio_spi.dma_chan);
+    //Setup the control channel 
+    pio_spi.pio_dma_chan_control_config = dma_channel_get_default_config(pio_spi.control_dma_chan);
+    channel_config_set_transfer_data_size(&pio_spi.pio_dma_chan_control_config, DMA_SIZE_32); //sets the size of each DMA transfer to 32 bits
+    channel_config_set_read_increment(&pio_spi.pio_dma_chan_control_config, false); //Disabled when reading from peripheral, as the source address is fixed
+    channel_config_set_write_increment(&pio_spi.pio_dma_chan_control_config, false); // We are writing to a fixed address (the control register of the data DMA channel), so we don't want the write address to increment after each transfer
+    channel_config_set_chain_to(&pio_spi.pio_dma_chan_control_config, pio_spi.data_dma_chan); // Chain the control DMA channel to the data DMA channel, so that when the control transfer is complete, the data channel will automatically trigger to start the next data transfer
+    channel_config_set_ring(&pio_spi.pio_dma_chan_control_config, true, 3); // 1 << 3 byte boundary on write ptr
+     // For control transfer to reset the data DMA channel    
+     dma_channel_configure(
+        pio_spi.data_dma_chan, // Channel to configure
+        &pio_spi.pio_dma_chan_control_config, // Channel configuration for PIO data transfers
+        give_reset_array_address(), // Write to data channel read address
+        &dma_hw->ch[pio_spi.data_dma_chan].read_addr, // Not important where to read from
+        1, // Number of transfers (bytes) to perform
+        false); // Don't start immediately, will be triggered by control channel when CSN goes low  
+       
+    //Setup the data channel
+    pio_spi.pio_dma_chan_data_config = dma_channel_get_default_config(pio_spi.data_dma_chan);
     //Tranfers 8-bits at a time
-    channel_config_set_transfer_data_size(&pio_spi.pio_dma_chan_config, DMA_SIZE_8); //sets the size of each DMA transfer to 32 bits
-    channel_config_set_read_increment(&pio_spi.pio_dma_chan_config, false); //Disabled when reading from peripheral, as the source address is fixed
-    channel_config_set_write_increment(&pio_spi.pio_dma_chan_config, true); 
-    channel_config_set_dreq(&pio_spi.pio_dma_chan_config, DREQ_PIO0_RX0); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
+    channel_config_set_transfer_data_size(&pio_spi.pio_dma_chan_data_config, DMA_SIZE_8); //sets the size of each DMA transfer to 32 bits
+    channel_config_set_read_increment(&pio_spi.pio_dma_chan_data_config, false); //Disabled when reading from peripheral, as the source address is fixed
+    channel_config_set_write_increment(&pio_spi.pio_dma_chan_data_config, true); // We are writing to a buffer in memory, so we want the write address to increment after each transfer to go to the next position in the buffer
+    channel_config_set_dreq(&pio_spi.pio_dma_chan_data_config, 0x3b); // DREQ paced by time0
+    // chain to the controller DMA channel 
+    channel_config_set_chain_to(&pio_spi.pio_dma_chan_data_config, pio_spi.control_dma_chan); // Chain the data DMA channel to the control DMA channel, so that when the data transfer is complete, the control channel will automatically trigger to reset the data DMA channel for the next transfer
+ 
 
+     dma_channel_configure(
+        pio_spi.control_dma_chan, // Channel to configure
+        &pio_spi.pio_dma_chan_data_config, // Channel configuration for control transfers to reset
+        give_array_address(), // Reserring it back to the beginning of the buffer in memory where data is written to by the data DMA channel
+        &(pio_spi.pio->rxf[0]), // Destination address in memory where data is read from the PIO's RX FIFO
+        BUF_LEN, // Number of transfers (bytes) to perform
+        false); //start immediatel
 }
 
 
-PRIVATE void dma_init(void)
+/* PRIVATE void dma_init(void)
 {   
+
+    // For data transfer
     dma_channel_configure(
-        pio_spi.dma_chan, 
-        &pio_spi.pio_dma_chan_config,
+        pio_spi.control_dma_chan, // Channel to configure
+        &pio_spi.pio_dma_chan_control_config, // Channel configuration for control transfers to reset
         give_array_address(), // Destination address where data is written to memory
         &(pio_spi.pio->rxf[0]), // Destination address in memory where data is read from the PIO's RX FIFO
         BUF_LEN, // Number of transfers (bytes) to perform
-        true); //start immediately
+        false); //start immediately
+
+     // For control transfer to reset the data DMA channel    
+     dma_channel_configure(
+        pio_spi.data_dma_chan, // Channel to configure
+        &pio_spi.pio_dma_chan_config, // Channel configuration for PIO data transfers
+        &dma_hw->ch[pio_spi.data_dma_chan].read_addr, // Write address data channel read address
+        &(pio_spi.pio->rxf[0]), // Source address in memory where data is read from the PIO's RX FIFO
+        1, // Number of transfers (bytes) to perform
+        false); // Don't start immediately, will be triggered by control channel when CSN goes low  
+       
 
    //     dma_channel_wait_for_finish_blocking(pio_spi.dma_chan); // Waits for the DMA transfer to complete before proceeding. This ensures that all data has been transferred from the PIO's RX FIFO to the data buffer in memory before any further processing is done.
 }
-
+ */
 
 PUBLIC void set_gpio_pins(){
     gpio_init(PICO_DEFAULT_SPI_CSN_PIN );

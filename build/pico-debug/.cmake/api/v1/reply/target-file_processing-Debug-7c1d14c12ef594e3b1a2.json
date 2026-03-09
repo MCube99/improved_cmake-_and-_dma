@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "tusb_src/libhost_storage.a"
+			"path" : "file_processing/libfile_processing.a"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"tusb_src/CMakeLists.txt",
+			"file_processing/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -29,13 +29,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 13,
+				"line" : 3,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 31,
+				"line" : 23,
 				"parent" : 0
 			},
 			{
@@ -50,7 +50,7 @@
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 17,
+				"line" : 8,
 				"parent" : 0
 			}
 		]
@@ -319,18 +319,14 @@
 				},
 				{
 					"backtrace" : 5,
+					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/hardware_processing"
+				},
+				{
+					"backtrace" : 5,
 					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/fatfs"
 				},
 				{
 					"backtrace" : 5,
-					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/tusb_src"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/hardware_processing"
-				},
-				{
-					"backtrace" : 2,
 					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/file_processing"
 				},
 				{
@@ -969,18 +965,14 @@
 				},
 				{
 					"backtrace" : 5,
+					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/hardware_processing"
+				},
+				{
+					"backtrace" : 5,
 					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/fatfs"
 				},
 				{
 					"backtrace" : 5,
-					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/tusb_src"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/hardware_processing"
-				},
-				{
-					"backtrace" : 2,
 					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/file_processing"
 				},
 				{
@@ -1577,18 +1569,14 @@
 				},
 				{
 					"backtrace" : 5,
+					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/hardware_processing"
+				},
+				{
+					"backtrace" : 5,
 					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/fatfs"
 				},
 				{
 					"backtrace" : 5,
-					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/tusb_src"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/hardware_processing"
-				},
-				{
-					"backtrace" : 2,
 					"path" : "C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/file_processing"
 				},
 				{
@@ -1914,15 +1902,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "hardware_processing::@60771dde3713b71e265c"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "fatfs_lib::@b3f6f056de49546e4374"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "file_processing::@37c7bcb0d8175d205c87"
+			"id" : "hardware_processing::@60771dde3713b71e265c"
 		}
 	],
 	"fileSets" : 
@@ -1930,21 +1914,22 @@
 		{
 			"baseDirectories" : 
 			[
+				"hardware_processing",
 				"fatfs",
-				"tusb_src"
+				"file_processing"
 			],
 			"name" : "HEADERS",
 			"type" : "HEADERS",
 			"visibility" : "PUBLIC"
 		}
 	],
-	"id" : "host_storage::@51bb6c48655b4c8cb2f7",
-	"name" : "host_storage",
-	"nameOnDisk" : "libhost_storage.a",
+	"id" : "file_processing::@37c7bcb0d8175d205c87",
+	"name" : "file_processing",
+	"nameOnDisk" : "libfile_processing.a",
 	"paths" : 
 	{
-		"build" : "tusb_src",
-		"source" : "tusb_src"
+		"build" : "file_processing",
+		"source" : "file_processing"
 	},
 	"sourceGroups" : 
 	[
@@ -2040,8 +2025,7 @@
 				73,
 				74,
 				75,
-				76,
-				77
+				76
 			]
 		}
 	],
@@ -2050,7 +2034,7 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "tusb_src/msc_app.c",
+			"path" : "file_processing/file_processing.c",
 			"sourceGroupIndex" : 0
 		},
 		{
@@ -2488,13 +2472,7 @@
 		{
 			"backtrace" : 5,
 			"fileSetIndex" : 0,
-			"path" : "tusb_src/msc_app.h",
-			"sourceGroupIndex" : 2
-		},
-		{
-			"backtrace" : 5,
-			"fileSetIndex" : 0,
-			"path" : "tusb_src/embedded_cli.h",
+			"path" : "hardware_processing/hardware_processing.h",
 			"sourceGroupIndex" : 2
 		},
 		{
@@ -2506,13 +2484,13 @@
 		{
 			"backtrace" : 5,
 			"fileSetIndex" : 0,
-			"path" : "fatfs/diskio.h",
+			"path" : "file_processing/file_processing.h",
 			"sourceGroupIndex" : 2
 		},
 		{
 			"backtrace" : 5,
 			"fileSetIndex" : 0,
-			"path" : "tusb_src/tusb.h",
+			"path" : "hardware_processing/queue.h",
 			"sourceGroupIndex" : 2
 		}
 	],

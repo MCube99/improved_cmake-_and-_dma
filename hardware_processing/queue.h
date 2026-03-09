@@ -20,5 +20,5 @@
 
 PUBLIC void queue_init();
 PUBLIC uint8_t* give_array_address();
-
-
+PUBLIC BYTE get_queue_size();
+PUBLIC uint8_t* give_reset_array_address();

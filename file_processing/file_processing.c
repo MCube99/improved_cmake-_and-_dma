@@ -69,9 +69,8 @@ FRESULT (*handle_error[])(FRESULT fr) = {
 
 Exists_check exists_check = {0};
 
-PRIVATE void get_date(const char *in, char *date);
+PRIVATE void get_date(const char *in, char *date, size_t date_size);
 
-PRIVATE void extract_date(const char *in_buf, char *out);
 // the function below exists to work on the results and errors
 
 PUBLIC void file_processing_main( ) {
@@ -136,7 +135,7 @@ FRESULT no_path(FRESULT fr)
     uint8_t *buffer = give_array_address(); // get the current position in the buffer to use for file name
     char dates[8];
     memset(dates,0,sizeof(dates));
-    get_date(buffer, dates);
+    get_date(buffer, dates, sizeof(dates)); // extract the date from the buffer and store it in the dates variable, which will be used as the folder name. The date is expected to be in the format DD/MM/YY and is extracted by searching for the first occurrence of '/' in the buffer and then taking the two characters before it as the day, the two characters after it as the month, and the two characters after that as the year.
    // extract_date(folder_buffer, dates);
 
 
@@ -385,17 +384,17 @@ PUBLIC char* return_buffer()
 
 // }
 
-PRIVATE void get_date(const char *in, char *date)
+PRIVATE void get_date(const char *in, char *date, size_t date_size)
 {
     
-    memset(date,0,sizeof(date));
+    memset(date,0,sizeof(date_size)); // initialize the date buffer to 0
     const char *date_ptr = in;
     while(*date_ptr) {
         if (*date_ptr == '/') 
         {
             date[0] = *( date_ptr - 2); // Get the first digit of the day
             date[1] = *(date_ptr - 1);  // Get the second digit of the day
-            date[2] = *( date_ptr ); // Get the /
+            date[2] = *( date_ptr ); // Get the first /
             date[3] = *( date_ptr + 1); // Get the first digit of the month
             date[4] = *( date_ptr + 2); // Get the second digit of the month
             date[5]  = *( date_ptr + 3); // Get the second /
