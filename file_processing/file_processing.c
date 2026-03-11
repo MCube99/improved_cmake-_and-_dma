@@ -163,34 +163,45 @@ FRESULT no_file(FRESULT fr)
     FILINFO fno;
     DIR dir;
 
-     uint8_t *buffer = give_array_address();
+    uint8_t *buffer = give_array_address();
 
-    f_opendir(&dir, "/");   // Open Root
-   
+    memset(times, 0, sizeof(times));
 
     get_time(buffer, times, sizeof(times));   // times used as file name
+    f_opendir(&dir, "/");
 
-    if(!exists_check.path_exists)
-    {
-        fr = FR_NO_PATH;
-        return(fr);
-    }
-    else
-    {
-        fr =f_opendir()
-    }
+    do {
+        f_readdir(&dir, &fno);
 
-    fr = f_stat("newfile.txt", &fno);
-    
-    fr = f_open(&fil, "newfile.txt",  FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */
-	if (fr == FR_OK) {
-		f_write(&fil, "It works!\r\n", 11, &bw);	/* Write data to the file */
-        f_puts(give_array_address(), &fil);
-        exists_check.file_exists = true; // Set flag to indicate that the file now exists
-		fr = f_close(&fil);	
-    }
+        if (fno.fname[0] != 0) {
 
+            if (fno.fattrib & AM_DIR) {
+                if(strncmp(fno.fname, dates, strlen(dates)) == 0) // Check if the directory name matches the date
+                {
+                    if(f_stat(times, &fno) == FR_OK) // Check if the file already exists in the directory
+                    {
+                        fr = f_open(&fil, times, FA_OPEN_APPEND | FA_OPEN_EXISTING); // Open the directory for writing
+                        f_puts(give_array_address(), &fil);
+                        exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                    }
 
+                }
+                else
+                {
+                    fr = f_open(&fil, times,  FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */
+                    f_puts(give_array_address(), &fil);
+                    exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                }
+            } 
+            else {
+                exists_check.file_exists = false; // Set flag to indicate that the padoes not exist
+            }
+
+        }
+
+    } while (fno.fname[0] != 0);
+
+    f_closedir(&dir);
     return(fr);
 }
 
