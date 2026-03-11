@@ -24,6 +24,8 @@ PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled);
 PUBLIC void pio_dma_setup(void);
 
 PUBLIC void copy_queue_buffer( void );
+PUBLIC int return_channel();
+
 
 extern volatile bool spi_reading;
 extern volatile bool csn_high;

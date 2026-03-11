@@ -1971,12 +1971,12 @@
 			"id" : "bs2_default_library::@efaae0dfea37ab6992ce"
 		},
 		{
-			"backtrace" : 2,
-			"id" : "fatfs_lib::@b3f6f056de49546e4374"
-		},
-		{
 			"backtrace" : 4,
 			"id" : "hardware_processing_clocked_input_pio_h::@60771dde3713b71e265c"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fatfs_lib::@b3f6f056de49546e4374"
 		}
 	],
 	"id" : "hardware_processing::@60771dde3713b71e265c",

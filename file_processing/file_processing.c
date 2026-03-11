@@ -14,23 +14,26 @@
 
 typedef struct 
 {
-    bool folder_exists:1;
-    bool path_exists:1;
-    bool file_exists:1;
+
+    bool path_exists;
+    bool file_exists;
 }Exists_check;
 
 static char folder_buffer[ BUF_LEN ]; // initialised on its own since its static
 
+static char dates[8];
+static char times[8];
+
 
 static FATFS fatfs;
 FATFS *fs = &fatfs;
+
 
 // Forward declarations
 FRESULT start(void);
 FRESULT ok(FRESULT fr);
 FRESULT no_file(FRESULT fr);
 FRESULT no_path(FRESULT fr);
-FRESULT no_folder(FRESULT fr);
 FRESULT invalid_name(FRESULT fr);
 FRESULT denied(FRESULT fr);
 FRESULT exist(FRESULT fr);
@@ -50,7 +53,6 @@ FRESULT (*handle_error[])(FRESULT fr) = {
     ok,       // FR_OK = 0 → no error handler
     no_file,    // FR_NO_FILE = 1
     no_path,    // FR_NO_PATH = 2
-    no_folder,
     invalid_name, // FR_INVALID_NAME = 3
     denied,     // FR_DENIED = 4
     exist,      // FR_EXIST = 5
@@ -70,6 +72,7 @@ FRESULT (*handle_error[])(FRESULT fr) = {
 Exists_check exists_check = {0};
 
 PRIVATE void get_date(const char *in, char *date, size_t date_size);
+PRIVATE void get_time(const char *in, char *time, size_t time_size);
 
 // the function below exists to work on the results and errors
 
@@ -103,11 +106,10 @@ FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done.
          fr = FR_NO_PATH;
          return(fr);
     }
-
-    if(!exists_check.folder_exists)
+    if(!exists_check.file_exists)
     {
-        fr = FR_NO_FOLDER;
-        return(fr);
+         fr = FR_NO_FILE;
+         return(fr);
     }
 
     // else
@@ -123,35 +125,29 @@ FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done.
 
 FRESULT start() { //This is the kick off function where the pico tries to mount onto the USB stick.
 
-    FRESULT fr;;
+    FRESULT fr;
     fr = f_mount(fs, "", 1);
     return(fr); //sets off whole reaction
 }
 
 FRESULT no_path(FRESULT fr)
 {
-    FIL fil;
-    UINT bw;
-    uint8_t *buffer = give_array_address(); // get the current position in the buffer to use for file name
-    char dates[8];
-    memset(dates,0,sizeof(dates));
-    get_date(buffer, dates, sizeof(dates)); // extract the date from the buffer and store it in the dates variable, which will be used as the folder name. The date is expected to be in the format DD/MM/YY and is extracted by searching for the first occurrence of '/' in the buffer and then taking the two characters before it as the day, the two characters after it as the month, and the two characters after that as the year.
-   // extract_date(folder_buffer, dates);
+    FILINFO fno;
+    uint8_t *buffer = give_array_address();
 
+    memset(dates, 0, sizeof(dates));
+    get_date(buffer, dates, sizeof(dates));   // dates used as folder/directory name
+    
 
-    char *dir  = dates;
-    const char *file = "MAAZ/test.txt";
+    fr = f_stat(dates, &fno);
 
-    fr = f_mkdir(dir);
-
-    if (fr == FR_OK || fr == FR_EXIST)
-    {
-        fr = f_open(&fil, file, FA_WRITE | FA_CREATE_ALWAYS);
-        if (fr == FR_OK)
-        {
-            
-            f_puts(folder_buffer, &fil);
-            fr = f_close(&fil);
+    if (fr == FR_NO_FILE) {
+        // directory does not exist so create it. Do not be foolled by the name, it is a directory not a file.
+        fr = f_mkdir(dates);
+    }
+    else if (fr == FR_OK) {
+        if (fno.fattrib & AM_DIR) {
+            exists_check.path_exists = true;
         }
     }
 
@@ -160,35 +156,40 @@ FRESULT no_path(FRESULT fr)
 
 
 
-FRESULT no_file(FRESULT fr) {
+FRESULT no_file(FRESULT fr) 
+{
     FIL fil;
-    UINT br, bw;  
+    UINT br, bw; 
+    FILINFO fno;
+    DIR dir;
 
-    f_chdir("TRTEST");
-    fr = f_open(&fil, "newfile.txt", FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */
+     uint8_t *buffer = give_array_address();
+
+    f_opendir(&dir, "/");   // Open Root
+   
+
+    get_time(buffer, times, sizeof(times));   // times used as file name
+
+    if(!exists_check.path_exists)
+    {
+        fr = FR_NO_PATH;
+        return(fr);
+    }
+    else
+    {
+        fr =f_opendir()
+    }
+
+    fr = f_stat("newfile.txt", &fno);
+    
+    fr = f_open(&fil, "newfile.txt",  FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */
 	if (fr == FR_OK) {
 		f_write(&fil, "It works!\r\n", 11, &bw);	/* Write data to the file */
-        f_puts(folder_buffer, &fil);
+        f_puts(give_array_address(), &fil);
+        exists_check.file_exists = true; // Set flag to indicate that the file now exists
 		fr = f_close(&fil);	
     }
-    return(fr);
-}
 
-FRESULT no_folder(FRESULT fr)
-{
-    FILINFO fno;
-
-    const char *fname = "MAAZ";
-    fr = f_stat(fname, &fno); //checks for the file name
-    if(fr == FR_OK){
-        if (fno.fattrib & AM_DIR) { //checks if directory was created
-            exists_check.folder_exists = true;
-        } 
-        else {
-            fr = f_mkdir(fname); 
-            // will leave the flag still false so it can come and check its been done later
-          }
-    }
 
     return(fr);
 }
@@ -392,15 +393,14 @@ PRIVATE void get_date(const char *in, char *date, size_t date_size)
     while(*date_ptr) {
         if (*date_ptr == '/') 
         {
-            date[0] = *( date_ptr - 2); // Get the first digit of the day
-            date[1] = *(date_ptr - 1);  // Get the second digit of the day
-            date[2] = *( date_ptr ); // Get the first /
-            date[3] = *( date_ptr + 1); // Get the first digit of the month
-            date[4] = *( date_ptr + 2); // Get the second digit of the month
-            date[5]  = *( date_ptr + 3); // Get the second /
-            date[6] = *( date_ptr + 4); // Get the first digit of the year
-            date[7] = *( date_ptr + 5); // Get the second digit of the year
-            date[8] = '\0'; // Null-terminate the string
+            date[0] = *( date_ptr - 2); // Get the first digit of the day 2     2
+            date[1] = *(date_ptr - 1);  // Get the second digit of the day 0    0
+            date[2] = '-'; // Get the first seperator                           -
+            date[3] = *( date_ptr + 1); // Get the first digit of the month     7
+            date[4] = '-'; // Get the second digit of the month                  -
+            date[5]  = *( date_ptr + 3); // Get the first digit of the year       2
+            date[6] = *( date_ptr + 4); // Get the second digit of the year      5
+            date[7] = '\0'; // Get the third digit of the year
             break; // Exit the loop after extracting the date
 
              // Validate the date format (DD/MM/YY)
@@ -408,6 +408,33 @@ PRIVATE void get_date(const char *in, char *date, size_t date_size)
 
             date_ptr++;
             // Found the first '/', now look for the second '/'
+    }
+}
+
+PRIVATE void get_time(const char *in, char *time, size_t time_size)
+{
+    
+    memset(time,0,sizeof(time_size)); // initialize the time buffer to 0
+    const char *time_ptr = in;
+    while(*time_ptr) {
+        if (*time_ptr == ':') 
+        {
+            
+            time[0] = *(time_ptr - 1);  // Get the digit of the hour 0              5
+            time[1] = ':'; // Get the first seperator                               :
+            time[2] = *( time_ptr + 1); // Get the first digit of the minute        4
+            time[3] = *( time_ptr + 2); // Get the second digit of the minute       0
+            time[4] = *( time_ptr + 3); // Get the third digit of the minute        :
+            time[5] = *( time_ptr + 4); // Get the first digit of the second        4
+            time[6] = *( time_ptr + 5); // Get the second digit of the second       6
+            time[7] = '\0'; // Get the third digit of the year
+            break; // Exit the loop after extracting the date
+
+             // Validate the date format (HH:MM)
+        }
+
+            time_ptr++;
+            // Found the first ':', now look for the second ':'
     }
 }
         

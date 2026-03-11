@@ -285,18 +285,17 @@ typedef enum {
     FR_OK = 0,
     FR_NO_FILE = 1,          /* normal errors 1, 2, 3... */
     FR_NO_PATH = 2,
-	FR_NO_FOLDER = 3,
-    FR_INVALID_NAME = 4,
-    FR_DENIED = 5,
-    FR_EXIST = 6,
-    FR_INVALID_OBJECT = 7,
-    FR_NOT_ENABLED = 8,
-    FR_NO_FILESYSTEM = 9,
-    FR_MKFS_ABORTED = 10,
-    FR_TIMEOUT = 11,
-    FR_LOCKED = 12,
-    FR_TOO_MANY_OPEN_FILES = 13,
-	FR_START				= 14
+    FR_INVALID_NAME = 3,
+    FR_DENIED = 4,
+    FR_EXIST = 5,
+    FR_INVALID_OBJECT = 6,
+    FR_NOT_ENABLED = 7,
+    FR_NO_FILESYSTEM = 8,
+    FR_MKFS_ABORTED = 9,
+    FR_TIMEOUT = 10,
+    FR_LOCKED = 11,
+    FR_TOO_MANY_OPEN_FILES = 12,
+	FR_START				= 13
 } FRESULT;
 
 
