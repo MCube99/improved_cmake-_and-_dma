@@ -22,6 +22,7 @@ typedef struct
     char dates[8];
     char times[8];
     uint8_t* store;
+    int diff;
 }File_Info;
 
 static File_Info file_info;
@@ -78,10 +79,7 @@ Exists_check exists_check = {0};
 PRIVATE void get_date(const char *in, char *date, size_t date_size);
 PRIVATE void extract_date(const char *in, char *dates, size_t size);
 PRIVATE void extract_time(const char *in, char *times, size_t size );
-PRIVATE void set_address(char *start);
-PRIVATE uint8_t* get_address();
  
-
 // the function below exists to work on the results and errors
 
 PUBLIC void file_processing_main( ) {
@@ -147,9 +145,6 @@ FRESULT no_path(FRESULT fr)
     uint8_t *buffer = give_array_address();
 
     extract_date(buffer, file_info.dates,sizeof(file_info.dates));   // dates used as folder/directory name
-
-    extract_time(buffer,file_info.times, sizeof(file_info.times));   // dates used as folder/directory name
-    
 
     fr = f_stat(file_info.dates, &fno);
 
@@ -365,31 +360,6 @@ static void add_subdirectory() //need to get date time stamp and stuff and use t
 
 // }
 
-PRIVATE void get_date(const char *in, char *date, size_t date_size)
-{
-    
-    memset(date,0,sizeof(date_size)); // initialize the date buffer to 0
-    const char *date_ptr = in;
-    while(*date_ptr) {
-        if (*date_ptr == '/') 
-        {
-            date[0] = *( date_ptr - 2); // Get the first digit of the day 2     2
-            date[1] = *(date_ptr - 1);  // Get the second digit of the day 0    0
-            date[2] = '-'; // Get the first seperator                           -
-            date[3] = *( date_ptr + 1); // Get the first digit of the month     7
-            date[4] = '-'; // Get the second digit of the month                  -
-            date[5]  = *( date_ptr + 3); // Get the first digit of the year       2
-            date[6] = *( date_ptr + 4); // Get the second digit of the year      5
-            date[7] = '\0'; // Get the third digit of the year
-            break; // Exit the loop after extracting the date
-
-             // Validate the date format (DD/MM/YY)
-        }
-
-            date_ptr++;
-            // Found the first '/', now look for the second '/'
-    }
-}
 
 
 PRIVATE void extract_date(const char *in, char *dates, size_t size)
@@ -482,41 +452,32 @@ PRIVATE void extract_date(const char *in, char *dates, size_t size)
             dates[(k++)+i+j] = *(date_ptr2 + 2);
         }
     }
-
-    set_address(date_ptr3);
-
     
 }
 
 PRIVATE void extract_time(const char *in, char *time, size_t size)
 {
-     memset(time,0,size);
- 
-    *(time + size - 1) = '\0'; // ensure null termination
-    char *comma_ptr = get_address();
-    char *date_ptr = strchr(in,':');
+    memset(time,0,size);
+    time[size-1] = '\0';
+    char *start = strchr(in, ',');
+    char *end   = strchr(start + 1, ',');
 
-    if(date_ptr == NULL)
+    int i = 0;
+
+    for(char *p = start + 1; p < end && i < size-1; p++)
     {
-        return;
+        if(isspace(*p))
+            continue;
+
+        time[i++] = *p;
     }
-    
-    uint8_t ptr_diff = date_ptr - comma_ptr; //get
-    if(ptr_diff<0)
-    {
-        return;
-    }
+
+
+
 }
 
-PRIVATE void set_address(char *start)
-{
-    file_info.store = start;
-}
 
-PRIVATE uint8_t* get_address()
-{
-    return(file_info.store);
-}
+
 
 
 

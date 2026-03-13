@@ -143,9 +143,8 @@ int main(void) {
     led_blinking_task();
     
 
-    if(!csn_high && is_dma_done()) // the reading depends when the button is pressed, so when it goes high. This nots it
+    if(!csn_high) // the reading depends when the button is pressed, so when it goes high. This nots it
     {
-       sleep_us(10);
         file_processing_main();
     }
     else  //  
