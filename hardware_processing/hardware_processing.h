@@ -26,6 +26,8 @@ PUBLIC bool is_dma_done();
 PUBLIC void wait_for_dma_to_be_done(void);
 
 PUBLIC void copy_queue_buffer( void );
+PUBLIC int return_channel();
+
 
 extern volatile bool spi_reading;
 extern volatile bool csn_high;

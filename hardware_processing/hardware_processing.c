@@ -64,7 +64,6 @@ typedef struct {
 static pio_spi_t pio_spi; 
 
 PRIVATE void myIRQHandler(uint gpio, uint32_t events); 
-PRIVATE void dma_init(void);
 
 PRIVATE void gpio_clear_events(uint gpio, uint32_t events) {
     gpio_acknowledge_irq(gpio,events);
@@ -76,18 +75,20 @@ PRIVATE void myIRQHandler(uint gpio, uint32_t events)
 
     if(events & GPIO_IRQ_EDGE_FALL)
     {
-        dma_init(); // Set up DMA to transfer data from PIO to memory when CSN goes low, indicating the start of an SPI transaction
-        uint32_t status = save_and_disable_interrupts(); // Disable interrupts to ensure atomic access to shared resources
-        csn_high = true; // Set flag to indicate that CSN is active (low)
-        restore_interrupts(status); // Restore previous interrupt state
+        dma_start_channel_mask(1u << pio_spi.dma_chan); // Set up DMA to transfer data from PIO to memory when CSN goes low, indicating the start of an SPI transaction
+        csn_high = true; // Set flag to indicate that CSN is low (active)
     }
 
     if(events & GPIO_IRQ_EDGE_RISE)
     {
-        uint32_t status = save_and_disable_interrupts();
-        csn_high = false; // Set flag to indicate that CSN is high (inactive) 
-        restore_interrupts(status); // Restore previous interrupt state
-         dma_channel_abort(pio_spi.dma_chan); // Unclaim the DMA channel to free it up for future use when CSN goes high, indicating the end of an SPI transactio
+        if(check_data()) // Check if data has been transferred to the buffer and is ready to be processed
+        {
+             csn_high = false; // Set flag to indicate that CSN is high (inactive) 
+        }
+        else
+        {
+            csn_high = true; // If data is not ready, keep the flag indicating that CSN is low (active) to allow for further processing or retries
+        }
     }
 }
 
@@ -110,36 +111,25 @@ PUBLIC void pio_dma_setup(void)
 
     // Claim DMA channel
     pio_spi.dma_chan = dma_claim_unused_channel(true);
+    pio_spi.pio_dma_chan_config = dma_channel_get_default_config(pio_spi.dma_chan);
+    //Tranfers 8-bits at a time
+    channel_config_set_transfer_data_size(&pio_spi.pio_dma_chan_config, DMA_SIZE_8); //sets the size of each DMA transfer to 32 bits
+    channel_config_set_read_increment(&pio_spi.pio_dma_chan_config, false); //Disabled when reading from peripheral, as the source address is fixed
+    channel_config_set_write_increment(&pio_spi.pio_dma_chan_config, true); 
+    channel_config_set_dreq(&pio_spi.pio_dma_chan_config, DREQ_PIO0_RX0); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
 
-    dma_channel_config c = dma_channel_get_default_config(pio_spi.dma_chan);
-
-    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
-    channel_config_set_read_increment(&c, false);
-    channel_config_set_write_increment(&c, true);
-
-    channel_config_set_dreq(
-        &c,
-        pio_get_dreq(pio_spi.pio, pio_spi.sm, false)
-    );
-
-    pio_spi.pio_dma_chan_config = c;
-}
-
-
-PRIVATE void dma_init(void)
-{   
-    dma_channel_configure(
+     dma_channel_configure(
         pio_spi.dma_chan, 
         &pio_spi.pio_dma_chan_config,
         give_array_address(), // Destination address where data is written to memory
         &pio_spi.pio->rxf[pio_spi.sm], // PIO RX FIFO, // Destination address in memory where data is read from the PIO's RX FIFO
         BUF_LEN, // Number of transfers (bytes) to perform
-        true); //start immediately
+        false); //start immediately
 
-        
-
-        
 }
+
+
+
 
 
 PUBLIC void set_gpio_pins(){
@@ -165,12 +155,8 @@ PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled) {
     }
 }
 
-PUBLIC bool is_dma_done(void)
-{
-    return(!dma_channel_is_busy(pio_spi.dma_chan));
-}
 
-PUBLIC void wait_for_dma_to_be_done(void)
+PUBLIC int return_channel()
 {
-    dma_channel_wait_for_finish_blocking(pio_spi.dma_chan);
+    return pio_spi.dma_chan; // Return the DMA channel number used for PIO transfers
 }

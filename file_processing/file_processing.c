@@ -1,3 +1,4 @@
+
 #include "ff.h"
 #include "file_processing.h"
 #include <stddef.h>
@@ -5,32 +6,38 @@
 #include <stdbool.h>
 #include <string.h>
 #include "queue.h"
-#include "hardware_processing.h"
-
-
-
+#include <ctype.h>
 
 
 
 typedef struct 
 {
-    bool folder_exists:1;
-    bool path_exists:1;
-    bool file_exists:1;
+    bool path_exists;
+    bool file_exists;
 }Exists_check;
 
-static char folder_buffer[ BUF_LEN ]; // initialised on its own since its static
+
+typedef struct
+{
+    char dates[8];
+    char times[8];
+    uint8_t* store;
+}File_Info;
+
+static File_Info file_info;
+
+
 
 
 static FATFS fatfs;
 FATFS *fs = &fatfs;
+
 
 // Forward declarations
 FRESULT start(void);
 FRESULT ok(FRESULT fr);
 FRESULT no_file(FRESULT fr);
 FRESULT no_path(FRESULT fr);
-FRESULT no_folder(FRESULT fr);
 FRESULT invalid_name(FRESULT fr);
 FRESULT denied(FRESULT fr);
 FRESULT exist(FRESULT fr);
@@ -50,7 +57,6 @@ FRESULT (*handle_error[])(FRESULT fr) = {
     ok,       // FR_OK = 0 → no error handler
     no_file,    // FR_NO_FILE = 1
     no_path,    // FR_NO_PATH = 2
-    no_folder,
     invalid_name, // FR_INVALID_NAME = 3
     denied,     // FR_DENIED = 4
     exist,      // FR_EXIST = 5
@@ -69,10 +75,13 @@ FRESULT (*handle_error[])(FRESULT fr) = {
 
 Exists_check exists_check = {0};
 
+PRIVATE void get_date(const char *in, char *date, size_t date_size);
+PRIVATE void extract_date(const char *in, char *dates, size_t size);
+PRIVATE void extract_time(const char *in, char *times, size_t size );
+PRIVATE void set_address(char *start);
+PRIVATE uint8_t* get_address();
+ 
 
-
-PRIVATE void extract_date(const char *in_buf, char *out,size_t size);
-PRIVATE const char* nth_strchr(const char* s, int c, int n);
 // the function below exists to work on the results and errors
 
 PUBLIC void file_processing_main( ) {
@@ -80,7 +89,9 @@ PUBLIC void file_processing_main( ) {
    
 
     fr = start();
-    
+
+    memset(file_info.dates, 0, sizeof(file_info.dates));
+    memset(file_info.times, 0, sizeof(file_info.times));
 
      // Check for hardware/system errors
     
@@ -105,11 +116,10 @@ FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done.
          fr = FR_NO_PATH;
          return(fr);
     }
-
-    if(!exists_check.folder_exists)
+    if(!exists_check.file_exists)
     {
-        fr = FR_NO_FOLDER;
-        return(fr);
+         fr = FR_NO_FILE;
+         return(fr);
     }
 
     // else
@@ -123,39 +133,33 @@ FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done.
 
 }
 
-FRESULT start() { //This is the kick off function where the pico tries to mount onto the USB stick.
+FRESULT start() 
+{ //This is the kick off function where the pico tries to mount onto the USB stick.
 
-    FRESULT fr;;
+    FRESULT fr;
     fr = f_mount(fs, "", 1);
     return(fr); //sets off whole reaction
 }
 
 FRESULT no_path(FRESULT fr)
 {
-    FIL fil;
-    UINT bw;
-   char *buffer = give_array_address(); // get the current position in the buffer to use for file name
-   wait_for_dma_to_be_done();
-   
-   char dates[9];
-    memset(dates,0,sizeof(dates));
-    extract_date(buffer, dates, sizeof(dates));
-   // extract_date(folder_buffer, dates);
+    FILINFO fno;
+    uint8_t *buffer = give_array_address();
 
+    extract_date(buffer, file_info.dates,sizeof(file_info.dates));   // dates used as folder/directory name
 
-    char *dir  = dates;
-    const char *file = "MAAZ/test.txt";
+    extract_time(buffer,file_info.times, sizeof(file_info.times));   // dates used as folder/directory name
+    
 
-    fr = f_mkdir(dir);
+    fr = f_stat(file_info.dates, &fno);
 
-    if (fr == FR_OK || fr == FR_EXIST)
-    {
-        fr = f_open(&fil, file, FA_WRITE | FA_CREATE_ALWAYS);
-        if (fr == FR_OK)
-        {
-            
-            f_puts(folder_buffer, &fil);
-            fr = f_close(&fil);
+    if (fr == FR_NO_FILE) {
+        // directory does not exist so create it. Do not be foolled by the name, it is a directory not a file.
+        fr = f_mkdir(file_info.dates);
+    }
+    else if (fr == FR_OK) {
+        if (fno.fattrib & AM_DIR) {
+            exists_check.path_exists = true;
         }
     }
 
@@ -164,36 +168,51 @@ FRESULT no_path(FRESULT fr)
 
 
 
-FRESULT no_file(FRESULT fr) {
-    FIL fil;
-    UINT br, bw;  
-
-    f_chdir("TRTEST");
-    fr = f_open(&fil, "newfile.txt", FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */
-	if (fr == FR_OK) {
-		f_write(&fil, "It works!\r\n", 11, &bw);	/* Write data to the file */
-        f_puts(folder_buffer, &fil);
-		fr = f_close(&fil);	
-    }
-    return(fr);
-}
-
-FRESULT no_folder(FRESULT fr)
+FRESULT no_file(FRESULT fr) 
 {
+    FIL fil;
+    UINT br, bw; 
     FILINFO fno;
+    DIR dir;
 
-    const char *fname = "MAAZ";
-    fr = f_stat(fname, &fno); //checks for the file name
-    if(fr == FR_OK){
-        if (fno.fattrib & AM_DIR) { //checks if directory was created
-            exists_check.folder_exists = true;
-        } 
-        else {
-            fr = f_mkdir(fname); 
-            // will leave the flag still false so it can come and check its been done later
-          }
-    }
+   uint8_t *buffer = give_array_address();
 
+   extract_time(buffer, file_info.times, sizeof(file_info.times));   // times used as file name
+
+    f_opendir(&dir, "/");
+
+    do {
+        f_readdir(&dir, &fno);
+
+        if (fno.fname[0] != 0) {
+
+            if (fno.fattrib & AM_DIR) {
+                if(strncmp(fno.fname, file_info.dates, strlen(file_info.dates)) == 0) // Check if the directory name matches the date
+                {
+                    if(f_stat(file_info.times, &fno) == FR_OK) // Check if the file already exists in the directory
+                    {
+                        fr = f_open(&fil, file_info.times, FA_OPEN_APPEND | FA_OPEN_EXISTING); // Open the directory for writing
+                        f_puts(give_array_address(), &fil);
+                        exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                    }
+
+                }
+                else
+                {
+                    fr = f_open(&fil, file_info.times,  FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */
+                    f_puts(give_array_address(), &fil);
+                    exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                }
+            } 
+            else {
+                exists_check.file_exists = false; // Set flag to indicate that the padoes not exist
+            }
+
+        }
+
+    } while (fno.fname[0] != 0);
+
+    f_closedir(&dir);
     return(fr);
 }
 
@@ -324,51 +343,60 @@ static void add_subdirectory() //need to get date time stamp and stuff and use t
 
 
 
-
-
- PUBLIC void convert_ascii_to_string(uint8_t *buffer)
-{
+// PRIVATE void extract_date(const char *in_buf, char *out)
+// {
 
     
-     int i = 0;
-     
-     for (i = 0; i < BUF_LEN - 1 && *buffer != '\n'; i++)
-      {
-        folder_buffer[i] = (char)buffer[i]; // convert each byte to a char and store it in the folder_buffer
-      }
+//     unsigned d, m, y;
+//     int n = 0;
 
-        folder_buffer[ i ] = '\0'; //already i++ so this is after the last one
+//     while (*in_buf) {
+//     if (sscanf(out, "%2u/%2u/%2u%n", &d, &m, &y, &n) == 3 &&
+//         n == 8 &&
+//         d <= 31 &&
+//         m <= 12)
+//     {
+//         break;
+//     }
+//     in_buf++;
+// }
 
-    
-}
+//     sscanf(in_buf, "%8s", info);
 
+// }
 
-
-PUBLIC unsigned int append_char(uint32_t byte)
+PRIVATE void get_date(const char *in, char *date, size_t date_size)
 {
-    static unsigned int i = 0;
+    
+    memset(date,0,sizeof(date_size)); // initialize the date buffer to 0
+    const char *date_ptr = in;
+    while(*date_ptr) {
+        if (*date_ptr == '/') 
+        {
+            date[0] = *( date_ptr - 2); // Get the first digit of the day 2     2
+            date[1] = *(date_ptr - 1);  // Get the second digit of the day 0    0
+            date[2] = '-'; // Get the first seperator                           -
+            date[3] = *( date_ptr + 1); // Get the first digit of the month     7
+            date[4] = '-'; // Get the second digit of the month                  -
+            date[5]  = *( date_ptr + 3); // Get the first digit of the year       2
+            date[6] = *( date_ptr + 4); // Get the second digit of the year      5
+            date[7] = '\0'; // Get the third digit of the year
+            break; // Exit the loop after extracting the date
 
-    folder_buffer[i++] = (char)byte; //adds char then appends 1 to the next
-    folder_buffer[i] = '\0'; //this is for next level
+             // Validate the date format (DD/MM/YY)
+        }
 
-    if (i == BUF_LEN - 1)
-    {
-        folder_buffer[++i] = '\0'; //adds 0 at the end. 
-        i = 0;
+            date_ptr++;
+            // Found the first '/', now look for the second '/'
     }
-    return i;   // return current count
-}
-
-
-PUBLIC char* return_buffer()
-{
-    return folder_buffer; // this is just for testing, will need to change when we want to use the buffer
 }
 
 
 PRIVATE void extract_date(const char *in, char *dates, size_t size)
 {
-    memset(dates,1,size);
+    memset(dates,0,size);
+ 
+    *(dates + size - 1) = '\0'; // ensure null termination
     char *date_ptr = strchr(in,'/');
 
     if(date_ptr == NULL)
@@ -383,6 +411,8 @@ PRIVATE void extract_date(const char *in, char *dates, size_t size)
         return;
     }
     int i = 0;
+    int j = 0;
+    int k = 0;
 
     for(; i < ptr_diff; )
     {
@@ -390,46 +420,42 @@ PRIVATE void extract_date(const char *in, char *dates, size_t size)
         {
             dates[i++] = *( date_ptr - 2 );  //1st digit to 0
             dates[i++] = *(date_ptr - 1);    //2nd digit to 1
-            dates[i++] = *(date_ptr); //actual / to 2nd
+            dates[i++] = '-'; //actual / to 2nd
 
         }
         else if(ptr_diff == 1)
         {
             dates[i++] = *(date_ptr - 1); //only one digit needed
-            dates[i++] = *(date_ptr);     // for the actual /.
+            dates[i++] = '-';     // for the actual /.
         }
         else
         {
             return; //should never be 3
         }
     }
-    // Works uptill here, dont amend this part just work around it 
-   char *date_ptr2 = date_ptr + 1;
+ 
+   char *date_ptr2 = strchr(date_ptr + 1, '/'); // look for the second '/' starting from the character after the first '/'
 
-    while (*date_ptr2 != '\0')
+    if(date_ptr2 == NULL)
     {
-        if (*date_ptr2 == '/')
-        {
-            break;
-        }
-
-        date_ptr2++;
+        return;
     }
 
     int ptr_diff2 = date_ptr2 - date_ptr;
+    --ptr_diff2; //get difference from 1st / to the second /, minus 1 to not include the first /
 
-    for(int j = 0; j < ptr_diff2; )
+    for(; j < ptr_diff2; )
     {
         if(ptr_diff2 >= 2)
         {
-            dates[(++j)+i] = *(date_ptr2 - 2);
+            dates[(j++)+i] = *( date_ptr - 2 ); 
             dates[(j++)+i] = *(date_ptr2 - 1);
-            dates[(j++)+i] = *(date_ptr2);
+            dates[(j++)+i] = '-';
         }
         else if(ptr_diff2 == 1)
         {
             dates[(j++)+i] = *(date_ptr2 - 1);
-            dates[(j++)+i] = *(date_ptr2);
+            dates[(j++)+i] = '-';
         }
 
         else
@@ -438,30 +464,62 @@ PRIVATE void extract_date(const char *in, char *dates, size_t size)
         }
     }
 
+    char *date_ptr3 = strchr(date_ptr2+1, ',');
 
-
-   
-
-
-   
-}
-
-
-
-PRIVATE const char* nth_strchr(const char* s, int c, int n)
-{
-    int c_count;
-    char* nth_ptr;
-
-    for (c_count=1,nth_ptr=strchr(s,c); 
-         nth_ptr != NULL && c_count < n && c!=0; 
-         c_count++) 
+    int ptr_diff3 = date_ptr3 - date_ptr2; //get difference from 2nd / to the end of the string
+    --ptr_diff3;
+    for(; k < ptr_diff3; )
     {
-         nth_ptr = strchr(nth_ptr+1, c);
+        if(ptr_diff3 == 2)
+        {
+            dates[(k++)+i+j] = *(date_ptr2 + 1);
+            dates[(k++)+i+j] = *(date_ptr2 + 2);
+
+        }
+        else if(ptr_diff3 == 1)
+        {
+            dates[(k++)+i+j] = *(date_ptr2 + 1);
+            dates[(k++)+i+j] = *(date_ptr2 + 2);
+        }
     }
 
-    return nth_ptr;
-}
-        
-  
+    set_address(date_ptr3);
 
+    
+}
+
+PRIVATE void extract_time(const char *in, char *time, size_t size)
+{
+     memset(time,0,size);
+ 
+    *(time + size - 1) = '\0'; // ensure null termination
+    char *comma_ptr = get_address();
+    char *date_ptr = strchr(in,':');
+
+    if(date_ptr == NULL)
+    {
+        return;
+    }
+    
+    uint8_t ptr_diff = date_ptr - comma_ptr; //get
+    if(ptr_diff<0)
+    {
+        return;
+    }
+}
+
+PRIVATE void set_address(char *start)
+{
+    file_info.store = start;
+}
+
+PRIVATE uint8_t* get_address()
+{
+    return(file_info.store);
+}
+
+
+
+
+
+  

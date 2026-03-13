@@ -92,7 +92,7 @@ void led_blinking_task(void);
 int main(void) {
 
    stdio_init_all();
-  static uint8_t in_buf[ BUF_LEN ];
+ 
   
   
 
