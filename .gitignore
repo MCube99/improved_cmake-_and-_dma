@@ -10,6 +10,21 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
+# Build directory
+build/
+
+# Compiled firmware files
+*.elf
+*.uf2
+*.bin
+*.map
+*.a
+
+# Logs
+*.log
+
+# Ninja build system files
+.ninja_*
 
 # CLion
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

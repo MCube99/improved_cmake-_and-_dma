@@ -136,9 +136,9 @@ PRIVATE void dma_init(void)
         BUF_LEN, // Number of transfers (bytes) to perform
         true); //start immediately
 
+        
 
-
-        dma_channel_wait_for_finish_blocking(pio_spi.dma_chan); // Waits for the DMA transfer to complete before proceeding. This ensures that all data has been transferred from the PIO's RX FIFO to the data buffer in memory before any further processing is done.
+        
 }
 
 
