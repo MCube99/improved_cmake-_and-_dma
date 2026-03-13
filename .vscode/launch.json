@@ -84,7 +84,7 @@
 
             "svdFile": "C:/PICOSDK/src/rp2040/hardware_regs/rp2040.svd",
 
-            "showDevDebugOutput": "formatted"
+            "showDevDebugOutput": "raw"
         }
     ]
 }

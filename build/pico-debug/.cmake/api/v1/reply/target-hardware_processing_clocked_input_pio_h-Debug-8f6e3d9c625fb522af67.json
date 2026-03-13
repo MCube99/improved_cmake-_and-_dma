@@ -1,0 +1,81 @@
+{
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_custom_target",
+			"pico_generate_pio_header"
+		],
+		"files" : 
+		[
+			"C:/Users/Mypc/.pico-sdk/sdk/2.2.0/tools/CMakeLists.txt",
+			"hardware_processing/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 7,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 252,
+				"parent" : 1
+			}
+		]
+	},
+	"id" : "hardware_processing_clocked_input_pio_h::@60771dde3713b71e265c",
+	"name" : "hardware_processing_clocked_input_pio_h",
+	"paths" : 
+	{
+		"build" : "hardware_processing",
+		"source" : "hardware_processing"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1,
+				2
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 2,
+			"isGenerated" : true,
+			"path" : "build/pico-debug/hardware_processing/CMakeFiles/hardware_processing_clocked_input_pio_h",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "build/pico-debug/hardware_processing/CMakeFiles/hardware_processing_clocked_input_pio_h.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "build/pico-debug/hardware_processing/clocked_input.pio.h.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "UTILITY"
+}

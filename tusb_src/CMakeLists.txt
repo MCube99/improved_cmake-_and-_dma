@@ -24,7 +24,7 @@ target_sources(host_storage
         ${SRC_HEADERS}
         ${PARENT_DIR}/fatfs/ff.h
         ${PARENT_DIR}/fatfs/diskio.h
-         ${CMAKE_CURRENT_SOURCE_DIR}/tusb.h)
+        )
        
 
 

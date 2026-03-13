@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "queue.h"
-
+#include "hardware_processing.h"
 
 
 
@@ -69,9 +69,10 @@ FRESULT (*handle_error[])(FRESULT fr) = {
 
 Exists_check exists_check = {0};
 
-PRIVATE void get_date(const char *in, char *date);
 
-PRIVATE void extract_date(const char *in_buf, char *out);
+
+PRIVATE void extract_date(const char *in_buf, char *out,size_t size);
+PRIVATE const char* nth_strchr(const char* s, int c, int n);
 // the function below exists to work on the results and errors
 
 PUBLIC void file_processing_main( ) {
@@ -133,10 +134,12 @@ FRESULT no_path(FRESULT fr)
 {
     FIL fil;
     UINT bw;
-    uint8_t *buffer = give_array_address(); // get the current position in the buffer to use for file name
-    char dates[8];
+   char *buffer = give_array_address(); // get the current position in the buffer to use for file name
+   wait_for_dma_to_be_done();
+   
+   char dates[9];
     memset(dates,0,sizeof(dates));
-    get_date(buffer, dates);
+    extract_date(buffer, dates, sizeof(dates));
    // extract_date(folder_buffer, dates);
 
 
@@ -363,53 +366,101 @@ PUBLIC char* return_buffer()
 }
 
 
-// PRIVATE void extract_date(const char *in_buf, char *out)
-// {
-
-    
-//     unsigned d, m, y;
-//     int n = 0;
-
-//     while (*in_buf) {
-//     if (sscanf(out, "%2u/%2u/%2u%n", &d, &m, &y, &n) == 3 &&
-//         n == 8 &&
-//         d <= 31 &&
-//         m <= 12)
-//     {
-//         break;
-//     }
-//     in_buf++;
-// }
-
-//     sscanf(in_buf, "%8s", info);
-
-// }
-
-PRIVATE void get_date(const char *in, char *date)
+PRIVATE void extract_date(const char *in, char *dates, size_t size)
 {
-    
-    memset(date,0,sizeof(date));
-    const char *date_ptr = in;
-    while(*date_ptr) {
-        if (*date_ptr == '/') 
-        {
-            date[0] = *( date_ptr - 2); // Get the first digit of the day
-            date[1] = *(date_ptr - 1);  // Get the second digit of the day
-            date[2] = *( date_ptr ); // Get the /
-            date[3] = *( date_ptr + 1); // Get the first digit of the month
-            date[4] = *( date_ptr + 2); // Get the second digit of the month
-            date[5]  = *( date_ptr + 3); // Get the second /
-            date[6] = *( date_ptr + 4); // Get the first digit of the year
-            date[7] = *( date_ptr + 5); // Get the second digit of the year
-            date[8] = '\0'; // Null-terminate the string
-            break; // Exit the loop after extracting the date
+    memset(dates,1,size);
+    char *date_ptr = strchr(in,'/');
 
-             // Validate the date format (DD/MM/YY)
+    if(date_ptr == NULL)
+    {
+        return;
+    }
+    
+    int ptr_diff = date_ptr - in; //get difference from startin point to where the '/' is
+
+    if(ptr_diff < 0)
+    {
+        return;
+    }
+    int i = 0;
+
+    for(; i < ptr_diff; )
+    {
+        if(ptr_diff >= 2)
+        {
+            dates[i++] = *( date_ptr - 2 );  //1st digit to 0
+            dates[i++] = *(date_ptr - 1);    //2nd digit to 1
+            dates[i++] = *(date_ptr); //actual / to 2nd
+
+        }
+        else if(ptr_diff == 1)
+        {
+            dates[i++] = *(date_ptr - 1); //only one digit needed
+            dates[i++] = *(date_ptr);     // for the actual /.
+        }
+        else
+        {
+            return; //should never be 3
+        }
+    }
+    // Works uptill here, dont amend this part just work around it 
+   char *date_ptr2 = date_ptr + 1;
+
+    while (*date_ptr2 != '\0')
+    {
+        if (*date_ptr2 == '/')
+        {
+            break;
         }
 
-            date_ptr++;
-            // Found the first '/', now look for the second '/'
+        date_ptr2++;
     }
+
+    int ptr_diff2 = date_ptr2 - date_ptr;
+
+    for(int j = 0; j < ptr_diff2; )
+    {
+        if(ptr_diff2 >= 2)
+        {
+            dates[(++j)+i] = *(date_ptr2 - 2);
+            dates[(j++)+i] = *(date_ptr2 - 1);
+            dates[(j++)+i] = *(date_ptr2);
+        }
+        else if(ptr_diff2 == 1)
+        {
+            dates[(j++)+i] = *(date_ptr2 - 1);
+            dates[(j++)+i] = *(date_ptr2);
+        }
+
+        else
+        {
+            return;
+        }
+    }
+
+
+
+   
+
+
+   
+}
+
+
+
+PRIVATE const char* nth_strchr(const char* s, int c, int n)
+{
+    int c_count;
+    char* nth_ptr;
+
+    for (c_count=1,nth_ptr=strchr(s,c); 
+         nth_ptr != NULL && c_count < n && c!=0; 
+         c_count++) 
+    {
+         nth_ptr = strchr(nth_ptr+1, c);
+    }
+
+    return nth_ptr;
 }
         
   

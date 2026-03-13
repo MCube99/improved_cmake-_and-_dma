@@ -20,5 +20,3 @@
 
 PUBLIC void queue_init();
 PUBLIC uint8_t* give_array_address();
-
-

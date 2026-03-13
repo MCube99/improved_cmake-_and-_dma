@@ -1,4 +1,4 @@
-// Padded and checksummed version of: C:/Users/mmadha/OneDrive - Transformers and Rectifiers Ltd/Desktop/bare_api/msc_file_explorer/build/pico-debug/pico-sdk/src/rp2040/boot_stage2/bs2_default.bin
+// Padded and checksummed version of: C:/msc_file_explorer/msc_file_explorer/build/pico-debug/pico-sdk/src/rp2040/boot_stage2/bs2_default.bin
 
 .cpu cortex-m0plus
 .thumb
