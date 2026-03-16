@@ -10,6 +10,7 @@
 
 
 
+
 typedef struct 
 {
     bool path_exists;
@@ -19,10 +20,8 @@ typedef struct
 
 typedef struct
 {
-    char dates[8];
-    char times[8];
-    uint8_t* store;
-    int diff;
+    char dates[10];
+    char times[10];
 }File_Info;
 
 static File_Info file_info;
@@ -318,9 +317,6 @@ static void add_subdirectory() //need to get date time stamp and stuff and use t
     FILINFO fno;
     const char *fname = "TRTEST";
 
-
-    printf("Test for \"%s\"...\n", fname);
-
     fr = f_stat(fname, &fno);
     switch (fr) {
 
@@ -472,9 +468,166 @@ PRIVATE void extract_time(const char *in, char *time, size_t size)
         time[i++] = *p;
     }
 
+}
+
+
+PRIVATE bool scan_files(char* path)
+{
+    DIR dir;
+    FILINFO fno;
+    char newpath[256];
+
+    if (f_opendir(&dir, path) == FR_OK) {
+
+        while (1) {
+
+            if (f_readdir(&dir, &fno) != FR_OK || fno.fname[0] == 0)
+                return(false);
+
+           if (fno.fattrib & AM_DIR) {
+                if(strncmp(fno.fname, file_info.dates) == 0) // Check if the directory name matches the date.  Since that will be the one files will be based on
+                {
+                    if(f_stat(file_info.times, &fno) == FR_OK) //  Checks if time exists in the file
+                    {
+                        fr = f_open(&fil, file_info.times, FA_OPEN_APPEND | FA_OPEN_EXISTING); // Open the directory for writing
+                        f_puts(give_array_address(), &fil);
+                        exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                    }
+                    else
+                    {
+                         fr = f_open(&fil, file_info.times, FA_WRITE | FA_CREATE_ALWAYS);
+                         f_puts(give_array_address(), &fil);
+                         exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                    }
+
+                }
+           }
+        }
+
+        f_closedir(&dir);
+    }
+
+    return(true);
+}
+
+
+
+
+
+PRIVATE FRESULT return_current_working_directory() //this will retur current working directory.
+{
+    char cwd[BUFSIZE];
+    FRESULT fr = f_getcwd(cwd,BUF_SIZE);
+    return(fr);
+}
+
+PRIVATE FRESULT change_current_working_directory() //this will change current working directory
+{
+    char cwd[BUFSIZE];
+    FRESULT fr;
+
+    fr = f_chdir(".."); //goes to the parent directory
+    if(fr==-1)
+    {
+        fr = FR_NO_FILE;
+        return(fr);
+    }
+
+    fr = f_getcwd(cwd,BUF_SIZE);
+
+    return(fr);
+}
+
+
+
+PRIVATE FRESULT read_directories() //should work in any directory
+{
+    DIR dir;                // directory object (not a pointer)
+    FILINFO filinfo;        // file information structure
+    char *filename;
+    FRESULT fr;
+
+    // open current directory
+    fr = f_opendir(&dir, ".");
+
+    if (fr != FR_OK)
+    {
+        return FR_NO_PATH;
+    }
+
+    // read directory entries one by one
+    while (1)
+    {
+        fr = f_readdir(&dir, &filinfo);
+
+        // stop if error or end of directory
+        if (fr != FR_OK || filinfo.fname[0] == 0)
+        {
+            break;
+        }
+
+        filename = filinfo.fname;
+
+        // get file metadata
+        fr = f_stat(filename, &filinfo);
+
+        switch (fr)
+        {
+            case FR_NO_FILE:
+            case FR_NO_PATH:
+                fr = FR_NO_PATH;
+                break;
+
+            case FR_OK:
+
+                // check if entry is a directory
+                if (filinfo.fattrib & AM_DIR)
+                {
+                     if(strncmp(file_info.fname, file_info.dates) == 0) // Check if the directory name matches the date.  Since that will be the one files will be based on
+                {
+                    if(f_stat(file_info.times, &fno) == FR_OK) //  Checks if time exists in the file
+                    {
+                        fr = f_open(&fil, file_info.times, FA_OPEN_APPEND | FA_OPEN_EXISTING); // Open the directory for writing
+                        f_puts(give_array_address(), &fil);
+                        exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                    }
+                    else
+                    {
+                         fr = f_open(&fil, file_info.times, FA_WRITE | FA_CREATE_ALWAYS);
+                         f_puts(give_array_address(), &fil);
+                         exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                    }
+
+                }
+                }
+
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    // close directory when finished
+    f_closedir(&dir);
+
+    return fr;
+}
+
+
+PRIVATE FRESULT into_subdirectory_from_a_directory()
+{
+    DIR *dp;
+    FILINFO filinfo;
+
 
 
 }
+
+
+
+
+
 
 
 
