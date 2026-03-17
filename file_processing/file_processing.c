@@ -147,7 +147,7 @@ FRESULT no_path(FRESULT fr)
 
     extract_date(buffer, file_info.dates,sizeof(file_info.dates));   // dates used as folder/directory name
 
-    extract_time(buffer,file_info.times, sizeof(file_info.times));   // dates used as folder/directory name
+
     
 
     fr = f_stat(file_info.dates, &fno);
@@ -473,34 +473,26 @@ PRIVATE void extract_date(const char *in, char *dates, size_t size)
         {
             dates[(k++)+i+j] = *(date_ptr2 + 1);
             dates[(k++)+i+j] = *(date_ptr2 + 2);
-
-        }
-        else if(ptr_diff3 == 1)
-        {
-            dates[(k++)+i+j] = *(date_ptr2 + 1);
-            dates[(k++)+i+j] = *(date_ptr2 + 2);
         }
     }
 
-    set_address(date_ptr3);
-
     
 }
+    
 
 PRIVATE void extract_time(const char *in, char *time, size_t size)
 {
-     memset(time,0,size);
- 
+    memset(time,0,size);
     *(time + size - 1) = '\0'; // ensure null termination
+    char *time_ptr = strchr(in, '/');
     char *comma_ptr = get_address();
-    char *date_ptr = strchr(in,':');
-
-    if(date_ptr == NULL)
+   
+    if(time_ptr == NULL)
     {
         return;
     }
     
-    uint8_t ptr_diff = date_ptr - comma_ptr; //get
+    uint8_t ptr_diff = time_ptr - comma_ptr; //get
     if(ptr_diff<0)
     {
         return;

@@ -2722,7 +2722,7 @@ LOAD C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/
                 0x10000100                        __boot2_end__ = .
                 0x00000001                        ASSERT (((__boot2_end__ - __boot2_start__) == 0x100), ERROR: Pico second stage bootloader must be 256 bytes in size)
 
-.text           0x10000100     0xe00c
+.text           0x10000100     0xdfc4
                 0x10000100                        __logical_binary_start = .
  *(.vectors)
  .vectors       0x10000100       0xd4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_crt0/crt0.S.obj
@@ -3664,459 +3664,456 @@ LOAD C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/
  .text.start_error
                 0x10008104        0x2 file_processing/libfile_processing.a(file_processing.c.obj)
                 0x10008104                start_error
- *fill*         0x10008106        0x2 
- .text.set_address
-                0x10008108        0xc file_processing/libfile_processing.a(file_processing.c.obj)
  .text.extract_date
-                0x10008114      0x11c file_processing/libfile_processing.a(file_processing.c.obj)
+                0x10008106       0xf2 file_processing/libfile_processing.a(file_processing.c.obj)
+ .text.no_path  0x100081f8       0x44 file_processing/libfile_processing.a(file_processing.c.obj)
+                0x100081f8                no_path
  .text.extract_time
-                0x10008230       0x18 file_processing/libfile_processing.a(file_processing.c.obj)
- .text.no_path  0x10008248       0x54 file_processing/libfile_processing.a(file_processing.c.obj)
-                0x10008248                no_path
- .text.no_file  0x1000829c       0xcc file_processing/libfile_processing.a(file_processing.c.obj)
-                0x1000829c                no_file
+                0x1000823c       0x18 file_processing/libfile_processing.a(file_processing.c.obj)
+ .text.no_file  0x10008254       0xcc file_processing/libfile_processing.a(file_processing.c.obj)
+                0x10008254                no_file
  .text.no_filesystem
-                0x10008368       0x2c file_processing/libfile_processing.a(file_processing.c.obj)
-                0x10008368                no_filesystem
- .text.start    0x10008394       0x18 file_processing/libfile_processing.a(file_processing.c.obj)
-                0x10008394                start
+                0x10008320       0x2c file_processing/libfile_processing.a(file_processing.c.obj)
+                0x10008320                no_filesystem
+ .text.start    0x1000834c       0x18 file_processing/libfile_processing.a(file_processing.c.obj)
+                0x1000834c                start
  .text.file_processing_main
-                0x100083ac       0x48 file_processing/libfile_processing.a(file_processing.c.obj)
-                0x100083ac                file_processing_main
+                0x10008364       0x48 file_processing/libfile_processing.a(file_processing.c.obj)
+                0x10008364                file_processing_main
  .text.pio_get_default_sm_config
-                0x100083f4       0x28 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x100083ac       0x28 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .text.clocked_input_program_get_default_config
-                0x1000841c       0x28 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x100083d4       0x28 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .text.clocked_input_program_init
-                0x10008444       0xc0 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x100083fc       0xc0 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .text.channel_config_set_chain_to
-                0x10008504       0x34 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x100084bc       0x34 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .text.dma_channel_get_default_config
-                0x10008538       0x74 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x100084f0       0x74 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .text.myIRQHandler
-                0x100085ac       0x44 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x10008564       0x44 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .text.pio_dma_setup
-                0x100085f0       0x98 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
-                0x100085f0                pio_dma_setup
+                0x100085a8       0x98 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x100085a8                pio_dma_setup
  .text.set_gpio_pins
-                0x10008688       0x2c hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
-                0x10008688                set_gpio_pins
+                0x10008640       0x2c hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x10008640                set_gpio_pins
  .text.return_channel
-                0x100086b4        0xc hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
-                0x100086b4                return_channel
+                0x1000866c        0xc hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x1000866c                return_channel
  .text.queue_init
-                0x100086c0       0x24 hardware_processing/libhardware_processing.a(queue.c.obj)
-                0x100086c0                queue_init
+                0x10008678       0x24 hardware_processing/libhardware_processing.a(queue.c.obj)
+                0x10008678                queue_init
  .text.give_array_address
-                0x100086e4        0x8 hardware_processing/libhardware_processing.a(queue.c.obj)
-                0x100086e4                give_array_address
+                0x1000869c        0x8 hardware_processing/libhardware_processing.a(queue.c.obj)
+                0x1000869c                give_array_address
  .text.check_data
-                0x100086ec       0x2c hardware_processing/libhardware_processing.a(queue.c.obj)
-                0x100086ec                check_data
+                0x100086a4       0x2c hardware_processing/libhardware_processing.a(queue.c.obj)
+                0x100086a4                check_data
  .text.pio_get_default_sm_config
-                0x10008718       0x28 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x100086d0       0x28 hardware_processing/libhardware_processing.a(pio.c.obj)
  .text.is_program_gpio_compatible
-                0x10008740        0x4 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x100086f8        0x4 hardware_processing/libhardware_processing.a(pio.c.obj)
  .text.add_program_at_offset_check
-                0x10008744       0x64 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x100086fc       0x64 hardware_processing/libhardware_processing.a(pio.c.obj)
  .text.add_program_at_offset
-                0x100087a8       0x60 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x10008760       0x60 hardware_processing/libhardware_processing.a(pio.c.obj)
  .text.find_offset_for_program
-                0x10008808       0x7c hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x100087c0       0x7c hardware_processing/libhardware_processing.a(pio.c.obj)
  .text.pio_claim_unused_sm
-                0x10008884       0x38 hardware_processing/libhardware_processing.a(pio.c.obj)
-                0x10008884                pio_claim_unused_sm
+                0x1000883c       0x38 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x1000883c                pio_claim_unused_sm
  .text.pio_add_program
-                0x100088bc       0x30 hardware_processing/libhardware_processing.a(pio.c.obj)
-                0x100088bc                pio_add_program
+                0x10008874       0x30 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x10008874                pio_add_program
  .text.pio_sm_set_consecutive_pindirs
-                0x100088ec       0xb4 hardware_processing/libhardware_processing.a(pio.c.obj)
-                0x100088ec                pio_sm_set_consecutive_pindirs
+                0x100088a4       0xb4 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x100088a4                pio_sm_set_consecutive_pindirs
  .text.pio_sm_init
-                0x100089a0       0xb4 hardware_processing/libhardware_processing.a(pio.c.obj)
-                0x100089a0                pio_sm_init
+                0x10008958       0xb4 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x10008958                pio_sm_init
  .text.dma_claim_unused_channel
-                0x10008a54       0x24 hardware_processing/libhardware_processing.a(dma.c.obj)
-                0x10008a54                dma_claim_unused_channel
- .text.ld_word  0x10008a78        0xa fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008a0c       0x24 hardware_processing/libhardware_processing.a(dma.c.obj)
+                0x10008a0c                dma_claim_unused_channel
+ .text.ld_word  0x10008a30        0xa fatfs/libfatfs_lib.a(ff.c.obj)
  .text.ld_dword
-                0x10008a82       0x18 fatfs/libfatfs_lib.a(ff.c.obj)
- .text.st_word  0x10008a9a        0x8 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008a3a       0x18 fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.st_word  0x10008a52        0x8 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.st_dword
-                0x10008aa2       0x10 fatfs/libfatfs_lib.a(ff.c.obj)
- .text.dbc_1st  0x10008ab2        0x4 fatfs/libfatfs_lib.a(ff.c.obj)
- .text.dbc_2nd  0x10008ab6        0x4 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008a5a       0x10 fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.dbc_1st  0x10008a6a        0x4 fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.dbc_2nd  0x10008a6e        0x4 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.clst2sect
-                0x10008aba       0x18 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008a72       0x18 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.ld_clust
-                0x10008ad2       0x26 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008a8a       0x26 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.st_clust
-                0x10008af8       0x26 fatfs/libfatfs_lib.a(ff.c.obj)
- *fill*         0x10008b1e        0x2 
+                0x10008ab0       0x26 fatfs/libfatfs_lib.a(ff.c.obj)
+ *fill*         0x10008ad6        0x2 
  .text.pick_lfn
-                0x10008b20       0x94 fatfs/libfatfs_lib.a(ff.c.obj)
- .text.put_lfn  0x10008bb4       0x8c fatfs/libfatfs_lib.a(ff.c.obj)
- .text.sum_sfn  0x10008c40       0x20 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008ad8       0x94 fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.put_lfn  0x10008b6c       0x8c fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.sum_sfn  0x10008bf8       0x20 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.get_ldnumber
-                0x10008c60       0x5c fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008c18       0x5c fatfs/libfatfs_lib.a(ff.c.obj)
  .text.validate
-                0x10008cbc       0x52 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008c74       0x52 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.sync_window
-                0x10008d0e       0x4a fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008cc6       0x4a fatfs/libfatfs_lib.a(ff.c.obj)
  .text.move_window
-                0x10008d58       0x36 fatfs/libfatfs_lib.a(ff.c.obj)
- *fill*         0x10008d8e        0x2 
+                0x10008d10       0x36 fatfs/libfatfs_lib.a(ff.c.obj)
+ *fill*         0x10008d46        0x2 
  .text.check_fs
-                0x10008d90       0xdc fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008d48       0xdc fatfs/libfatfs_lib.a(ff.c.obj)
  .text.find_volume
-                0x10008e6c       0x6e fatfs/libfatfs_lib.a(ff.c.obj)
- *fill*         0x10008eda        0x2 
+                0x10008e24       0x6e fatfs/libfatfs_lib.a(ff.c.obj)
+ *fill*         0x10008e92        0x2 
  .text.mount_volume
-                0x10008edc      0x30c fatfs/libfatfs_lib.a(ff.c.obj)
- .text.put_fat  0x100091e8      0x12e fatfs/libfatfs_lib.a(ff.c.obj)
- .text.get_fat  0x10009316       0xd6 fatfs/libfatfs_lib.a(ff.c.obj)
- .text.dir_sdi  0x100093ec       0xb4 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10008e94      0x30c fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.put_fat  0x100091a0      0x12e fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.get_fat  0x100092ce       0xd6 fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.dir_sdi  0x100093a4       0xb4 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.create_chain
-                0x100094a0      0x122 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10009458      0x122 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.remove_chain
-                0x100095c2       0x7c fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000957a       0x7c fatfs/libfatfs_lib.a(ff.c.obj)
  .text.dir_clear
-                0x1000963e       0x64 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x100095f6       0x64 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.dir_next
-                0x100096a2       0xd4 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000965a       0xd4 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.dir_alloc
-                0x10009776       0x4e fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000972e       0x4e fatfs/libfatfs_lib.a(ff.c.obj)
  .text.dir_read
-                0x100097c4       0xdc fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000977c       0xdc fatfs/libfatfs_lib.a(ff.c.obj)
  .text.dir_remove
-                0x100098a0       0x4c fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10009858       0x4c fatfs/libfatfs_lib.a(ff.c.obj)
  .text.putc_init
-                0x100098ec       0x12 fatfs/libfatfs_lib.a(ff.c.obj)
- .text.put_utf  0x100098fe       0x3a fatfs/libfatfs_lib.a(ff.c.obj)
+                0x100098a4       0x12 fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.put_utf  0x100098b6       0x3a fatfs/libfatfs_lib.a(ff.c.obj)
  .text.get_fileinfo
-                0x10009938      0x148 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x100098f0      0x148 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.tchar2uni
-                0x10009a80       0x4c fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10009a38       0x4c fatfs/libfatfs_lib.a(ff.c.obj)
  .text.create_name
-                0x10009acc      0x32c fatfs/libfatfs_lib.a(ff.c.obj)
- .text.cmp_lfn  0x10009df8       0xb0 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10009a84      0x32c fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.cmp_lfn  0x10009db0       0xb0 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.dir_find
-                0x10009ea8       0xe8 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10009e60       0xe8 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.follow_path
-                0x10009f90       0xb0 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10009f48       0xb0 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.gen_numname
-                0x1000a040       0xac fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10009ff8       0xac fatfs/libfatfs_lib.a(ff.c.obj)
  .text.dir_register
-                0x1000a0ec      0x152 fatfs/libfatfs_lib.a(ff.c.obj)
- *fill*         0x1000a23e        0x2 
- .text.sync_fs  0x1000a240       0x9c fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000a0a4      0x152 fatfs/libfatfs_lib.a(ff.c.obj)
+ *fill*         0x1000a1f6        0x2 
+ .text.sync_fs  0x1000a1f8       0x9c fatfs/libfatfs_lib.a(ff.c.obj)
  .text.create_partition
-                0x1000a2dc      0x18c fatfs/libfatfs_lib.a(ff.c.obj)
- .text.f_mount  0x1000a468       0x5c fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000a468                f_mount
- .text.f_open   0x1000a4c4      0x210 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000a4c4                f_open
- .text.f_read   0x1000a6d4      0x1a2 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000a6d4                f_read
- .text.f_write  0x1000a876      0x1e8 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000a876                f_write
+                0x1000a294      0x18c fatfs/libfatfs_lib.a(ff.c.obj)
+ .text.f_mount  0x1000a420       0x5c fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000a420                f_mount
+ .text.f_open   0x1000a47c      0x210 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000a47c                f_open
+ .text.f_read   0x1000a68c      0x1a2 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000a68c                f_read
+ .text.f_write  0x1000a82e      0x1e8 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000a82e                f_write
  .text.putc_bfd
-                0x1000aa5e       0x40 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000aa16       0x40 fatfs/libfatfs_lib.a(ff.c.obj)
  .text.putc_flush
-                0x1000aa9e       0x3c fatfs/libfatfs_lib.a(ff.c.obj)
- *fill*         0x1000aada        0x2 
- .text.f_sync   0x1000aadc       0x98 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000aadc                f_sync
- .text.f_close  0x1000ab74       0x24 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000ab74                f_close
- .text.f_chdir  0x1000ab98       0x5c fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000ab98                f_chdir
+                0x1000aa56       0x3c fatfs/libfatfs_lib.a(ff.c.obj)
+ *fill*         0x1000aa92        0x2 
+ .text.f_sync   0x1000aa94       0x98 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000aa94                f_sync
+ .text.f_close  0x1000ab2c       0x24 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000ab2c                f_close
+ .text.f_chdir  0x1000ab50       0x5c fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000ab50                f_chdir
  .text.f_getcwd
-                0x1000abf4      0x118 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000abf4                f_getcwd
+                0x1000abac      0x118 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000abac                f_getcwd
  .text.f_opendir
-                0x1000ad0c       0x6c fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000ad0c                f_opendir
+                0x1000acc4       0x6c fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000acc4                f_opendir
  .text.f_closedir
-                0x1000ad78       0x18 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000ad78                f_closedir
+                0x1000ad30       0x18 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000ad30                f_closedir
  .text.f_readdir
-                0x1000ad90       0x52 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000ad90                f_readdir
- .text.f_stat   0x1000ade2       0x44 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000ade2                f_stat
+                0x1000ad48       0x52 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000ad48                f_readdir
+ .text.f_stat   0x1000ad9a       0x44 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000ad9a                f_stat
  .text.f_unlink
-                0x1000ae26       0xba fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000ae26                f_unlink
- .text.f_mkdir  0x1000aee0      0x118 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000aee0                f_mkdir
+                0x1000adde       0xba fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000adde                f_unlink
+ .text.f_mkdir  0x1000ae98      0x118 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000ae98                f_mkdir
  .text.f_rename
-                0x1000aff8      0x11a fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000aff8                f_rename
- *fill*         0x1000b112        0x2 
- .text.f_mkfs   0x1000b114      0x6ac fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000b114                f_mkfs
- .text.f_puts   0x1000b7c0       0x26 fatfs/libfatfs_lib.a(ff.c.obj)
-                0x1000b7c0                f_puts
- *fill*         0x1000b7e6        0x2 
+                0x1000afb0      0x11a fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000afb0                f_rename
+ *fill*         0x1000b0ca        0x2 
+ .text.f_mkfs   0x1000b0cc      0x6ac fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000b0cc                f_mkfs
+ .text.f_puts   0x1000b778       0x26 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x1000b778                f_puts
+ *fill*         0x1000b79e        0x2 
  .text.ff_uni2oem
-                0x1000b7e8       0x44 fatfs/libfatfs_lib.a(ffunicode.c.obj)
-                0x1000b7e8                ff_uni2oem
+                0x1000b7a0       0x44 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+                0x1000b7a0                ff_uni2oem
  .text.ff_oem2uni
-                0x1000b82c       0x30 fatfs/libfatfs_lib.a(ffunicode.c.obj)
-                0x1000b82c                ff_oem2uni
+                0x1000b7e4       0x30 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+                0x1000b7e4                ff_oem2uni
  .text.ff_wtoupper
-                0x1000b85c       0xa8 fatfs/libfatfs_lib.a(ffunicode.c.obj)
-                0x1000b85c                ff_wtoupper
+                0x1000b814       0xa8 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+                0x1000b814                ff_wtoupper
  .text.onCharInput
-                0x1000b904       0x28 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000b8bc       0x28 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.isControlChar
-                0x1000b92c       0x32 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000b8e4       0x32 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.isDisplayableChar
-                0x1000b95e       0x10 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000b916       0x10 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.fifoBufAvailable
-                0x1000b96e       0x1a fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000b926       0x1a fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.fifoBufPop
-                0x1000b988       0x24 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000b940       0x24 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.fifoBufPush
-                0x1000b9ac       0x28 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000b964       0x28 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.getTokenPosition
-                0x1000b9d4       0x44 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000b98c       0x44 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.disk_io_complete
-                0x1000ba18       0x10 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000b9d0       0x10 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.writeToOutput
-                0x1000ba28       0x22 fatfs/libfatfs_lib.a(msc_app.c.obj)
- *fill*         0x1000ba4a        0x2 
+                0x1000b9e0       0x22 fatfs/libfatfs_lib.a(msc_app.c.obj)
+ *fill*         0x1000ba02        0x2 
  .text.onUnknownCommand
-                0x1000ba4c       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000ba04       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.clearCurrentLine
-                0x1000ba80       0x38 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000ba38       0x38 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.getAutocompletedCommand
-                0x1000bab8       0xd4 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000ba70       0xd4 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.printLiveAutocompletion
-                0x1000bb8c       0x8a fatfs/libfatfs_lib.a(msc_app.c.obj)
- *fill*         0x1000bc16        0x2 
+                0x1000bb44       0x8a fatfs/libfatfs_lib.a(msc_app.c.obj)
+ *fill*         0x1000bbce        0x2 
  .text.onAutocompleteRequest
-                0x1000bc18       0xb8 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bbd0       0xb8 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.inquiry_complete_cb
-                0x1000bcd0       0xb4 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bc88       0xb4 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.wait_for_disk_io
-                0x1000bd84       0x20 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bd3c       0x20 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.cli_write_char
-                0x1000bda4        0xa fatfs/libfatfs_lib.a(msc_app.c.obj)
- *fill*         0x1000bdae        0x2 
+                0x1000bd5c        0xa fatfs/libfatfs_lib.a(msc_app.c.obj)
+ *fill*         0x1000bd66        0x2 
  .text.embeddedCliDefaultConfig
-                0x1000bdb0       0x20 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000bdb0                embeddedCliDefaultConfig
+                0x1000bd68       0x20 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bd68                embeddedCliDefaultConfig
  .text.embeddedCliRequiredSize
-                0x1000bdd0       0x30 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000bdd0                embeddedCliRequiredSize
+                0x1000bd88       0x30 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bd88                embeddedCliRequiredSize
  .text.embeddedCliReceiveChar
-                0x1000be00       0x1c fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000be00                embeddedCliReceiveChar
+                0x1000bdb8       0x1c fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bdb8                embeddedCliReceiveChar
  .text.embeddedCliAddBinding
-                0x1000be1c       0x40 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000be1c                embeddedCliAddBinding
+                0x1000bdd4       0x40 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bdd4                embeddedCliAddBinding
  .text.initInternalBindings
-                0x1000be5c       0x2c fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000be14       0x2c fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.embeddedCliNew
-                0x1000be88       0xa4 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000be88                embeddedCliNew
+                0x1000be40       0xa4 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000be40                embeddedCliNew
  .text.embeddedCliTokenizeArgs
-                0x1000bf2c       0x88 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000bf2c                embeddedCliTokenizeArgs
+                0x1000bee4       0x88 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bee4                embeddedCliTokenizeArgs
  .text.embeddedCliGetToken
-                0x1000bfb4       0x1c fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000bfb4                embeddedCliGetToken
+                0x1000bf6c       0x1c fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bf6c                embeddedCliGetToken
  .text.historyGet
-                0x1000bfd0       0x1c fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bf88       0x1c fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.navigateHistory
-                0x1000bfec       0x98 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000bfa4       0x98 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.onEscapedInput
-                0x1000c084       0x32 fatfs/libfatfs_lib.a(msc_app.c.obj)
- *fill*         0x1000c0b6        0x2 
+                0x1000c03c       0x32 fatfs/libfatfs_lib.a(msc_app.c.obj)
+ *fill*         0x1000c06e        0x2 
  .text.embeddedCliGetTokenVariable
-                0x1000c0b8       0x1c fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c0b8                embeddedCliGetTokenVariable
+                0x1000c070       0x1c fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c070                embeddedCliGetTokenVariable
  .text.historyRemove
-                0x1000c0d4       0x66 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c08c       0x66 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.historyPut
-                0x1000c13a       0x76 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c0f2       0x76 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.parseCommand
-                0x1000c1b0      0x128 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c168      0x128 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.onControlInput
-                0x1000c2d8       0xa4 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c290       0xa4 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.embeddedCliProcess
-                0x1000c37c       0xb0 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c37c                embeddedCliProcess
+                0x1000c334       0xb0 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c334                embeddedCliProcess
  .text.embeddedCliGetTokenCount
-                0x1000c42c       0x2e fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c42c                embeddedCliGetTokenCount
- *fill*         0x1000c45a        0x2 
- .text.onHelp   0x1000c45c      0x134 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c3e4       0x2e fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c3e4                embeddedCliGetTokenCount
+ *fill*         0x1000c412        0x2 
+ .text.onHelp   0x1000c414      0x134 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .text.cli_cmd_cat
-                0x1000c590       0xac fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c590                cli_cmd_cat
+                0x1000c548       0xac fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c548                cli_cmd_cat
  .text.cli_cmd_cd
-                0x1000c63c       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c63c                cli_cmd_cd
+                0x1000c5f4       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c5f4                cli_cmd_cd
  .text.cli_cmd_cp
-                0x1000c670       0xc4 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c670                cli_cmd_cp
+                0x1000c628       0xc4 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c628                cli_cmd_cp
  .text.cli_cmd_ls
-                0x1000c734       0xac fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c734                cli_cmd_ls
+                0x1000c6ec       0xac fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c6ec                cli_cmd_ls
  .text.cli_cmd_pwd
-                0x1000c7e0       0x40 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c7e0                cli_cmd_pwd
+                0x1000c798       0x40 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c798                cli_cmd_pwd
  .text.cli_cmd_mkdir
-                0x1000c820       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c820                cli_cmd_mkdir
+                0x1000c7d8       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c7d8                cli_cmd_mkdir
  .text.cli_cmd_mv
-                0x1000c854       0x4c fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c854                cli_cmd_mv
+                0x1000c80c       0x4c fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c80c                cli_cmd_mv
  .text.cli_cmd_rm
-                0x1000c8a0       0x44 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c8a0                cli_cmd_rm
+                0x1000c858       0x44 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c858                cli_cmd_rm
  .text.msc_app_task
-                0x1000c8e4       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c8e4                msc_app_task
+                0x1000c89c       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c89c                msc_app_task
  .text.tuh_msc_mount_cb
-                0x1000c918       0x2c fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c918                tuh_msc_mount_cb
+                0x1000c8d0       0x2c fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c8d0                tuh_msc_mount_cb
  .text.tuh_msc_umount_cb
-                0x1000c944       0x30 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c944                tuh_msc_umount_cb
+                0x1000c8fc       0x30 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c8fc                tuh_msc_umount_cb
  .text.disk_status
-                0x1000c974       0x16 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c974                disk_status
+                0x1000c92c       0x16 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c92c                disk_status
  .text.disk_initialize
-                0x1000c98a        0x4 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c98a                disk_initialize
- *fill*         0x1000c98e        0x2 
+                0x1000c942        0x4 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c942                disk_initialize
+ *fill*         0x1000c946        0x2 
  .text.disk_read
-                0x1000c990       0x3c fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c990                disk_read
+                0x1000c948       0x3c fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c948                disk_read
  .text.disk_write
-                0x1000c9cc       0x3c fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000c9cc                disk_write
+                0x1000c984       0x3c fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c984                disk_write
  .text.disk_ioctl
-                0x1000ca08       0x4a fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000ca08                disk_ioctl
- *fill*         0x1000ca52        0x2 
+                0x1000c9c0       0x4a fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000c9c0                disk_ioctl
+ *fill*         0x1000ca0a        0x2 
  .text.cli_init
-                0x1000ca54      0x1bc fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000ca54                cli_init
+                0x1000ca0c      0x1bc fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000ca0c                cli_init
  .text.msc_app_init
-                0x1000cc10       0x30 fatfs/libfatfs_lib.a(msc_app.c.obj)
-                0x1000cc10                msc_app_init
- .text.malloc   0x1000cc40       0x14 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-malloc.o)
-                0x1000cc40                malloc
+                0x1000cbc8       0x30 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x1000cbc8                msc_app_init
+ .text.malloc   0x1000cbf8       0x14 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-malloc.o)
+                0x1000cbf8                malloc
  .text._malloc_r
-                0x1000cc54      0x5cc C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mallocr.o)
-                0x1000cc54                _malloc_r
+                0x1000cc0c      0x5cc C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mallocr.o)
+                0x1000cc0c                _malloc_r
  .text.__malloc_lock
-                0x1000d220       0x10 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mlock.o)
-                0x1000d220                __malloc_lock
+                0x1000d1d8       0x10 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mlock.o)
+                0x1000d1d8                __malloc_lock
  .text.__malloc_unlock
-                0x1000d230       0x10 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mlock.o)
-                0x1000d230                __malloc_unlock
- .text.setbuf   0x1000d240       0x18 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-setbuf.o)
-                0x1000d240                setbuf
- .text.setvbuf  0x1000d258      0x1a8 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-setvbuf.o)
-                0x1000d258                setvbuf
- .text.memcmp   0x1000d400       0x48 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-memcmp.o)
-                0x1000d400                memcmp
- .text.memmove  0x1000d448       0xc4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-memmove.o)
-                0x1000d448                memmove
- .text.strchr   0x1000d50c       0xc4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strchr.o)
-                0x1000d50c                strchr
- .text.strncmp  0x1000d5d0       0x68 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strncmp.o)
-                0x1000d5d0                strncmp
- .text._sbrk_r  0x1000d638       0x24 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-sbrkr.o)
-                0x1000d638                _sbrk_r
- .text.__errno  0x1000d65c        0xc C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-errno.o)
-                0x1000d65c                __errno
+                0x1000d1e8       0x10 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mlock.o)
+                0x1000d1e8                __malloc_unlock
+ .text.setbuf   0x1000d1f8       0x18 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-setbuf.o)
+                0x1000d1f8                setbuf
+ .text.setvbuf  0x1000d210      0x1a8 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-setvbuf.o)
+                0x1000d210                setvbuf
+ .text.memcmp   0x1000d3b8       0x48 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-memcmp.o)
+                0x1000d3b8                memcmp
+ .text.memmove  0x1000d400       0xc4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-memmove.o)
+                0x1000d400                memmove
+ .text.strchr   0x1000d4c4       0xc4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strchr.o)
+                0x1000d4c4                strchr
+ .text.strncmp  0x1000d588       0x68 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strncmp.o)
+                0x1000d588                strncmp
+ .text._sbrk_r  0x1000d5f0       0x24 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-sbrkr.o)
+                0x1000d5f0                _sbrk_r
+ .text.__errno  0x1000d614        0xc C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-errno.o)
+                0x1000d614                __errno
  .text.__retarget_lock_init_recursive
-                0x1000d668        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
-                0x1000d668                __retarget_lock_init_recursive
+                0x1000d620        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
+                0x1000d620                __retarget_lock_init_recursive
  .text.__retarget_lock_close_recursive
-                0x1000d66c        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
-                0x1000d66c                __retarget_lock_close_recursive
+                0x1000d624        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
+                0x1000d624                __retarget_lock_close_recursive
  .text.__retarget_lock_acquire_recursive
-                0x1000d670        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
-                0x1000d670                __retarget_lock_acquire_recursive
+                0x1000d628        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
+                0x1000d628                __retarget_lock_acquire_recursive
  .text.__retarget_lock_release_recursive
-                0x1000d674        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
-                0x1000d674                __retarget_lock_release_recursive
- .text.sysconf  0x1000d678       0x1c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-sysconf.o)
-                0x1000d678                sysconf
- .text          0x1000d694       0x88 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strcmp.o)
-                0x1000d694                strcmp
- .text.strlen   0x1000d71c       0x5c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strlen-stub.o)
-                0x1000d71c                strlen
+                0x1000d62c        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
+                0x1000d62c                __retarget_lock_release_recursive
+ .text.sysconf  0x1000d630       0x1c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-sysconf.o)
+                0x1000d630                sysconf
+ .text          0x1000d64c       0x88 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strcmp.o)
+                0x1000d64c                strcmp
+ .text.strlen   0x1000d6d4       0x5c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strlen-stub.o)
+                0x1000d6d4                strlen
  .text._malloc_trim_r
-                0x1000d778       0xb4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-freer.o)
-                0x1000d778                _malloc_trim_r
- .text._free_r  0x1000d82c      0x1f0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-freer.o)
-                0x1000d82c                _free_r
+                0x1000d730       0xb4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-freer.o)
+                0x1000d730                _malloc_trim_r
+ .text._free_r  0x1000d7e4      0x1f0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-freer.o)
+                0x1000d7e4                _free_r
  .text.__sflush_r
-                0x1000da1c      0x13c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fflush.o)
-                0x1000da1c                __sflush_r
+                0x1000d9d4      0x13c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fflush.o)
+                0x1000d9d4                __sflush_r
  .text._fflush_r
-                0x1000db58       0x68 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fflush.o)
-                0x1000db58                _fflush_r
+                0x1000db10       0x68 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fflush.o)
+                0x1000db10                _fflush_r
  .text.stdio_exit_handler
-                0x1000dbc0       0x1c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
+                0x1000db78       0x1c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
  .text.cleanup_stdio
-                0x1000dbdc       0x3c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
+                0x1000db94       0x3c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
  .text.global_stdio_init.part.0
-                0x1000dc18      0x118 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
- .text.__sinit  0x1000dd30       0x38 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
-                0x1000dd30                __sinit
+                0x1000dbd0      0x118 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
+ .text.__sinit  0x1000dce8       0x38 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
+                0x1000dce8                __sinit
  .text.__sfp_lock_acquire
-                0x1000dd68       0x10 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
-                0x1000dd68                __sfp_lock_acquire
+                0x1000dd20       0x10 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
+                0x1000dd20                __sfp_lock_acquire
  .text.__sfp_lock_release
-                0x1000dd78       0x10 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
-                0x1000dd78                __sfp_lock_release
+                0x1000dd30       0x10 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
+                0x1000dd30                __sfp_lock_release
  .text._fwalk_sglue
-                0x1000dd88       0x44 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fwalk.o)
-                0x1000dd88                _fwalk_sglue
+                0x1000dd40       0x44 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fwalk.o)
+                0x1000dd40                _fwalk_sglue
  .text.__swhatbuf_r
-                0x1000ddcc       0x58 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-makebuf.o)
-                0x1000ddcc                __swhatbuf_r
- .text.__sread  0x1000de24       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
-                0x1000de24                __sread
+                0x1000dd84       0x58 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-makebuf.o)
+                0x1000dd84                __swhatbuf_r
+ .text.__sread  0x1000dddc       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
+                0x1000dddc                __sread
  .text.__swrite
-                0x1000de4c       0x40 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
-                0x1000de4c                __swrite
- .text.__sseek  0x1000de8c       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
-                0x1000de8c                __sseek
+                0x1000de04       0x40 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
+                0x1000de04                __swrite
+ .text.__sseek  0x1000de44       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
+                0x1000de44                __sseek
  .text.__sclose
-                0x1000deb8        0xc C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
-                0x1000deb8                __sclose
+                0x1000de70        0xc C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
+                0x1000de70                __sclose
  .text._close_r
-                0x1000dec4       0x24 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-closer.o)
-                0x1000dec4                _close_r
+                0x1000de7c       0x24 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-closer.o)
+                0x1000de7c                _close_r
  .text._fstat_r
-                0x1000dee8       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fstatr.o)
-                0x1000dee8                _fstat_r
+                0x1000dea0       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fstatr.o)
+                0x1000dea0                _fstat_r
  .text._lseek_r
-                0x1000df10       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lseekr.o)
-                0x1000df10                _lseek_r
- .text._read_r  0x1000df38       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-readr.o)
-                0x1000df38                _read_r
+                0x1000dec8       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lseekr.o)
+                0x1000dec8                _lseek_r
+ .text._read_r  0x1000def0       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-readr.o)
+                0x1000def0                _read_r
  .text._write_r
-                0x1000df60       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-writer.o)
-                0x1000df60                _write_r
+                0x1000df18       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-writer.o)
+                0x1000df18                _write_r
  .text._fclose_r
-                0x1000df88       0xcc C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fclose.o)
-                0x1000df88                _fclose_r
+                0x1000df40       0xcc C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fclose.o)
+                0x1000df40                _fclose_r
  *(.fini)
- .fini          0x1000e054        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crti.o
-                0x1000e054                _fini
- .fini.__stub   0x1000e058       0x70 linker stubs
+ .fini          0x1000e00c        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crti.o
+                0x1000e00c                _fini
+ .fini.__stub   0x1000e010       0x70 linker stubs
  *crtbegin.o(.ctors)
  *crtbegin?.o(.ctors)
  *(EXCLUDE_FILE(*crtend.o *crtend?.o) .ctors)
@@ -4127,606 +4124,606 @@ LOAD C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/
  *(EXCLUDE_FILE(*crtend.o *crtend?.o) .dtors)
  *(SORT_BY_NAME(.dtors.*))
  *(.dtors)
-                0x1000e0c8                        . = ALIGN (0x4)
-                0x1000e0c8                        PROVIDE (__preinit_array_start = .)
+                0x1000e080                        . = ALIGN (0x4)
+                0x1000e080                        PROVIDE (__preinit_array_start = .)
  *(SORT_BY_NAME(.preinit_array.*))
  .preinit_array.00100
-                0x1000e0c8        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x1000e0c8                __pre_init_runtime_init_early_resets
+                0x1000e080        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000e080                __pre_init_runtime_init_early_resets
  .preinit_array.00101
-                0x1000e0cc        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x1000e0cc                __pre_init_runtime_init_usb_power_down
+                0x1000e084        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000e084                __pre_init_runtime_init_usb_power_down
  .preinit_array.00275
-                0x1000e0d0        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+                0x1000e088        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
  .preinit_array.00300
-                0x1000e0d4        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+                0x1000e08c        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
  .preinit_array.00350
-                0x1000e0d8        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_aeabi_rp2040.S.obj
+                0x1000e090        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_aeabi_rp2040.S.obj
  .preinit_array.00350
-                0x1000e0dc        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_aeabi_rp2040.S.obj
+                0x1000e094        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_aeabi_rp2040.S.obj
  .preinit_array.00500
-                0x1000e0e0        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x1000e0e0                __pre_init_runtime_init_clocks
+                0x1000e098        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000e098                __pre_init_runtime_init_clocks
  .preinit_array.00600
-                0x1000e0e4        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x1000e0e4                __pre_init_runtime_init_post_clock_resets
+                0x1000e09c        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000e09c                __pre_init_runtime_init_post_clock_resets
  .preinit_array.00700
-                0x1000e0e8        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x1000e0e8                __pre_init_runtime_init_rp2040_gpio_ie_disable
+                0x1000e0a0        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000e0a0                __pre_init_runtime_init_rp2040_gpio_ie_disable
  .preinit_array.01000
-                0x1000e0ec        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x1000e0ec                __pre_init_runtime_init_spin_locks_reset
+                0x1000e0a4        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000e0a4                __pre_init_runtime_init_spin_locks_reset
  .preinit_array.01100
-                0x1000e0f0        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
-                0x1000e0f0                __pre_init_runtime_init_mutex
+                0x1000e0a8        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
+                0x1000e0a8                __pre_init_runtime_init_mutex
  .preinit_array.10080
-                0x1000e0f4        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x1000e0f4                __pre_init_runtime_init_install_ram_vector_table
+                0x1000e0ac        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000e0ac                __pre_init_runtime_init_install_ram_vector_table
  .preinit_array.11000
-                0x1000e0f8        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
-                0x1000e0f8                __pre_init_runtime_init_default_alarm_pool
+                0x1000e0b0        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
+                0x1000e0b0                __pre_init_runtime_init_default_alarm_pool
  .preinit_array.YYYYY
-                0x1000e0fc        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime/runtime.c.obj
-                0x1000e0fc                __pre_init_first_per_core_initializer
+                0x1000e0b4        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime/runtime.c.obj
+                0x1000e0b4                __pre_init_first_per_core_initializer
  .preinit_array.ZZZZZ.01200
-                0x1000e100        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
-                0x1000e100                __pre_init_runtime_init_per_core_irq_priorities
+                0x1000e0b8        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+                0x1000e0b8                __pre_init_runtime_init_per_core_irq_priorities
  *(.preinit_array)
-                0x1000e104                        PROVIDE (__preinit_array_end = .)
-                0x1000e104                        . = ALIGN (0x4)
-                0x1000e104                        PROVIDE (__init_array_start = .)
+                0x1000e0bc                        PROVIDE (__preinit_array_end = .)
+                0x1000e0bc                        . = ALIGN (0x4)
+                0x1000e0bc                        PROVIDE (__init_array_start = .)
  *(SORT_BY_NAME(.init_array.*))
  .init_array.01000
-                0x1000e104        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_unique_id/unique_id.c.obj
+                0x1000e0bc        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_unique_id/unique_id.c.obj
  *(.init_array)
- .init_array    0x1000e108        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtbegin.o
-                0x1000e10c                        PROVIDE (__init_array_end = .)
-                0x1000e10c                        . = ALIGN (0x4)
+ .init_array    0x1000e0c0        0x4 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtbegin.o
+                0x1000e0c4                        PROVIDE (__init_array_end = .)
+                0x1000e0c4                        . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_NAME(.fini_array.*))
  *(.fini_array)
                 [!provide]                        PROVIDE (__fini_array_end = .)
  *(.eh_frame*)
- .eh_frame      0x1000e10c        0x0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtbegin.o
-                0x1000e10c                        . = ALIGN (0x4)
+ .eh_frame      0x1000e0c4        0x0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtbegin.o
+                0x1000e0c4                        . = ALIGN (0x4)
 
-.glue_7         0x1000e10c        0x0
- .glue_7        0x1000e10c        0x0 linker stubs
+.glue_7         0x1000e0c4        0x0
+ .glue_7        0x1000e0c4        0x0 linker stubs
 
-.glue_7t        0x1000e10c        0x0
- .glue_7t       0x1000e10c        0x0 linker stubs
+.glue_7t        0x1000e0c4        0x0
+ .glue_7t       0x1000e0c4        0x0 linker stubs
 
-.vfp11_veneer   0x1000e10c        0x0
- .vfp11_veneer  0x1000e10c        0x0 linker stubs
+.vfp11_veneer   0x1000e0c4        0x0
+ .vfp11_veneer  0x1000e0c4        0x0 linker stubs
 
-.v4_bx          0x1000e10c        0x0
- .v4_bx         0x1000e10c        0x0 linker stubs
+.v4_bx          0x1000e0c4        0x0
+ .v4_bx         0x1000e0c4        0x0 linker stubs
 
-.iplt           0x1000e10c        0x0
- .iplt          0x1000e10c        0x0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtbegin.o
+.iplt           0x1000e0c4        0x0
+ .iplt          0x1000e0c4        0x0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtbegin.o
 
-.rodata         0x1000e110     0x2d80
+.rodata         0x1000e0c8     0x2d80
  *(EXCLUDE_FILE(*libm.a: *libc.a:*lib_a-mem*.o *libgcc.a:) .rodata*)
- .rodata        0x1000e110        0x2 app/CMakeFiles/app_main.dir/main.c.obj
- *fill*         0x1000e112        0x2 
+ .rodata        0x1000e0c8        0x2 app/CMakeFiles/app_main.dir/main.c.obj
+ *fill*         0x1000e0ca        0x2 
  .rodata.hw_trans_complete.str1.4
-                0x1000e114     0x1e4b app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000e0cc     0x1e4b app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
                                  0x44 (size before relaxing)
  .rodata.hw_handle_buff_status.str1.4
-                0x1000ff5f       0x15 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff17       0x15 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.hcd_rp2040_irq.str1.4
-                0x1000ff5f       0x50 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff17       0x50 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata._hw_endpoint_allocate.str1.4
-                0x1000ff5f       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff17       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.hcd_init.str1.4
-                0x1000ff5f        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff17        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.hcd_port_connect_status.str1.4
-                0x1000ff5f        0x3 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff17        0x3 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.hcd_port_speed_get.str1.4
-                0x1000ff5f        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff17        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata._hw_endpoint_init.str1.4
-                0x1000ff5f       0x57 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff17       0x57 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.hcd_edpt_open.str1.4
-                0x1000ff5f       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff17       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.hcd_edpt_xfer.str1.4
-                0x1000ff5f       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff17       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.hcd_setup_send.str1.4
-                0x1000ff5f        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x1000ff5f        0x1 
+                0x1000ff17        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ff17        0x1 
  .rodata.__func__.0
-                0x1000ff60        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x1000ff6f        0x1 
+                0x1000ff18        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ff27        0x1 
  .rodata.__func__.1
-                0x1000ff70        0xe app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x1000ff7e        0x2 
+                0x1000ff28        0xe app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ff36        0x2 
  .rodata.__func__.2
-                0x1000ff80       0x12 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff38       0x12 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.str1.4
-                0x1000ff92       0x26 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x1000ff92        0x2 
- .rodata.str.3  0x1000ff94       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ff4a       0x26 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ff4a        0x2 
+ .rodata.str.3  0x1000ff4c       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.__func__.4
-                0x1000ffa4       0x16 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x1000ffba        0x2 
+                0x1000ff5c       0x16 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ff72        0x2 
  .rodata.__func__.5
-                0x1000ffbc        0xe app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x1000ffca        0x2 
+                0x1000ff74        0xe app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ff82        0x2 
  .rodata.__func__.7
-                0x1000ffcc        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x1000ffdb        0x1 
+                0x1000ff84        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ff93        0x1 
  .rodata.__func__.8
-                0x1000ffdc       0x13 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x1000ffef        0x1 
+                0x1000ff94       0x13 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ffa7        0x1 
  .rodata.__func__.9
-                0x1000fff0       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000ffa8       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.__func__.10
-                0x10010008        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x10010017        0x1 
+                0x1000ffc0        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ffcf        0x1 
  .rodata.__func__.11
-                0x10010018        0x9 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x10010021        0x3 
+                0x1000ffd0        0x9 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ffd9        0x3 
  .rodata.__func__.12
-                0x10010024       0x12 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- *fill*         0x10010036        0x2 
+                0x1000ffdc       0x12 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ *fill*         0x1000ffee        0x2 
  .rodata.__func__.13
-                0x10010038       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+                0x1000fff0       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .rodata.sync_ep_buffer.str1.4
-                0x10010050       0x75 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x10010008       0x75 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .rodata.rp2040_usb_init.str1.4
-                0x10010050       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x10010008       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .rodata._hw_endpoint_buffer_control_update32.str1.4
-                0x10010050       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x10010008       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .rodata.hw_endpoint_xfer_start.str1.4
-                0x10010050       0x38 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x10010008       0x38 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .rodata.hw_endpoint_xfer_continue.str1.4
-                0x10010050       0x28 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x10010008       0x28 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .rodata.__func__.0
-                0x10010050        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x10010008        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .rodata.process_removed_device.str1.4
-                0x1001005f       0x3d app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017       0x3d app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.tu_print_buf.str1.4
-                0x1001005f        0xa app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017        0xa app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.enum_parse_configuration_desc.str1.4
-                0x1001005f       0xe8 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017       0xe8 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.tuh_rhport_init.str1.4
-                0x1001005f      0x106 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017      0x106 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.usbh_edpt_claim.str1.4
-                0x1001005f       0x19 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017       0x19 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.usbh_edpt_release.str1.4
-                0x1001005f       0x1a app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017       0x1a app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.usbh_edpt_xfer_with_callback.str1.4
-                0x1001005f       0x34 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017       0x34 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.usbh_edpt_control_open.str1.4
-                0x1001005f       0x22 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017       0x22 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.tuh_edpt_abort_xfer.str1.4
-                0x1001005f       0x23 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017       0x23 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.usbh_control_xfer_cb.str1.4
-                0x1001005f       0xa4 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017       0xa4 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.usbh_driver_set_config_complete.str1.4
-                0x1001005f       0x3a app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010017       0x3a app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.process_enumeration.str1.4
-                0x1001005f      0x11b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
- *fill*         0x1001005f        0x1 
+                0x10010017      0x11b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+ *fill*         0x10010017        0x1 
  .rodata.process_enumeration
-                0x10010060       0x50 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010018       0x50 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.enum_new_device.str1.4
-                0x100100b0       0x2f app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010068       0x2f app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.tuh_task_ext.str1.4
-                0x100100b0       0xbd app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010068       0xbd app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.tuh_control_xfer.str1.4
-                0x100100b0       0x1d app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010068       0x1d app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.tuh_descriptor_get_hid_report.str1.4
-                0x100100b0       0x1b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010068       0x1b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.tuh_address_set.str1.4
-                0x100100b0       0x13 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010068       0x13 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.tuh_configuration_set.str1.4
-                0x100100b0       0x19 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010068       0x19 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.__func__.0
-                0x100100b0       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010068       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.__func__.1
-                0x100100c0        0xe app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
- *fill*         0x100100ce        0x2 
+                0x10010078        0xe app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+ *fill*         0x10010086        0x2 
  .rodata.__func__.2
-                0x100100d0       0x1d app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
- *fill*         0x100100ed        0x3 
+                0x10010088       0x1d app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+ *fill*         0x100100a5        0x3 
  .rodata.__func__.3
-                0x100100f0       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x100100a8       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.__func__.4
-                0x10010100       0x11 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
- *fill*         0x10010111        0x3 
+                0x100100b8       0x11 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+ *fill*         0x100100c9        0x3 
  .rodata.__func__.5
-                0x10010114       0x15 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
- *fill*         0x10010129        0x3 
+                0x100100cc       0x15 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+ *fill*         0x100100e1        0x3 
  .rodata.__func__.6
-                0x1001012c        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x100100e4        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.__func__.7
-                0x10010138       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
- *fill*         0x10010156        0x2 
+                0x100100f0       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+ *fill*         0x1001010e        0x2 
  .rodata.__func__.8
-                0x10010158       0x14 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010110       0x14 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.__func__.10
-                0x1001016c       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010124       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.__func__.11
-                0x1001017c        0xd app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
- *fill*         0x10010189        0x3 
+                0x10010134        0xd app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+ *fill*         0x10010141        0x3 
  .rodata.__func__.12
-                0x1001018c       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010144       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.str1.4
-                0x1001019c        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010154        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.usbh_class_drivers
-                0x1001019c       0x54 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+                0x10010154       0x54 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
  .rodata.hub_port_clear_feature.str1.4
-                0x100101f0       0x47 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+                0x100101a8       0x47 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
  .rodata.hub_port_set_feature.str1.4
-                0x100101f0       0x2b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+                0x100101a8       0x2b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
  .rodata.hub_port_get_status.str1.4
-                0x100101f0       0x2b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+                0x100101a8       0x2b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
  .rodata.hub_close.str1.4
-                0x100101f0       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+                0x100101a8       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
  .rodata.process_new_status.str1.4
-                0x100101f0       0x58 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+                0x100101a8       0x58 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
  .rodata.hub_xfer_cb.str1.4
-                0x100101f0       0x1f app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+                0x100101a8       0x1f app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
  .rodata.__func__.0
-                0x100101f0       0x13 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
- *fill*         0x10010203        0x1 
+                0x100101a8       0x13 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+ *fill*         0x100101bb        0x1 
  .rodata.__func__.1
-                0x10010204        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+                0x100101bc        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
  .rodata.__func__.2
-                0x10010210       0x1b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
- *fill*         0x1001022b        0x1 
+                0x100101c8       0x1b app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+ *fill*         0x100101e3        0x1 
  .rodata.__func__.3
-                0x1001022c       0x16 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
- *fill*         0x10010242        0x2 
+                0x100101e4       0x16 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+ *fill*         0x100101fa        0x2 
  .rodata.__func__.4
-                0x10010244        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
- *fill*         0x10010253        0x1 
+                0x100101fc        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+ *fill*         0x1001020b        0x1 
  .rodata.__func__.5
-                0x10010254        0x9 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
- *fill*         0x1001025d        0x3 
+                0x1001020c        0x9 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+ *fill*         0x10010215        0x3 
  .rodata.__func__.6
-                0x10010260       0x15 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
- *fill*         0x10010275        0x3 
+                0x10010218       0x15 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+ *fill*         0x1001022d        0x3 
  .rodata.__func__.7
-                0x10010278       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+                0x10010230       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
  .rodata.str1.4
-                0x1001028f       0xf3 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
- *fill*         0x1001028f        0x1 
+                0x10010247       0xf3 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+ *fill*         0x10010247        0x1 
  .rodata._hub_feature_str
-                0x10010290       0x5c app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
- .rodata        0x100102ec        0x8 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+                0x10010248       0x5c app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+ .rodata        0x100102a4        0x8 app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
  .rodata._hidh_set_protocol.str1.4
-                0x100102f4       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+                0x100102ac       0x18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
  .rodata._hidh_set_idle.str1.4
-                0x100102f4        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+                0x100102ac        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
  .rodata.config_driver_mount_complete.str1.4
-                0x100102f4       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+                0x100102ac       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
  .rodata.process_set_config.str1.4
-                0x100102f4       0x3c app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+                0x100102ac       0x3c app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
  .rodata.hidh_init.str1.4
-                0x100102f4       0x20 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+                0x100102ac       0x20 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
  .rodata.hidh_xfer_cb.str1.4
-                0x100102f4       0x21 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+                0x100102ac       0x21 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
  .rodata.hidh_close.str1.4
-                0x100102f4       0x24 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+                0x100102ac       0x24 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
  .rodata.hidh_open.str1.4
-                0x100102f4       0x20 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+                0x100102ac       0x20 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
  .rodata.__func__.0
-                0x100102f4       0x13 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
- *fill*         0x10010307        0x1 
+                0x100102ac       0x13 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+ *fill*         0x100102bf        0x1 
  .rodata.__func__.1
-                0x10010308        0xa app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
- *fill*         0x10010312        0x2 
+                0x100102c0        0xa app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+ *fill*         0x100102ca        0x2 
  .rodata.__func__.2
-                0x10010314        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+                0x100102cc        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
  .rodata.config_read_capacity_complete.str1.4
-                0x10010320       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+                0x100102d8       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
  .rodata.config_get_maxlun_complete.str1.4
-                0x10010320       0x2a app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+                0x100102d8       0x2a app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
  .rodata.config_test_unit_ready_complete.str1.4
-                0x10010320       0x28 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+                0x100102d8       0x28 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
  .rodata.msch_init.str1.4
-                0x10010320       0x3c app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+                0x100102d8       0x3c app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
  .rodata.msch_close.str1.4
-                0x10010320       0x19 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+                0x100102d8       0x19 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
  .rodata.msch_set_config.str1.4
-                0x10010320       0x11 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+                0x100102d8       0x11 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
  .rodata.__func__.0
-                0x10010320       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
- *fill*         0x1001033e        0x2 
+                0x100102d8       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+ *fill*         0x100102f6        0x2 
  .rodata.__func__.1
-                0x10010340       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
- *fill*         0x1001035e        0x2 
+                0x100102f8       0x1e app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+ *fill*         0x10010316        0x2 
  .rodata.__func__.2
-                0x10010360       0x20 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+                0x10010318       0x20 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
  .rodata.__func__.3
-                0x10010380       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+                0x10010338       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
  .rodata.__func__.4
-                0x10010390        0xa app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
- *fill*         0x1001039a        0x2 
+                0x10010348        0xa app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+ *fill*         0x10010352        0x2 
  .rodata.__func__.5
-                0x1001039c        0xd app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+                0x10010354        0xd app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
  .rodata.dump_str_line.str1.4
-                0x100103a9        0x7 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+                0x10010361        0x7 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
  .rodata.tusb_rhport_init.str1.4
-                0x100103a9       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+                0x10010361       0x17 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
  .rodata.tu_edpt_validate.str1.4
-                0x100103a9       0x5d app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+                0x10010361       0x5d app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
  .rodata.tu_edpt_bind_driver.str1.4
-                0x100103a9       0x21 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+                0x10010361       0x21 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
  .rodata.tu_print_mem.str1.4
-                0x100103a9        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
- *fill*         0x100103a9        0x3 
+                0x10010361        0xf app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+ *fill*         0x10010361        0x3 
  .rodata.__func__.4
-                0x100103ac       0x11 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
- *fill*         0x100103bd        0x3 
+                0x10010364       0x11 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+ *fill*         0x10010375        0x3 
  .rodata.__func__.6
-                0x100103c0       0x11 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+                0x10010378       0x11 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
  .rodata.str1.4
-                0x100103d1       0xe1 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
- *fill*         0x100103d1        0x3 
+                0x10010389       0xe1 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+ *fill*         0x10010389        0x3 
  .rodata.tu_str_xfer_result
-                0x100103d4       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
-                0x100103d4                tu_str_xfer_result
+                0x1001038c       0x10 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+                0x1001038c                tu_str_xfer_result
  .rodata.tu_str_std_request
-                0x100103e4       0x34 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
-                0x100103e4                tu_str_std_request
+                0x1001039c       0x34 app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+                0x1001039c                tu_str_std_request
  .rodata.tu_str_speed
-                0x10010418        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
-                0x10010418                tu_str_speed
+                0x100103d0        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+                0x100103d0                tu_str_speed
  .rodata.resolve_j_16.str1.4
-                0x10010424       0x5e app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+                0x100103dc       0x5e app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
  .rodata.make_j_16.str1.4
-                0x10010424       0x30 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+                0x100103dc       0x30 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
  .rodata.insert_bl_32.str1.4
-                0x10010424       0x10 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+                0x100103dc       0x10 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
  .rodata.irq_set_exclusive_handler.str1.4
-                0x10010424       0x36 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+                0x100103dc       0x36 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
  .rodata.irq_add_shared_handler.str1.4
-                0x10010424       0xd2 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+                0x100103dc       0xd2 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
  .rodata.irq_remove_handler.str1.4
-                0x10010424       0x3a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+                0x100103dc       0x3a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
  .rodata.irq_add_tail_to_free_list.str1.4
-                0x10010424       0x3a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+                0x100103dc       0x3a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
  .rodata.__func__.0
-                0x10010424       0x1a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
- *fill*         0x1001043e        0x2 
+                0x100103dc       0x1a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+ *fill*         0x100103f6        0x2 
  .rodata.__func__.1
-                0x10010440        0xd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
- *fill*         0x1001044d        0x3 
+                0x100103f8        0xd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+ *fill*         0x10010405        0x3 
  .rodata.__func__.2
-                0x10010450       0x13 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
- *fill*         0x10010463        0x1 
+                0x10010408       0x13 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+ *fill*         0x1001041b        0x1 
  .rodata.__func__.3
-                0x10010464        0xa app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
- *fill*         0x1001046e        0x2 
+                0x1001041c        0xa app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+ *fill*         0x10010426        0x2 
  .rodata.__func__.4
-                0x10010470        0xd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
- *fill*         0x1001047d        0x3 
+                0x10010428        0xd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+ *fill*         0x10010435        0x3 
  .rodata.__func__.5
-                0x10010480       0x17 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
- *fill*         0x10010497        0x1 
+                0x10010438       0x17 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+ *fill*         0x1001044f        0x1 
  .rodata.__func__.6
-                0x10010498       0x1a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+                0x10010450       0x1a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
  .rodata.panic.str1.4
-                0x100104b2       0x12 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_platform_panic/panic.c.obj
+                0x1001046a       0x12 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_platform_panic/panic.c.obj
  .rodata.spin_lock_claim_unused.str1.4
-                0x100104b2       0x1b app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_sync/sync.c.obj
+                0x1001046a       0x1b app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_sync/sync.c.obj
  .rodata.runtime_init_mutex.str1.4
-                0x100104b2       0x61 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
+                0x1001046a       0x61 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
  .rodata.str1.4
-                0x100104b2       0x51 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
- *fill*         0x100104b2        0x2 
+                0x1001046a       0x51 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
+ *fill*         0x1001046a        0x2 
  .rodata.__func__.1
-                0x100104b4        0xb app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
- *fill*         0x100104bf        0x1 
+                0x1001046c        0xb app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
+ *fill*         0x10010477        0x1 
  .rodata.__func__.3
-                0x100104c0       0x18 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
+                0x10010478       0x18 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
  .rodata.__func__.6
-                0x100104d8       0x13 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
+                0x10010490       0x13 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
  .rodata.alarm_pool_irq_handler.str1.4
-                0x100104eb       0x6c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
+                0x100104a3       0x6c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
  .rodata.alarm_pool_get_default.str1.4
-                0x100104eb       0x21 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
+                0x100104a3       0x21 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
  .rodata.sleep_until.str1.4
-                0x100104eb       0x4d app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
- *fill*         0x100104eb        0x1 
+                0x100104a3       0x4d app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
+ *fill*         0x100104a3        0x1 
  .rodata.__func__.1
-                0x100104ec       0x17 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
- *fill*         0x10010503        0x1 
+                0x100104a4       0x17 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
+ *fill*         0x100104bb        0x1 
  .rodata.__func__.2
-                0x10010504       0x17 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
- *fill*         0x1001051b        0x5 
+                0x100104bc       0x17 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
+ *fill*         0x100104d3        0x5 
  .rodata.at_the_end_of_time
-                0x10010520        0x8 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
-                0x10010520                at_the_end_of_time
+                0x100104d8        0x8 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
+                0x100104d8                at_the_end_of_time
  .rodata.timer_hardware_alarm_claim.str1.4
-                0x10010528       0x22 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_timer/timer.c.obj
+                0x100104e0       0x22 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_timer/timer.c.obj
  .rodata.str1.4
-                0x10010528        0x4 app/CMakeFiles/app_main.dir/H_/tinyusb/hw/bsp/rp2040/family.c.obj
+                0x100104e0        0x4 app/CMakeFiles/app_main.dir/H_/tinyusb/hw/bsp/rp2040/family.c.obj
  .rodata.__bi_186.0
-                0x10010528        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/hw/bsp/rp2040/family.c.obj
+                0x100104e0        0xc app/CMakeFiles/app_main.dir/H_/tinyusb/hw/bsp/rp2040/family.c.obj
  .rodata.str1.4
-                0x10010534      0x205 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_flash/flash.c.obj
+                0x100104ec      0x205 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_flash/flash.c.obj
  .rodata.__func__.0
-                0x10010534        0xd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_flash/flash.c.obj
+                0x100104ec        0xd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_flash/flash.c.obj
  .rodata.gpio_set_irq_enabled.str1.4
-                0x10010541       0x74 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_gpio/gpio.c.obj
- *fill*         0x10010541        0x3 
+                0x100104f9       0x74 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_gpio/gpio.c.obj
+ *fill*         0x100104f9        0x3 
  .rodata.__func__.4
-                0x10010544       0x15 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x100104fc       0x15 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_gpio/gpio.c.obj
  .rodata.pll_init.str1.4
-                0x10010559      0x11c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_pll/pll.c.obj
- *fill*         0x10010559        0x3 
+                0x10010511      0x11c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_pll/pll.c.obj
+ *fill*         0x10010511        0x3 
  .rodata.__func__.0
-                0x1001055c        0x9 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_pll/pll.c.obj
+                0x10010514        0x9 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_pll/pll.c.obj
  .rodata.__aeabi_double_init.str1.4
-                0x10010565       0x9c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_init_rom_rp2040.c.obj
- *fill*         0x10010565        0x3 
+                0x1001051d       0x9c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_init_rom_rp2040.c.obj
+ *fill*         0x1001051d        0x3 
  .rodata.__func__.0
-                0x10010568       0x14 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_init_rom_rp2040.c.obj
+                0x10010520       0x14 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_init_rom_rp2040.c.obj
  .rodata.__aeabi_float_init.str1.4
-                0x1001057c       0x8e app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_init_rom_rp2040.c.obj
+                0x10010534       0x8e app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_init_rom_rp2040.c.obj
  .rodata.__func__.0
-                0x1001057c       0x13 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_init_rom_rp2040.c.obj
+                0x10010534       0x13 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_init_rom_rp2040.c.obj
  .rodata.check_alloc.str1.4
-                0x1001058f        0xe app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_malloc/malloc.c.obj
+                0x10010547        0xe app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_malloc/malloc.c.obj
  .rodata.str1.4
-                0x1001058f       0x40 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
- *fill*         0x1001058f        0x1 
+                0x10010547       0x40 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+ *fill*         0x10010547        0x1 
  .rodata.__bi_84
-                0x10010590        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010548        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_78
-                0x1001059c        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010554        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_54
-                0x100105a8        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010560        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_48
-                0x100105b4        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x1001056c        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_42
-                0x100105c0        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010578        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_34
-                0x100105cc        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010584        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_26
-                0x100105d8        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010590        0xc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata._ftoa.str1.4
-                0x100105e4       0x15 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_printf/printf.c.obj
+                0x1001059c       0x15 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_printf/printf.c.obj
  .rodata._vsnprintf
-                0x100105e4      0x19c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_printf/printf.c.obj
+                0x1001059c      0x19c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_printf/printf.c.obj
  .rodata.pow10.0
-                0x10010780       0x50 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_printf/printf.c.obj
+                0x10010738       0x50 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_printf/printf.c.obj
  .rodata.__assert_func.str1.4
-                0x100107d0       0x43 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+                0x10010788       0x43 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .rodata.stdio_getchar_timeout_us.str1.4
-                0x100107d0       0x4a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
+                0x10010788       0x4a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
  .rodata.__func__.1
-                0x100107d0       0x19 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
- *fill*         0x100107e9        0x3 
+                0x10010788       0x19 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
+ *fill*         0x100107a1        0x3 
  .rodata.crlf_str.0
-                0x100107ec        0x2 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
+                0x100107a4        0x2 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
  .rodata.no_file.str1.4
-                0x100107ee        0x2 file_processing/libfile_processing.a(file_processing.c.obj)
+                0x100107a6        0x2 file_processing/libfile_processing.a(file_processing.c.obj)
  .rodata.no_filesystem.str1.4
-                0x100107ee        0x7 file_processing/libfile_processing.a(file_processing.c.obj)
+                0x100107a6        0x7 file_processing/libfile_processing.a(file_processing.c.obj)
  .rodata.channel_config_set_chain_to.str1.4
-                0x100107ee       0x77 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
- *fill*         0x100107ee        0x2 
+                0x100107a6       0x77 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+ *fill*         0x100107a6        0x2 
  .rodata.__func__.3
-                0x100107f0       0x1c hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x100107a8       0x1c hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .rodata.clocked_input_program
-                0x1001080c        0x8 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x100107c4        0x8 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .rodata.clocked_input_program_instructions
-                0x10010814        0xa hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x100107cc        0xa hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .rodata.find_offset_for_program.str1.4
-                0x1001081e       0x72 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x100107d6       0x72 hardware_processing/libhardware_processing.a(pio.c.obj)
  .rodata.pio_claim_unused_sm.str1.4
-                0x1001081e       0x24 hardware_processing/libhardware_processing.a(pio.c.obj)
- *fill*         0x1001081e        0x2 
+                0x100107d6       0x24 hardware_processing/libhardware_processing.a(pio.c.obj)
+ *fill*         0x100107d6        0x2 
  .rodata.__func__.1
-                0x10010820       0x18 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x100107d8       0x18 hardware_processing/libhardware_processing.a(pio.c.obj)
  .rodata.dma_claim_unused_channel.str1.4
-                0x10010838       0x1e hardware_processing/libhardware_processing.a(dma.c.obj)
+                0x100107f0       0x1e hardware_processing/libhardware_processing.a(dma.c.obj)
  .rodata.check_fs.str1.4
-                0x10010838        0x9 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x100107f0        0x9 fatfs/libfatfs_lib.a(ff.c.obj)
  .rodata.create_name.str1.4
-                0x10010838       0x13 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x100107f0       0x13 fatfs/libfatfs_lib.a(ff.c.obj)
  .rodata.f_mkfs.str1.4
-                0x10010838       0x34 fatfs/libfatfs_lib.a(ff.c.obj)
- .rodata.cst.0  0x10010838        0xe fatfs/libfatfs_lib.a(ff.c.obj)
- *fill*         0x10010846        0x2 
+                0x100107f0       0x34 fatfs/libfatfs_lib.a(ff.c.obj)
+ .rodata.cst.0  0x100107f0        0xe fatfs/libfatfs_lib.a(ff.c.obj)
+ *fill*         0x100107fe        0x2 
  .rodata.cst32.1
-                0x10010848        0xe fatfs/libfatfs_lib.a(ff.c.obj)
- *fill*         0x10010856        0x2 
+                0x10010800        0xe fatfs/libfatfs_lib.a(ff.c.obj)
+ *fill*         0x1001080e        0x2 
  .rodata.defopt.2
-                0x10010858       0x10 fatfs/libfatfs_lib.a(ff.c.obj)
- .rodata.ExCvt  0x10010868       0x80 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x10010810       0x10 fatfs/libfatfs_lib.a(ff.c.obj)
+ .rodata.ExCvt  0x10010820       0x80 fatfs/libfatfs_lib.a(ff.c.obj)
  .rodata.LfnOfs
-                0x100108e8        0xd fatfs/libfatfs_lib.a(ff.c.obj)
- *fill*         0x100108f5        0x3 
+                0x100108a0        0xd fatfs/libfatfs_lib.a(ff.c.obj)
+ *fill*         0x100108ad        0x3 
  .rodata.ff_wtoupper
-                0x100108f8       0x24 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+                0x100108b0       0x24 fatfs/libfatfs_lib.a(ffunicode.c.obj)
  .rodata.cvt2.0
-                0x1001091c       0xbc fatfs/libfatfs_lib.a(ffunicode.c.obj)
+                0x100108d4       0xbc fatfs/libfatfs_lib.a(ffunicode.c.obj)
  .rodata.cvt1.1
-                0x100109d8      0x1f2 fatfs/libfatfs_lib.a(ffunicode.c.obj)
- *fill*         0x10010bca        0x2 
- .rodata.uc437  0x10010bcc      0x100 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+                0x10010990      0x1f2 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+ *fill*         0x10010b82        0x2 
+ .rodata.uc437  0x10010b84      0x100 fatfs/libfatfs_lib.a(ffunicode.c.obj)
  .rodata.onUnknownCommand.str1.4
-                0x10010ccc       0x4b fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x4b fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.inquiry_complete_cb.str1.4
-                0x10010ccc       0x4f fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x4f fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.embeddedCliNew.str1.4
-                0x10010ccc        0x3 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84        0x3 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.embeddedCliTokenizeArgs.str1.4
-                0x10010ccc        0x2 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84        0x2 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.navigateHistory.str1.4
-                0x10010ccc        0x1 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84        0x1 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.onHelp.str1.4
-                0x10010ccc       0x4a fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x4a fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.cli_cmd_cat.str1.4
-                0x10010ccc       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x34 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.cli_cmd_cp.str1.4
-                0x10010ccc       0x5f fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x5f fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.cli_cmd_ls.str1.4
-                0x10010ccc       0x55 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x55 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.cli_cmd_pwd.str1.4
-                0x10010ccc       0x26 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x26 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.cli_cmd_mkdir.str1.4
-                0x10010ccc       0x23 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x23 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.cli_cmd_mv.str1.4
-                0x10010ccc       0x15 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x15 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.cli_cmd_rm.str1.4
-                0x10010ccc       0x30 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x30 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.tuh_msc_mount_cb.str1.4
-                0x10010ccc       0x21 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x21 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.tuh_msc_umount_cb.str1.4
-                0x10010ccc       0x23 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x23 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.cli_init.str1.4
-                0x10010ccc       0x17 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84       0x17 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.__func__.0
-                0x10010ccc        0x9 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c84        0x9 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata.str1.4
-                0x10010cd5      0x243 fatfs/libfatfs_lib.a(msc_app.c.obj)
- *fill*         0x10010cd5        0x3 
- .rodata        0x10010cd8       0xb4 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x10010c8d      0x243 fatfs/libfatfs_lib.a(msc_app.c.obj)
+ *fill*         0x10010c8d        0x3 
+ .rodata        0x10010c90       0xb4 fatfs/libfatfs_lib.a(msc_app.c.obj)
  .rodata._ctype_
-                0x10010d8c      0x101 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-ctype_.o)
-                0x10010d8c                _ctype_
-                0x10010e90                        . = ALIGN (0x4)
- *fill*         0x10010e8d        0x3 
+                0x10010d44      0x101 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-ctype_.o)
+                0x10010d44                _ctype_
+                0x10010e48                        . = ALIGN (0x4)
+ *fill*         0x10010e45        0x3 
  *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.flashdata*)))
-                0x10010e90                        . = ALIGN (0x4)
+                0x10010e48                        . = ALIGN (0x4)
 
 .ARM.extab
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x10010e90                        __exidx_start = .
+                0x10010e48                        __exidx_start = .
 
 .ARM.exidx
  *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-                0x10010e90                        __exidx_end = .
-                0x10010e90                        . = ALIGN (0x4)
-                0x10010e90                        __binary_info_start = .
+                0x10010e48                        __exidx_end = .
+                0x10010e48                        . = ALIGN (0x4)
+                0x10010e48                        __binary_info_start = .
 
-.binary_info    0x10010e90       0x20
+.binary_info    0x10010e48       0x20
  *(.binary_info.keep.*)
  .binary_info.keep.__bi_ptr186
-                0x10010e90        0x4 app/CMakeFiles/app_main.dir/H_/tinyusb/hw/bsp/rp2040/family.c.obj
+                0x10010e48        0x4 app/CMakeFiles/app_main.dir/H_/tinyusb/hw/bsp/rp2040/family.c.obj
  .binary_info.keep.__bi_ptr84
-                0x10010e94        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010e4c        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr78
-                0x10010e98        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010e50        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr54
-                0x10010e9c        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010e54        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr48
-                0x10010ea0        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010e58        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr42
-                0x10010ea4        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010e5c        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr34
-                0x10010ea8        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010e60        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr26
-                0x10010eac        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10010e64        0x4 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  *(.binary_info.*)
-                0x10010eb0                        __binary_info_end = .
-                0x10010eb0                        . = ALIGN (0x4)
+                0x10010e68                        __binary_info_end = .
+                0x10010e68                        . = ALIGN (0x4)
 
 .ram_vector_table
                 0x20000000       0xc0
@@ -4740,7 +4737,7 @@ LOAD C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/
                 0x200000c0                        . = ALIGN (0x4)
  *(.uninitialized_data*)
 
-.data           0x200000c0      0xa9c load address 0x10010eb0
+.data           0x200000c0      0xa9c load address 0x10010e68
                 0x200000c0                        __data_start__ = .
  *(vtable)
  *(.time_critical*)
@@ -4849,23 +4846,23 @@ LOAD C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/
                 0x20000b5c                        . = ALIGN (0x4)
 
 .tm_clone_table
-                0x20000b5c        0x0 load address 0x1001194c
+                0x20000b5c        0x0 load address 0x10011904
  .tm_clone_table
                 0x20000b5c        0x0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtbegin.o
  .tm_clone_table
                 0x20000b5c        0x0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtend.o
 
-.igot.plt       0x20000b5c        0x0 load address 0x1001194c
+.igot.plt       0x20000b5c        0x0 load address 0x10011904
  .igot.plt      0x20000b5c        0x0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtbegin.o
 
-.tdata          0x20000b5c        0x0 load address 0x1001194c
+.tdata          0x20000b5c        0x0 load address 0x10011904
                 0x20000b5c                        . = ALIGN (0x4)
  *(.tdata .tdata.* .gnu.linkonce.td.*)
                 0x20000b5c                        __tdata_end = .
                 0x20000b5c                        PROVIDE (__data_end__ = .)
-                0x10010eb0                        __etext = LOADADDR (.data)
+                0x10010e68                        __etext = LOADADDR (.data)
 
-.tbss           0x20000b5c        0x0 load address 0x1001194c
+.tbss           0x20000b5c        0x0 load address 0x10011904
                 0x20000b5c                        . = ALIGN (0x4)
                 0x20000b5c                        __bss_start__ = .
                 0x20000b5c                        __tls_base = .
@@ -4873,7 +4870,7 @@ LOAD C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/
  *(.tcommon)
                 0x20000b5c                        __tls_end = .
 
-.bss            0x20000b60     0x263c load address 0x1001194c
+.bss            0x20000b60     0x263c load address 0x10011904
                 0x20000b60                        . = ALIGN (0x4)
                 0x20000b60                        __tbss_end = .
  *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.bss*)))
@@ -5016,26 +5013,26 @@ LOAD C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/
  *fill*         0x2000319b        0x1 
                 0x2000319c                        __bss_end__ = .
 
-.heap           0x2000319c      0x800 load address 0x1001194c
+.heap           0x2000319c      0x800 load address 0x10011904
                 0x2000319c                        __end__ = .
                 0x2000319c                        end = __end__
  *(.heap*)
  .heap          0x2000319c      0x800 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_crt0/crt0.S.obj
                 0x20040000                        __HeapLimit = (ORIGIN (RAM) + LENGTH (RAM))
 
-.scratch_x      0x20040000        0x0 load address 0x1001194c
+.scratch_x      0x20040000        0x0 load address 0x10011904
                 0x20040000                        __scratch_x_start__ = .
  *(.scratch_x.*)
                 0x20040000                        . = ALIGN (0x4)
                 0x20040000                        __scratch_x_end__ = .
-                0x1001194c                        __scratch_x_source__ = LOADADDR (.scratch_x)
+                0x10011904                        __scratch_x_source__ = LOADADDR (.scratch_x)
 
-.scratch_y      0x20041000        0x0 load address 0x1001194c
+.scratch_y      0x20041000        0x0 load address 0x10011904
                 0x20041000                        __scratch_y_start__ = .
  *(.scratch_y.*)
                 0x20041000                        . = ALIGN (0x4)
                 0x20041000                        __scratch_y_end__ = .
-                0x1001194c                        __scratch_y_source__ = LOADADDR (.scratch_y)
+                0x10011904                        __scratch_y_source__ = LOADADDR (.scratch_y)
 
 .stack1_dummy
  *(.stack1*)
@@ -5047,9 +5044,9 @@ LOAD C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/
 .rel.dyn        0x20041800        0x0
  .rel.iplt      0x20041800        0x0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/crtbegin.o
 
-.flash_end      0x1001194c        0x0
+.flash_end      0x10011904        0x0
  *(.embedded_end_block*)
-                0x1001194c                        PROVIDE (__flash_binary_end = .)
+                0x10011904                        PROVIDE (__flash_binary_end = .)
                 0x20040000                        __StackLimit = (ORIGIN (RAM) + LENGTH (RAM))
                 0x20041000                        __StackOneTop = (ORIGIN (SCRATCH_X) + LENGTH (SCRATCH_X))
                 0x20042000                        __StackTop = (ORIGIN (SCRATCH_Y) + LENGTH (SCRATCH_Y))
@@ -5392,7 +5389,7 @@ LOAD linker stubs
  .comment       0x00000045       0x46 fatfs/libfatfs_lib.a(ffunicode.c.obj)
  .comment       0x00000045       0x46 fatfs/libfatfs_lib.a(msc_app.c.obj)
 
-.debug_info     0x00000000    0x3f0cb
+.debug_info     0x00000000    0x3f06d
  .debug_info    0x00000000      0x8ba app/CMakeFiles/app_main.dir/main.c.obj
  .debug_info    0x000008ba     0x248a app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .debug_info    0x00002d44      0xf04 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
@@ -5440,16 +5437,16 @@ LOAD linker stubs
  .debug_info    0x0002bf92       0x23 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_crt0/crt0.S.obj
  .debug_info    0x0002bfb5      0xc22 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .debug_info    0x0002cbd7     0x13e8 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_info    0x0002dfbf     0x11e6 file_processing/libfile_processing.a(file_processing.c.obj)
- .debug_info    0x0002f1a5     0x255c hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
- .debug_info    0x00031701      0x6f2 hardware_processing/libhardware_processing.a(queue.c.obj)
- .debug_info    0x00031df3     0x2c53 hardware_processing/libhardware_processing.a(pio.c.obj)
- .debug_info    0x00034a46      0xad6 hardware_processing/libhardware_processing.a(dma.c.obj)
- .debug_info    0x0003551c     0x5525 fatfs/libfatfs_lib.a(ff.c.obj)
- .debug_info    0x0003aa41      0x29a fatfs/libfatfs_lib.a(ffunicode.c.obj)
- .debug_info    0x0003acdb     0x43f0 fatfs/libfatfs_lib.a(msc_app.c.obj)
+ .debug_info    0x0002dfbf     0x1188 file_processing/libfile_processing.a(file_processing.c.obj)
+ .debug_info    0x0002f147     0x255c hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+ .debug_info    0x000316a3      0x6f2 hardware_processing/libhardware_processing.a(queue.c.obj)
+ .debug_info    0x00031d95     0x2c53 hardware_processing/libhardware_processing.a(pio.c.obj)
+ .debug_info    0x000349e8      0xad6 hardware_processing/libhardware_processing.a(dma.c.obj)
+ .debug_info    0x000354be     0x5525 fatfs/libfatfs_lib.a(ff.c.obj)
+ .debug_info    0x0003a9e3      0x29a fatfs/libfatfs_lib.a(ffunicode.c.obj)
+ .debug_info    0x0003ac7d     0x43f0 fatfs/libfatfs_lib.a(msc_app.c.obj)
 
-.debug_abbrev   0x00000000     0x9a11
+.debug_abbrev   0x00000000     0x9a00
  .debug_abbrev  0x00000000      0x32e app/CMakeFiles/app_main.dir/main.c.obj
  .debug_abbrev  0x0000032e      0x5a0 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .debug_abbrev  0x000008ce      0x39a app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
@@ -5497,17 +5494,17 @@ LOAD linker stubs
  .debug_abbrev  0x000074e7       0x12 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_crt0/crt0.S.obj
  .debug_abbrev  0x000074f9      0x35f app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .debug_abbrev  0x00007858      0x51f app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_abbrev  0x00007d77      0x383 file_processing/libfile_processing.a(file_processing.c.obj)
- .debug_abbrev  0x000080fa      0x541 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
- .debug_abbrev  0x0000863b      0x213 hardware_processing/libhardware_processing.a(queue.c.obj)
- .debug_abbrev  0x0000884e      0x53e hardware_processing/libhardware_processing.a(pio.c.obj)
- .debug_abbrev  0x00008d8c      0x2ea hardware_processing/libhardware_processing.a(dma.c.obj)
- .debug_abbrev  0x00009076      0x2c4 fatfs/libfatfs_lib.a(ff.c.obj)
- .debug_abbrev  0x0000933a       0xf7 fatfs/libfatfs_lib.a(ffunicode.c.obj)
- .debug_abbrev  0x00009431      0x5e0 fatfs/libfatfs_lib.a(msc_app.c.obj)
+ .debug_abbrev  0x00007d77      0x372 file_processing/libfile_processing.a(file_processing.c.obj)
+ .debug_abbrev  0x000080e9      0x541 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+ .debug_abbrev  0x0000862a      0x213 hardware_processing/libhardware_processing.a(queue.c.obj)
+ .debug_abbrev  0x0000883d      0x53e hardware_processing/libhardware_processing.a(pio.c.obj)
+ .debug_abbrev  0x00008d7b      0x2ea hardware_processing/libhardware_processing.a(dma.c.obj)
+ .debug_abbrev  0x00009065      0x2c4 fatfs/libfatfs_lib.a(ff.c.obj)
+ .debug_abbrev  0x00009329       0xf7 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+ .debug_abbrev  0x00009420      0x5e0 fatfs/libfatfs_lib.a(msc_app.c.obj)
 
 .debug_loclists
-                0x00000000    0x1da79
+                0x00000000    0x1da39
  .debug_loclists
                 0x00000000       0x93 app/CMakeFiles/app_main.dir/main.c.obj
  .debug_loclists
@@ -5581,23 +5578,23 @@ LOAD linker stubs
  .debug_loclists
                 0x00013d0d      0x7cb app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
  .debug_loclists
-                0x000144d8      0x446 file_processing/libfile_processing.a(file_processing.c.obj)
+                0x000144d8      0x406 file_processing/libfile_processing.a(file_processing.c.obj)
  .debug_loclists
-                0x0001491e      0x789 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x000148de      0x789 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .debug_loclists
-                0x000150a7       0x29 hardware_processing/libhardware_processing.a(queue.c.obj)
+                0x00015067       0x29 hardware_processing/libhardware_processing.a(queue.c.obj)
  .debug_loclists
-                0x000150d0     0x173b hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x00015090     0x173b hardware_processing/libhardware_processing.a(pio.c.obj)
  .debug_loclists
-                0x0001680b      0x2a6 hardware_processing/libhardware_processing.a(dma.c.obj)
+                0x000167cb      0x2a6 hardware_processing/libhardware_processing.a(dma.c.obj)
  .debug_loclists
-                0x00016ab1     0x51d3 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x00016a71     0x51d3 fatfs/libfatfs_lib.a(ff.c.obj)
  .debug_loclists
-                0x0001bc84      0x2f2 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+                0x0001bc44      0x2f2 fatfs/libfatfs_lib.a(ffunicode.c.obj)
  .debug_loclists
-                0x0001bf76     0x1b03 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x0001bf36     0x1b03 fatfs/libfatfs_lib.a(msc_app.c.obj)
 
-.debug_aranges  0x00000000     0x1f88
+.debug_aranges  0x00000000     0x1f80
  .debug_aranges
                 0x00000000       0x50 app/CMakeFiles/app_main.dir/main.c.obj
  .debug_aranges
@@ -5693,24 +5690,24 @@ LOAD linker stubs
  .debug_aranges
                 0x00001760       0xd0 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
  .debug_aranges
-                0x00001830       0xb0 file_processing/libfile_processing.a(file_processing.c.obj)
+                0x00001830       0xa8 file_processing/libfile_processing.a(file_processing.c.obj)
  .debug_aranges
-                0x000018e0       0x68 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x000018d8       0x68 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .debug_aranges
-                0x00001948       0x40 hardware_processing/libhardware_processing.a(queue.c.obj)
+                0x00001940       0x40 hardware_processing/libhardware_processing.a(queue.c.obj)
  .debug_aranges
-                0x00001988      0x108 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x00001980      0x108 hardware_processing/libhardware_processing.a(pio.c.obj)
  .debug_aranges
-                0x00001a90       0x78 hardware_processing/libhardware_processing.a(dma.c.obj)
+                0x00001a88       0x78 hardware_processing/libhardware_processing.a(dma.c.obj)
  .debug_aranges
-                0x00001b08      0x268 fatfs/libfatfs_lib.a(ff.c.obj)
+                0x00001b00      0x268 fatfs/libfatfs_lib.a(ff.c.obj)
  .debug_aranges
-                0x00001d70       0x30 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+                0x00001d68       0x30 fatfs/libfatfs_lib.a(ffunicode.c.obj)
  .debug_aranges
-                0x00001da0      0x1e8 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x00001d98      0x1e8 fatfs/libfatfs_lib.a(msc_app.c.obj)
 
 .debug_rnglists
-                0x00000000     0x21fb
+                0x00000000     0x21f5
  .debug_rnglists
                 0x00000000       0x43 app/CMakeFiles/app_main.dir/main.c.obj
  .debug_rnglists
@@ -5802,23 +5799,23 @@ LOAD linker stubs
  .debug_rnglists
                 0x00001aa5       0xed app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
  .debug_rnglists
-                0x00001b92       0x81 file_processing/libfile_processing.a(file_processing.c.obj)
+                0x00001b92       0x7b file_processing/libfile_processing.a(file_processing.c.obj)
  .debug_rnglists
-                0x00001c13       0x4b hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+                0x00001c0d       0x4b hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
  .debug_rnglists
-                0x00001c5e       0x2b hardware_processing/libhardware_processing.a(queue.c.obj)
+                0x00001c58       0x2b hardware_processing/libhardware_processing.a(queue.c.obj)
  .debug_rnglists
-                0x00001c89      0x129 hardware_processing/libhardware_processing.a(pio.c.obj)
+                0x00001c83      0x129 hardware_processing/libhardware_processing.a(pio.c.obj)
  .debug_rnglists
-                0x00001db2       0x56 hardware_processing/libhardware_processing.a(dma.c.obj)
+                0x00001dac       0x56 hardware_processing/libhardware_processing.a(dma.c.obj)
  .debug_rnglists
-                0x00001e08      0x1ec fatfs/libfatfs_lib.a(ff.c.obj)
+                0x00001e02      0x1ec fatfs/libfatfs_lib.a(ff.c.obj)
  .debug_rnglists
-                0x00001ff4       0x20 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+                0x00001fee       0x20 fatfs/libfatfs_lib.a(ffunicode.c.obj)
  .debug_rnglists
-                0x00002014      0x1e7 fatfs/libfatfs_lib.a(msc_app.c.obj)
+                0x0000200e      0x1e7 fatfs/libfatfs_lib.a(msc_app.c.obj)
 
-.debug_line     0x00000000    0x26120
+.debug_line     0x00000000    0x260cf
  .debug_line    0x00000000      0x777 app/CMakeFiles/app_main.dir/main.c.obj
  .debug_line    0x00000777     0x1266 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .debug_line    0x000019dd      0xa18 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
@@ -5866,74 +5863,74 @@ LOAD linker stubs
  .debug_line    0x00019ec9       0xa2 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_crt0/crt0.S.obj
  .debug_line    0x00019f6b      0x883 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .debug_line    0x0001a7ee      0xd17 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_line    0x0001b505      0x833 file_processing/libfile_processing.a(file_processing.c.obj)
- .debug_line    0x0001bd38      0xc1a hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
- .debug_line    0x0001c952      0x3b3 hardware_processing/libhardware_processing.a(queue.c.obj)
- .debug_line    0x0001cd05     0x12c5 hardware_processing/libhardware_processing.a(pio.c.obj)
- .debug_line    0x0001dfca      0x691 hardware_processing/libhardware_processing.a(dma.c.obj)
- .debug_line    0x0001e65b     0x5911 fatfs/libfatfs_lib.a(ff.c.obj)
- .debug_line    0x00023f6c      0x36d fatfs/libfatfs_lib.a(ffunicode.c.obj)
- .debug_line    0x000242d9     0x1e47 fatfs/libfatfs_lib.a(msc_app.c.obj)
+ .debug_line    0x0001b505      0x7e2 file_processing/libfile_processing.a(file_processing.c.obj)
+ .debug_line    0x0001bce7      0xc1a hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+ .debug_line    0x0001c901      0x3b3 hardware_processing/libhardware_processing.a(queue.c.obj)
+ .debug_line    0x0001ccb4     0x12c5 hardware_processing/libhardware_processing.a(pio.c.obj)
+ .debug_line    0x0001df79      0x691 hardware_processing/libhardware_processing.a(dma.c.obj)
+ .debug_line    0x0001e60a     0x5911 fatfs/libfatfs_lib.a(ff.c.obj)
+ .debug_line    0x00023f1b      0x36d fatfs/libfatfs_lib.a(ffunicode.c.obj)
+ .debug_line    0x00024288     0x1e47 fatfs/libfatfs_lib.a(msc_app.c.obj)
 
-.debug_str      0x00000000     0xb237
- .debug_str     0x00000000     0xb237 app/CMakeFiles/app_main.dir/main.c.obj
+.debug_str      0x00000000     0xb234
+ .debug_str     0x00000000     0xb234 app/CMakeFiles/app_main.dir/main.c.obj
                                 0x9ba (size before relaxing)
- .debug_str     0x0000b237      0xee4 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
- .debug_str     0x0000b237      0x810 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
- .debug_str     0x0000b237     0x269e app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
- .debug_str     0x0000b237     0x13dc app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
- .debug_str     0x0000b237     0x1674 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
- .debug_str     0x0000b237     0x126a app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
- .debug_str     0x0000b237     0x10be app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
- .debug_str     0x0000b237      0x647 app/CMakeFiles/app_main.dir/H_/tinyusb/src/common/tusb_fifo.c.obj
- .debug_str     0x0000b237      0xaf9 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
- .debug_str     0x0000b237      0x234 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_platform_panic/panic.c.obj
- .debug_str     0x0000b237      0x3dd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/hardware_claim/claim.c.obj
- .debug_str     0x0000b237      0x378 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_sync/sync.c.obj
- .debug_str     0x0000b237      0x29e app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
- .debug_str     0x0000b237      0x25c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/lock_core.c.obj
- .debug_str     0x0000b237      0x845 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
- .debug_str     0x0000b237      0x31c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/critical_section.c.obj
- .debug_str     0x0000b237     0x1242 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
- .debug_str     0x0000b237      0xa88 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_timer/timer.c.obj
- .debug_str     0x0000b237      0x7c5 app/CMakeFiles/app_main.dir/H_/tinyusb/hw/bsp/rp2040/family.c.obj
- .debug_str     0x0000b237      0x2cb app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_unique_id/unique_id.c.obj
- .debug_str     0x0000b237      0x7bf app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_flash/flash.c.obj
- .debug_str     0x0000b237      0x395 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_str     0x0000b237      0xa76 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_str     0x0000b237      0xd0a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_str     0x0000b237      0x4bd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_pll/pll.c.obj
- .debug_str     0x0000b237      0x2de app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_ticks/ticks.c.obj
- .debug_str     0x0000b237      0x285 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_str     0x0000b237      0x2d5 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_str     0x0000b237      0x808 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
- .debug_str     0x0000b237      0x4dd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
- .debug_str     0x0000b237       0xcd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
- .debug_str     0x0000b237       0xd0 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_divider/divider_hardware.S.obj
- .debug_str     0x0000b237       0xd2 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_aeabi_rp2040.S.obj
- .debug_str     0x0000b237      0x32f app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_init_rom_rp2040.c.obj
- .debug_str     0x0000b237       0xd8 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_v1_rom_shim_rp2040.S.obj
- .debug_str     0x0000b237       0xd6 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
- .debug_str     0x0000b237       0xd0 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_aeabi_rp2040.S.obj
- .debug_str     0x0000b237      0x314 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_init_rom_rp2040.c.obj
- .debug_str     0x0000b237       0xd6 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_v1_rom_shim_rp2040.S.obj
- .debug_str     0x0000b237      0x27b app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_malloc/malloc.c.obj
- .debug_str     0x0000b237       0xcd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
- .debug_str     0x0000b237      0x444 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
- .debug_str     0x0000b237      0x4d2 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_printf/printf.c.obj
- .debug_str     0x0000b237       0xc1 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_crt0/crt0.S.obj
- .debug_str     0x0000b237      0x7dc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
- .debug_str     0x0000b237      0xb5c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_str     0x0000b237      0xb2d file_processing/libfile_processing.a(file_processing.c.obj)
- .debug_str     0x0000b237     0x1573 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
- .debug_str     0x0000b237      0x8d5 hardware_processing/libhardware_processing.a(queue.c.obj)
- .debug_str     0x0000b237     0x114e hardware_processing/libhardware_processing.a(pio.c.obj)
- .debug_str     0x0000b237      0x64b hardware_processing/libhardware_processing.a(dma.c.obj)
- .debug_str     0x0000b237      0xb58 fatfs/libfatfs_lib.a(ff.c.obj)
- .debug_str     0x0000b237      0x25e fatfs/libfatfs_lib.a(ffunicode.c.obj)
- .debug_str     0x0000b237     0x1535 fatfs/libfatfs_lib.a(msc_app.c.obj)
+ .debug_str     0x0000b234      0xee4 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
+ .debug_str     0x0000b234      0x810 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+ .debug_str     0x0000b234     0x269e app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/usbh.c.obj
+ .debug_str     0x0000b234     0x13dc app/CMakeFiles/app_main.dir/H_/tinyusb/src/host/hub.c.obj
+ .debug_str     0x0000b234     0x1674 app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/hid/hid_host.c.obj
+ .debug_str     0x0000b234     0x126a app/CMakeFiles/app_main.dir/H_/tinyusb/src/class/msc/msc_host.c.obj
+ .debug_str     0x0000b234     0x10be app/CMakeFiles/app_main.dir/H_/tinyusb/src/tusb.c.obj
+ .debug_str     0x0000b234      0x647 app/CMakeFiles/app_main.dir/H_/tinyusb/src/common/tusb_fifo.c.obj
+ .debug_str     0x0000b234      0xaf9 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_str     0x0000b234      0x234 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_platform_panic/panic.c.obj
+ .debug_str     0x0000b234      0x3dd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/hardware_claim/claim.c.obj
+ .debug_str     0x0000b234      0x378 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_str     0x0000b234      0x29e app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+ .debug_str     0x0000b234      0x25c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/lock_core.c.obj
+ .debug_str     0x0000b234      0x845 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/mutex.c.obj
+ .debug_str     0x0000b234      0x31c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_sync/critical_section.c.obj
+ .debug_str     0x0000b234     0x1242 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/common/pico_time/time.c.obj
+ .debug_str     0x0000b234      0xa88 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_str     0x0000b234      0x7c5 app/CMakeFiles/app_main.dir/H_/tinyusb/hw/bsp/rp2040/family.c.obj
+ .debug_str     0x0000b234      0x2cb app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_str     0x0000b234      0x7bf app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_flash/flash.c.obj
+ .debug_str     0x0000b234      0x395 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_str     0x0000b234      0xa76 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_str     0x0000b234      0xd0a app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_str     0x0000b234      0x4bd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_str     0x0000b234      0x2de app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_ticks/ticks.c.obj
+ .debug_str     0x0000b234      0x285 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_str     0x0000b234      0x2d5 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_str     0x0000b234      0x808 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+ .debug_str     0x0000b234      0x4dd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+ .debug_str     0x0000b234       0xcd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+ .debug_str     0x0000b234       0xd0 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_divider/divider_hardware.S.obj
+ .debug_str     0x0000b234       0xd2 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_aeabi_rp2040.S.obj
+ .debug_str     0x0000b234      0x32f app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_init_rom_rp2040.c.obj
+ .debug_str     0x0000b234       0xd8 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_double/double_v1_rom_shim_rp2040.S.obj
+ .debug_str     0x0000b234       0xd6 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
+ .debug_str     0x0000b234       0xd0 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_aeabi_rp2040.S.obj
+ .debug_str     0x0000b234      0x314 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_init_rom_rp2040.c.obj
+ .debug_str     0x0000b234       0xd6 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_float/float_v1_rom_shim_rp2040.S.obj
+ .debug_str     0x0000b234      0x27b app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_malloc/malloc.c.obj
+ .debug_str     0x0000b234       0xcd app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+ .debug_str     0x0000b234      0x444 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+ .debug_str     0x0000b234      0x4d2 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_printf/printf.c.obj
+ .debug_str     0x0000b234       0xc1 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_crt0/crt0.S.obj
+ .debug_str     0x0000b234      0x7dc app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+ .debug_str     0x0000b234      0xb5c app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_str     0x0000b234      0xb2a file_processing/libfile_processing.a(file_processing.c.obj)
+ .debug_str     0x0000b234     0x1573 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+ .debug_str     0x0000b234      0x8d5 hardware_processing/libhardware_processing.a(queue.c.obj)
+ .debug_str     0x0000b234     0x114e hardware_processing/libhardware_processing.a(pio.c.obj)
+ .debug_str     0x0000b234      0x64b hardware_processing/libhardware_processing.a(dma.c.obj)
+ .debug_str     0x0000b234      0xb58 fatfs/libfatfs_lib.a(ff.c.obj)
+ .debug_str     0x0000b234      0x25e fatfs/libfatfs_lib.a(ffunicode.c.obj)
+ .debug_str     0x0000b234     0x1535 fatfs/libfatfs_lib.a(msc_app.c.obj)
 
-.debug_frame    0x00000000     0x55ac
+.debug_frame    0x00000000     0x5594
  .debug_frame   0x00000000       0xa0 app/CMakeFiles/app_main.dir/main.c.obj
  .debug_frame   0x000000a0      0x2b8 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/hcd_rp2040.c.obj
  .debug_frame   0x00000358      0x108 app/CMakeFiles/app_main.dir/H_/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
@@ -5971,43 +5968,43 @@ LOAD linker stubs
  .debug_frame   0x0000301c      0x200 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_printf/printf.c.obj
  .debug_frame   0x0000321c      0x184 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .debug_frame   0x000033a0      0x268 app/CMakeFiles/app_main.dir/C_/Users/mmadha/.pico-sdk/sdk/2.2.0/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_frame   0x00003608      0x1a8 file_processing/libfile_processing.a(file_processing.c.obj)
- .debug_frame   0x000037b0      0x110 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
- .debug_frame   0x000038c0       0x74 hardware_processing/libhardware_processing.a(queue.c.obj)
- .debug_frame   0x00003934      0x368 hardware_processing/libhardware_processing.a(pio.c.obj)
- .debug_frame   0x00003c9c      0x154 hardware_processing/libhardware_processing.a(dma.c.obj)
- .debug_frame   0x00003df0      0x948 fatfs/libfatfs_lib.a(ff.c.obj)
- .debug_frame   0x00004738       0x50 fatfs/libfatfs_lib.a(ffunicode.c.obj)
- .debug_frame   0x00004788      0x658 fatfs/libfatfs_lib.a(msc_app.c.obj)
- .debug_frame   0x00004de0       0x40 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-malloc.o)
- .debug_frame   0x00004e20       0x3c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mallocr.o)
- .debug_frame   0x00004e5c       0x40 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mlock.o)
- .debug_frame   0x00004e9c       0x20 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-ctype_.o)
- .debug_frame   0x00004ebc       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-setbuf.o)
- .debug_frame   0x00004ee8       0x38 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-setvbuf.o)
- .debug_frame   0x00004f20       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-memcmp.o)
- .debug_frame   0x00004f4c       0x34 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-memmove.o)
- .debug_frame   0x00004f80       0x30 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strchr.o)
- .debug_frame   0x00004fb0       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strncmp.o)
- .debug_frame   0x00004fdc       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-sbrkr.o)
- .debug_frame   0x00005008       0x20 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-errno.o)
- .debug_frame   0x00005028       0xb0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
- .debug_frame   0x000050d8       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-sysconf.o)
- .debug_frame   0x00005100       0x20 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strcmp.o)
- .debug_frame   0x00005120       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strlen-stub.o)
- .debug_frame   0x00005148       0x5c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-freer.o)
- .debug_frame   0x000051a4       0x6c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fflush.o)
- .debug_frame   0x00005210      0x138 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
- .debug_frame   0x00005348       0x38 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fwalk.o)
- .debug_frame   0x00005380       0x50 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-makebuf.o)
- .debug_frame   0x000053d0       0x90 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
- .debug_frame   0x00005460       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-closer.o)
- .debug_frame   0x0000548c       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-reent.o)
- .debug_frame   0x000054b8       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fstatr.o)
- .debug_frame   0x000054e4       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lseekr.o)
- .debug_frame   0x00005510       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-readr.o)
- .debug_frame   0x0000553c       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-writer.o)
- .debug_frame   0x00005568       0x44 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fclose.o)
+ .debug_frame   0x00003608      0x190 file_processing/libfile_processing.a(file_processing.c.obj)
+ .debug_frame   0x00003798      0x110 hardware_processing/libhardware_processing.a(hardware_processing.c.obj)
+ .debug_frame   0x000038a8       0x74 hardware_processing/libhardware_processing.a(queue.c.obj)
+ .debug_frame   0x0000391c      0x368 hardware_processing/libhardware_processing.a(pio.c.obj)
+ .debug_frame   0x00003c84      0x154 hardware_processing/libhardware_processing.a(dma.c.obj)
+ .debug_frame   0x00003dd8      0x948 fatfs/libfatfs_lib.a(ff.c.obj)
+ .debug_frame   0x00004720       0x50 fatfs/libfatfs_lib.a(ffunicode.c.obj)
+ .debug_frame   0x00004770      0x658 fatfs/libfatfs_lib.a(msc_app.c.obj)
+ .debug_frame   0x00004dc8       0x40 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-malloc.o)
+ .debug_frame   0x00004e08       0x3c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mallocr.o)
+ .debug_frame   0x00004e44       0x40 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-mlock.o)
+ .debug_frame   0x00004e84       0x20 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-ctype_.o)
+ .debug_frame   0x00004ea4       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-setbuf.o)
+ .debug_frame   0x00004ed0       0x38 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-setvbuf.o)
+ .debug_frame   0x00004f08       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-memcmp.o)
+ .debug_frame   0x00004f34       0x34 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-memmove.o)
+ .debug_frame   0x00004f68       0x30 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strchr.o)
+ .debug_frame   0x00004f98       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strncmp.o)
+ .debug_frame   0x00004fc4       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-sbrkr.o)
+ .debug_frame   0x00004ff0       0x20 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-errno.o)
+ .debug_frame   0x00005010       0xb0 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lock.o)
+ .debug_frame   0x000050c0       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-sysconf.o)
+ .debug_frame   0x000050e8       0x20 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strcmp.o)
+ .debug_frame   0x00005108       0x28 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-strlen-stub.o)
+ .debug_frame   0x00005130       0x5c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-freer.o)
+ .debug_frame   0x0000518c       0x6c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fflush.o)
+ .debug_frame   0x000051f8      0x138 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-findfp.o)
+ .debug_frame   0x00005330       0x38 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fwalk.o)
+ .debug_frame   0x00005368       0x50 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-makebuf.o)
+ .debug_frame   0x000053b8       0x90 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-stdio.o)
+ .debug_frame   0x00005448       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-closer.o)
+ .debug_frame   0x00005474       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-reent.o)
+ .debug_frame   0x000054a0       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fstatr.o)
+ .debug_frame   0x000054cc       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-lseekr.o)
+ .debug_frame   0x000054f8       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-readr.o)
+ .debug_frame   0x00005524       0x2c C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-writer.o)
+ .debug_frame   0x00005550       0x44 C:/Users/mmadha/.pico-sdk/toolchain/14_2_Rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp\libg.a(libc_a-fclose.o)
 
 .debug_line_str
                 0x00000000      0x486

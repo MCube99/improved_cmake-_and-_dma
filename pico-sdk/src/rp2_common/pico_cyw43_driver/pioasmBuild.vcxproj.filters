@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\CMakeFiles\51538afdd29061c9329b6d743826c292\pioasmBuild-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\CMakeFiles\51538afdd29061c9329b6d743826c292\pioasmBuild-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\CMakeFiles\51538afdd29061c9329b6d743826c292\pioasmBuild-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\CMakeFiles\51538afdd29061c9329b6d743826c292\pioasmBuild-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\CMakeFiles\51538afdd29061c9329b6d743826c292\pioasmBuild-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\CMakeFiles\51538afdd29061c9329b6d743826c292\pioasmBuild-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\CMakeFiles\51538afdd29061c9329b6d743826c292\pioasmBuild-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\CMakeFiles\5c169249ef4783f3f291eaf666fcb50f\pioasmBuild-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\CMakeFiles\e45e3e3568c1b44d75c028b5cbfce05f\pioasmBuild.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\mmadha\.pico-sdk\sdk\2.2.0\src\rp2_common\pico_cyw43_driver\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\mmadha\OneDrive - Transformers and Rectifiers Ltd\Desktop\bare_api\msc_file_explorer\pico-sdk\src\rp2_common\pico_cyw43_driver\CMakeFiles\pioasmBuild" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{67E44A89-C491-305C-8F4A-2F750C601599}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
