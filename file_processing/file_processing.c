@@ -1,3 +1,4 @@
+
 #include "ff.h"
 #include "file_processing.h"
 #include <stddef.h>
@@ -6,6 +7,7 @@
 #include <string.h>
 #include "queue.h"
 #include <ctype.h>
+
 
 
 
@@ -18,9 +20,8 @@ typedef struct
 
 typedef struct
 {
-    char dates[8];
-    char times[8];
-    uint8_t* store;
+    char dates[10];
+    char times[10];
 }File_Info;
 
 static File_Info file_info;
@@ -77,10 +78,7 @@ Exists_check exists_check = {0};
 PRIVATE void get_date(const char *in, char *date, size_t date_size);
 PRIVATE void extract_date(const char *in, char *dates, size_t size);
 PRIVATE void extract_time(const char *in, char *times, size_t size );
-PRIVATE void set_address(char *start);
-PRIVATE uint8_t* get_address();
  
-
 // the function below exists to work on the results and errors
 
 PUBLIC void file_processing_main( ) {
@@ -322,9 +320,6 @@ static void add_subdirectory() //need to get date time stamp and stuff and use t
     FILINFO fno;
     const char *fname = "TRTEST";
 
-
-    printf("Test for \"%s\"...\n", fname);
-
     fr = f_stat(fname, &fno);
     switch (fr) {
 
@@ -364,31 +359,6 @@ static void add_subdirectory() //need to get date time stamp and stuff and use t
 
 // }
 
-PRIVATE void get_date(const char *in, char *date, size_t date_size)
-{
-    
-    memset(date,0,sizeof(date_size)); // initialize the date buffer to 0
-    const char *date_ptr = in;
-    while(*date_ptr) {
-        if (*date_ptr == '/') 
-        {
-            date[0] = *( date_ptr - 2); // Get the first digit of the day 2     2
-            date[1] = *(date_ptr - 1);  // Get the second digit of the day 0    0
-            date[2] = '-'; // Get the first seperator                           -
-            date[3] = *( date_ptr + 1); // Get the first digit of the month     7
-            date[4] = '-'; // Get the second digit of the month                  -
-            date[5]  = *( date_ptr + 3); // Get the first digit of the year       2
-            date[6] = *( date_ptr + 4); // Get the second digit of the year      5
-            date[7] = '\0'; // Get the third digit of the year
-            break; // Exit the loop after extracting the date
-
-             // Validate the date format (DD/MM/YY)
-        }
-
-            date_ptr++;
-            // Found the first '/', now look for the second '/'
-    }
-}
 
 
 PRIVATE void extract_date(const char *in, char *dates, size_t size)
@@ -489,7 +459,8 @@ PRIVATE void extract_time(const char *in, char *time, size_t size)
    
     if(time_ptr == NULL)
     {
-        return;
+        fr = FR_NO_FILE;
+        return(fr);
     }
     
     uint8_t ptr_diff = time_ptr - comma_ptr; //get
@@ -513,5 +484,5 @@ PRIVATE uint8_t* get_address()
 
 
 
-  
 
+  

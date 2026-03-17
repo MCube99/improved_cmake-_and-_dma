@@ -22,6 +22,8 @@ typedef uint32_t DWORD;
 PUBLIC void set_gpio_pins();
 PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled);
 PUBLIC void pio_dma_setup(void);
+PUBLIC bool is_dma_done();
+PUBLIC void wait_for_dma_to_be_done(void);
 
 PUBLIC void copy_queue_buffer( void );
 PUBLIC int return_channel();

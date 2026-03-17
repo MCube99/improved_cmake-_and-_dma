@@ -96,11 +96,20 @@ PRIVATE void myIRQHandler(uint gpio, uint32_t events)
 PUBLIC void pio_dma_setup(void)
 {
     pio_spi.pio = pio0;
+
     uint offset = pio_add_program(pio_spi.pio, &clocked_input_program);
+
     pio_spi.sm = pio_claim_unused_sm(pio_spi.pio, true);
-    clocked_input_program_init(pio_spi.pio, pio_spi.sm, offset,PICO_DEFAULT_SPI_RX_PIN,PICO_DEFAULT_SPI_CSN_PIN  );
 
+    clocked_input_program_init(
+        pio_spi.pio,
+        pio_spi.sm,
+        offset,
+        PICO_DEFAULT_SPI_RX_PIN,
+        PICO_DEFAULT_SPI_CSN_PIN
+    );
 
+    // Claim DMA channel
     pio_spi.dma_chan = dma_claim_unused_channel(true);
     pio_spi.pio_dma_chan_config = dma_channel_get_default_config(pio_spi.dma_chan);
     //Tranfers 8-bits at a time
@@ -113,7 +122,7 @@ PUBLIC void pio_dma_setup(void)
         pio_spi.dma_chan, 
         &pio_spi.pio_dma_chan_config,
         give_array_address(), // Destination address where data is written to memory
-        &(pio_spi.pio->rxf[0]), // Destination address in memory where data is read from the PIO's RX FIFO
+        &pio_spi.pio->rxf[pio_spi.sm], // PIO RX FIFO, // Destination address in memory where data is read from the PIO's RX FIFO
         BUF_LEN, // Number of transfers (bytes) to perform
         false); //start immediately
 
