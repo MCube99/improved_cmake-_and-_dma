@@ -10,4 +10,3 @@ typedef enum
 }FSUCCESS;
 
 PUBLIC void file_processing_main();
-PUBLIC void convert_ascii_to_string(uint8_t *buffer);

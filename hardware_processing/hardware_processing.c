@@ -124,7 +124,7 @@ PUBLIC void pio_dma_setup(void)
         give_array_address(), // Destination address where data is written to memory
         &pio_spi.pio->rxf[pio_spi.sm], // PIO RX FIFO, // Destination address in memory where data is read from the PIO's RX FIFO
         BUF_LEN, // Number of transfers (bytes) to perform
-        false); //start immediately
+        false); //start later
 
 }
 

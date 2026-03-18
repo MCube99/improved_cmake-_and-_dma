@@ -295,7 +295,12 @@ typedef enum {
     FR_TIMEOUT = 10,
     FR_LOCKED = 11,
     FR_TOO_MANY_OPEN_FILES = 12,
-	FR_START				= 13
+	FR_START				= 13,
+
+
+	/* These are checK states*/
+	FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS= 14,
+	FR_CHECK_IF_TIME_FILE_ALREADY_EXISTS = 15
 } FRESULT;
 
 

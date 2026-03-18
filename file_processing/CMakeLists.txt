@@ -2,6 +2,7 @@ cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH PARENT_DIR)
 
 add_library(file_processing STATIC
          file_processing.c
+         stackADT.c
         )
        
 
@@ -16,6 +17,7 @@ target_sources(file_processing
             ${PARENT_DIR}/hardware_processing/hardware_processing.h
             ${PARENT_DIR}/fatfs/ff.h
             ${CMAKE_CURRENT_SOURCE_DIR}/file_processing.h 
+            ${CMAKE_CURRENT_SOURCE_DIR}/stackADT.h
             ${PARENT_DIR}/hardware_processing/queue.h
             )        
 

@@ -22,6 +22,7 @@ typedef struct
 {
     char dates[10];
     char times[10];
+    unsigned int;
 }File_Info;
 
 static File_Info file_info;
@@ -34,21 +35,23 @@ FATFS *fs = &fatfs;
 
 
 // Forward declarations
-FRESULT start(void);
-FRESULT ok(FRESULT fr);
-FRESULT no_file(FRESULT fr);
-FRESULT no_path(FRESULT fr);
-FRESULT invalid_name(FRESULT fr);
-FRESULT denied(FRESULT fr);
-FRESULT exist(FRESULT fr);
-FRESULT invalid_object(FRESULT fr);
-FRESULT not_enabled(FRESULT fr);
-FRESULT no_filesystem(FRESULT fr);
-FRESULT mkfs_aborted(FRESULT fr);
-FRESULT timeout(FRESULT fr);
-FRESULT locked(FRESULT fr);
-FRESULT too_many_open_files(FRESULT fr);
-FRESULT start_error(FRESULT fr);
+PRIVATE start(void);
+PRIVATE FRESULT ok(FRESULT fr);
+PRIVATE FRESULT no_file(FRESULT fr);
+PRIVATE FRESULT no_path(FRESULT fr);
+PRIVATE FRESULT invalid_name(FRESULT fr);
+PRIVATE FRESULT denied(FRESULT fr);
+PRIVATE FRESULT exist(FRESULT fr);
+PRIVATE FRESULT invalid_object(FRESULT fr);
+PRIVATE FRESULT not_enabled(FRESULT fr);
+PRIVATE FRESULT no_filesystem(FRESULT fr);
+PRIVATE FRESULT mkfs_aborted(FRESULT fr);
+PRIVATE FRESULT timeout(FRESULT fr);
+PRIVATE FRESULT locked(FRESULT fr);
+PRIVATE FRESULT too_many_open_files(FRESULT fr);
+PRIVATE FRESULT start_error(FRESULT fr);
+PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr);
+PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr);
 
 
 
@@ -67,31 +70,39 @@ FRESULT (*handle_error[])(FRESULT fr) = {
     timeout,    // FR_TIMEOUT = 10
     locked,     // FR_LOCKED = 11
     too_many_open_files, // FR_TOO_MANY_OPEN_FILES = 12
-    start_error // FR_START = 13
-   
+    start_error, // FR_START = 13
+    check_if_date_folder_already_exists,  // FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS== 14
+    check_if_time_folder_already_exists
 };
+
+
 
 
 
 Exists_check exists_check = {0};
 
-PRIVATE void get_date(const char *in, char *date, size_t date_size);
+
 PRIVATE void extract_date(const char *in, char *dates, size_t size);
 PRIVATE void extract_time(const char *in, char *times, size_t size );
+PRIVATE bool scan_files(char* path);
+// PRIVATE FRESULT read_root_directories();
  
 // the function below exists to work on the results and errors
 
 PUBLIC void file_processing_main( ) {
     FRESULT fr;
+   // Initialise all date and time stuff early 
    
-
-    fr = start();
+    
 
     memset(file_info.dates, 0, sizeof(file_info.dates));
     memset(file_info.times, 0, sizeof(file_info.times));
-
+    uint8_t *buffer = give_array_address();
+    extract_date(buffer, file_info.dates,sizeof(file_info.dates));   // dates used as folder/directory name
+    extract_time(buffer, file_info.times,sizeof(file_info.times));
+  
      // Check for hardware/system errors
-    
+    fr = start();
 // This state machine is mainly for error handling. The ones in the if statement are hardware issues and can't be fixed by me. The ones in the state machine hopefully can.
     while(1){
         if( fr == FR_DISK_ERR || fr == FR_NOT_READY ||fr == FR_WRITE_PROTECTED || fr == FR_INT_ERR  ) {
@@ -106,16 +117,16 @@ PUBLIC void file_processing_main( ) {
 
 ///////////FRESULT functions/////////////////////////
 
-FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done. 
+PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done. 
 
     if(!exists_check.path_exists)
     {
-         fr = FR_NO_PATH;
+         fr = FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS;
          return(fr);
     }
     if(!exists_check.file_exists)
     {
-         fr = FR_NO_FILE;
+         fr = FR_CHECK_IF_TIME_FILE_ALREADY_EXISTS;
          return(fr);
     }
 
@@ -130,7 +141,7 @@ FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done.
 
 }
 
-FRESULT start() 
+PRIVATE FRESULT start() 
 { //This is the kick off function where the pico tries to mount onto the USB stick.
 
     FRESULT fr;
@@ -138,108 +149,126 @@ FRESULT start()
     return(fr); //sets off whole reaction
 }
 
-FRESULT no_path(FRESULT fr)
+PRIVATE FRESULT no_path(FRESULT fr) // create a path in the root directory
 {
-    FILINFO fno;
-    uint8_t *buffer = give_array_address();
-
-    extract_date(buffer, file_info.dates,sizeof(file_info.dates));   // dates used as folder/directory name
-
-
-    
-
-    fr = f_stat(file_info.dates, &fno);
-
-    if (fr == FR_NO_FILE) {
-        // directory does not exist so create it. Do not be foolled by the name, it is a directory not a file.
-        fr = f_mkdir(file_info.dates);
-    }
-    else if (fr == FR_OK) {
-        if (fno.fattrib & AM_DIR) {
-            exists_check.path_exists = true;
-        }
-    }
-
+    const char *fname = file_info.dates;
+     fr = f_mkdir(fname);
     return fr;
 }
 
-
-
-FRESULT no_file(FRESULT fr) 
+PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr)
 {
-    FIL fil;
-    UINT br, bw; 
-    FILINFO fno;
     DIR dir;
+    int ndir;
+    FILINFO fno;
+    fr = f_opendir(&dir,"/");
+    char subbuff[8];
 
-   uint8_t *buffer = give_array_address();
 
-   extract_time(buffer, file_info.times, sizeof(file_info.times));   // times used as file name
-
-    f_opendir(&dir, "/");
-
-    do {
-        f_readdir(&dir, &fno);
-
-        if (fno.fname[0] != 0) {
-
-            if (fno.fattrib & AM_DIR) {
-                if(strncmp(fno.fname, file_info.dates, strlen(file_info.dates)) == 0) // Check if the directory name matches the date
+    if(fr == FR_OK)
+    {
+        ndir = 0;
+        for(;;) {
+            fr = f_readdir(&dir, &fno);
+            if(fno.fname[0] == 0) break;
+            if(fno.fattrib & AM_DIR) {
+                memcpy( subbuff, &fno.fname[60], 7 ); //comes uptil 6th 0 to 6
+                subbuff[7] = '\0';
+                if(strncmp(subbuff, file_info.dates,7) == 0) // Check if the directory name matches the date.  Since that will be the one files will be based on
                 {
-                    if(f_stat(file_info.times, &fno) == FR_OK) // Check if the file already exists in the directory
-                    {
-                        fr = f_open(&fil, file_info.times, FA_OPEN_APPEND | FA_OPEN_EXISTING); // Open the directory for writing
-                        f_puts(give_array_address(), &fil);
-                        exists_check.file_exists = true; // Set flag to indicate that the path now exists
-                    }
-
+                    fr = FR_OK;
+                    exists_check.path_exists = true;
                 }
                 else
                 {
-                    fr = f_open(&fil, file_info.times,  FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */
-                    f_puts(give_array_address(), &fil);
-                    exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                    fr = FR_NO_PATH;
+                    exists_check.path_exists = false;
                 }
-            } 
-            else {
-                exists_check.file_exists = false; // Set flag to indicate that the padoes not exist
             }
-
         }
 
-    } while (fno.fname[0] != 0);
+    }
 
-    f_closedir(&dir);
     return(fr);
 }
 
-FRESULT invalid_name(FRESULT fr)
+PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr)
+{
+     DIR dir;
+     FILINFO fno;
+     int nfile;
+     FIL fp;
+
+     char *root_directory = "/";
+     strlcat(root_directory, file_info.dates,sizeof(file_info.times));
+
+     fr = f_opendir(&dir,*root_directory);
+     if(fr == FR_OK)
+     {
+        nfile = 0;
+        fr = f_stat(file_info.times,&fno);
+        switch(fr)
+        {
+            const *char input = get_buffer_address();
+
+            case FR_OK: // when its FR_OK the the file exists, so merely need to add to it
+            fr = f_open(&fp, file_names.times,FA_WRITE|FA_OPEN_APPEND);
+            if(fr == FR_OK)
+            {
+                fr = fputs(input,&fp);
+            }
+
+            break;
+
+            case FR_NO_FILE:
+            break;
+        }
+        
+     }
+
+     return(fr);
+
+
+}
+
+
+PRIVATE FRESULT no_file(FRESULT fr) 
+{
+    FIL fp;
+     fr = f_open(&fp,file_info.times,FA_CREATE_NEW|FA_WRITE);
+     if(fr == FR_OK)
+     {
+        fr = fputs(input,&fp);
+     }
+}
+
+PRIVATE FRESULT invalid_name(FRESULT fr)
 {
     ;
 }
 
-FRESULT denied( FRESULT fr)
+PRIVATE FRESULT denied( FRESULT fr)
 {
     ;
 }
 
-FRESULT exist(FRESULT fr)
+PRIVATE FRESULT exist(FRESULT fr)
 {
     fr = FR_OK;
     return(fr);
 }
 
-FRESULT invalid_object(FRESULT fr)
+PRIVATE FRESULT invalid_object(FRESULT fr)
 {
     ;
 }
 
-FRESULT not_enabled(FRESULT fr)
+PRIVATE FRESULT not_enabled(FRESULT fr)
 {
     ;
 }
 
-FRESULT no_filesystem(FRESULT fr)
+PRIVATE FRESULT no_filesystem(FRESULT fr)
 {
    
     uint8_t work[FF_MAX_SS];
@@ -247,27 +276,27 @@ FRESULT no_filesystem(FRESULT fr)
     return(f_mount(&fatfs, "0:", 1));                 /*makes another attempt at mounting it*/
 }
 
-FRESULT mkfs_aborted(FRESULT fr)
+PRIVATE FRESULT mkfs_aborted(FRESULT fr)
 {
     ;
 }
 
-FRESULT timeout(FRESULT fr)
+PRIVATE FRESULT timeout(FRESULT fr)
 {
     ;
 }
 
-FRESULT locked(FRESULT fr)
+PRIVATE FRESULT locked(FRESULT fr)
 {
     ;
 }
 
-FRESULT too_many_open_files(FRESULT fr)
+PRIVATE FRESULT too_many_open_files(FRESULT fr)
 {
     ;
 }
 
-FRESULT start_error(FRESULT fr)
+PRIVATE FRESULT start_error(FRESULT fr)
 {
     ;
 }
@@ -443,46 +472,195 @@ PRIVATE void extract_date(const char *in, char *dates, size_t size)
         {
             dates[(k++)+i+j] = *(date_ptr2 + 1);
             dates[(k++)+i+j] = *(date_ptr2 + 2);
+
+        }
+        else if(ptr_diff3 == 1)
+        {
+            dates[(k++)+i+j] = *(date_ptr2 + 1);
+            dates[(k++)+i+j] = *(date_ptr2 + 2);
         }
     }
-
     
 }
-    
 
 PRIVATE void extract_time(const char *in, char *time, size_t size)
 {
     memset(time,0,size);
-    *(time + size - 1) = '\0'; // ensure null termination
-    char *time_ptr = strchr(in, '/');
-    char *comma_ptr = get_address();
-   
-    if(time_ptr == NULL)
+    time[size-1] = '\0';
+    char *start = strchr(in, ',');
+    char *end   = strchr(start + 1, ',');
+
+    int i = 0;
+
+    for(char *p = start + 1; p < end && i < size-1; p++)
     {
-        fr = FR_NO_FILE;
-        return(fr);
+        if(isspace(*p))
+            continue;
+
+        time[i++] = *p;
+    }
+
+}
+
+
+PRIVATE bool scan_files(char* path)
+{
+    DIR dir;
+    FILINFO fno;
+    char newpath[256];
+    FRESULT fr_stat;
+    FRESULT fr_check;
+    FIL fil;
+
+    if (f_opendir(&dir, path) == FR_OK) {
+
+        while (1) {
+            if (f_readdir(&dir, &fno) != FR_OK || fno.fname[0] == 0)
+                return(false);
+
+            if (fno.fattrib & AM_DIR) {
+                char subbuff[8];
+                memcpy( subbuff, &fno.fname[60], 7 ); //comes uptil 6th
+                subbuff[7] = '\0';
+                if(strncmp(subbuff, file_info.dates,7) == 0) // Check if the directory name matches the date.  Since that will be the one files will be based on
+                {
+                    
+
+                }
+           }
+        }
+
     }
     
-    uint8_t ptr_diff = time_ptr - comma_ptr; //get
-    if(ptr_diff<0)
-    {
-        return;
-    }
-}
-
-PRIVATE void set_address(char *start)
-{
-    file_info.store = start;
-}
-
-PRIVATE uint8_t* get_address()
-{
-    return(file_info.store);
-}
-
-
-
-
-
-
   
+
+    return(true);
+}
+
+
+
+
+/* PRIVATE FRESULT read_root_directory() //should work in any directory
+{
+    DIR dir;                // directory object (not a pointer)
+    FILINFO filinfo;        // file information structure
+    char *filename;
+    FRESULT fr;
+
+    // open current directory
+    fr = f_opendir(&dir, "/");
+
+    if (fr != FR_OK)
+    {
+        return FR_NO_PATH;
+    }
+
+    // read directory entries one by one
+    while (1)
+    {
+        fr = f_readdir(&dir, &filinfo);
+
+        // stop if error or end of directory
+        if (fr != FR_OK || filinfo.fname[0] == 0)
+        {
+            break;
+        }
+
+        filename = filinfo.fname;
+
+        // get file metadata
+        fr = f_stat(filename, &filinfo);
+
+        switch (fr)
+        {
+            case FR_NO_FILE:
+            case FR_NO_PATH:
+                fr = FR_NO_PATH;
+                break;
+
+            case FR_OK:
+
+                // check if entry is a directory
+                if (filinfo.fattrib & AM_DIR)
+                {
+                     if(strncmp(file_info.fname, file_info.dates,10) == 0) // Check if the directory name matches the date.  Since that will be the one files will be based on
+                {
+                    if(f_stat(file_info.times, &fno) == FR_OK) //  Checks if time exists in the file
+                    {
+                        fr = f_open(&fil, file_info.times, FA_OPEN_APPEND | FA_OPEN_EXISTING); // Open the directory for writing
+                        f_puts(give_array_address(), &fil);
+                        exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                    }
+                    else
+                    {
+                         fr = f_open(&fil, file_info.times, FA_WRITE | FA_CREATE_ALWAYS);
+                         f_puts(give_array_address(), &fil);
+                         exists_check.file_exists = true; // Set flag to indicate that the path now exists
+                    }
+
+                }
+                }
+
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    // close directory when finished
+    f_closedir(&dir);
+
+    return fr;
+} */
+
+
+// void dir(const char *dirname)
+// {
+//     FRESULT fr;
+// 	DIR *dp;
+// 	FILINFO file_info;
+// 	struct stat fs;
+// 	char *filename;
+// 	char directory[BUFSIZ];
+//     fr = f_chdir(dirname)
+// 	if( fr != FR_OK )
+// 	{
+// 		fprintf(stderr,"Unable to change to %s\n",dirname);
+// 		exit(1);
+// 	}
+
+// 	fr = f_getcwd(directory, BUFSIZE); 
+
+
+// 	dp = opendir(directory);
+// 	if( dp==NULL )
+// 	{
+// 		fprintf(stderr,"Unable to read directory '%s'\n",
+// 				directory
+// 			   );
+// 		exit(1);
+// 	}
+
+// 	printf("%s\n",directory);
+// 	while( (entry=readdir(dp)) != NULL )
+// 	{
+// 		filename = entry->d_name;
+// 		if( strncmp( filename,".",1)==0 )
+// 			continue;
+
+// 		stat(filename,&fs);
+// 		if( S_ISDIR(fs.st_mode) )
+// 			dir(filename);
+// 	}
+
+// 	closedir(dp);
+// }
+
+// PRIVATE void getcwd(char *buff, uint len)
+// {
+
+//     fr = f_getcwd(cwd, BUFSIZE); 
+// }
+
+
