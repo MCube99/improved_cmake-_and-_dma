@@ -22,7 +22,6 @@ typedef struct
 {
     char dates[10];
     char times[10];
-    unsigned int;
 }File_Info;
 
 static File_Info file_info;
@@ -35,7 +34,7 @@ FATFS *fs = &fatfs;
 
 
 // Forward declarations
-PRIVATE start(void);
+PRIVATE FRESULT start(void);
 PRIVATE FRESULT ok(FRESULT fr);
 PRIVATE FRESULT no_file(FRESULT fr);
 PRIVATE FRESULT no_path(FRESULT fr);
@@ -168,11 +167,10 @@ PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr)
     if(fr == FR_OK)
     {
         ndir = 0;
-        for(;;) {
             fr = f_readdir(&dir, &fno);
             if(fno.fname[0] == 0) break;
             if(fno.fattrib & AM_DIR) {
-                memcpy( subbuff, &fno.fname[60], 7 ); //comes uptil 6th 0 to 6
+                memcpy( subbuff, &fno.fname[0], 7 ); //comes uptil 6th 0 to 6
                 subbuff[7] = '\0';
                 if(strncmp(subbuff, file_info.dates,7) == 0) // Check if the directory name matches the date.  Since that will be the one files will be based on
                 {
@@ -185,7 +183,7 @@ PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr)
                     exists_check.path_exists = false;
                 }
             }
-        }
+            
 
     }
 
@@ -199,47 +197,45 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr)
      int nfile;
      FIL fp;
 
-     char *root_directory = "/";
+     TCHAR *root_directory = "/";
      strlcat(root_directory, file_info.dates,sizeof(file_info.times));
 
-     fr = f_opendir(&dir,*root_directory);
+     fr = f_opendir(&dir,root_directory);
      if(fr == FR_OK)
      {
         nfile = 0;
         fr = f_stat(file_info.times,&fno);
         switch(fr)
         {
-            const *char input = get_buffer_address();
-
             case FR_OK: // when its FR_OK the the file exists, so merely need to add to it
-            fr = f_open(&fp, file_names.times,FA_WRITE|FA_OPEN_APPEND);
+            fr = f_open(&fp, file_info.times, FA_WRITE|FA_OPEN_APPEND);
             if(fr == FR_OK)
             {
-                fr = fputs(input,&fp);
+                fr = f_puts((TCHAR *)give_array_address(),&fp);
             }
 
             break;
 
             case FR_NO_FILE:
+            fr = FR_NO_FILE;
             break;
         }
         
      }
 
-     return(fr);
-
-
+     return(fr); 
 }
 
 
 PRIVATE FRESULT no_file(FRESULT fr) 
 {
-    FIL fp;
+     FIL fp;
      fr = f_open(&fp,file_info.times,FA_CREATE_NEW|FA_WRITE);
      if(fr == FR_OK)
      {
-        fr = fputs(input,&fp);
+        fr = f_puts(file_info.times,&fp);
      }
+     return(fr);
 }
 
 PRIVATE FRESULT invalid_name(FRESULT fr)
