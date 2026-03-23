@@ -22,6 +22,7 @@ typedef struct
 {
     char dates[10];
     char times[10];
+    TCHAR date_directory[15];
 }File_Info;
 
 static File_Info file_info;
@@ -81,6 +82,7 @@ FRESULT (*handle_error[])(FRESULT fr) = {
 Exists_check exists_check = {0};
 
 
+
 PRIVATE void extract_date(const char *in, char *dates, size_t size);
 PRIVATE void extract_time(const char *in, char *times, size_t size );
 PRIVATE bool scan_files(char* path);
@@ -91,14 +93,16 @@ PRIVATE bool scan_files(char* path);
 PUBLIC void file_processing_main( ) {
     FRESULT fr;
    // Initialise all date and time stuff early 
-   
-    
-
+    fr = f_getcwd(file_info.date_directory, strlen(file_info.date_directory)); //gets current directory and drive 
+    // this is drive 0 and root directory
     memset(file_info.dates, 0, sizeof(file_info.dates));
     memset(file_info.times, 0, sizeof(file_info.times));
     uint8_t *buffer = give_array_address();
     extract_date(buffer, file_info.dates,sizeof(file_info.dates));   // dates used as folder/directory name
     extract_time(buffer, file_info.times,sizeof(file_info.times));
+
+    strcat(file_info.date_directory,file_info.dates);
+  //  snprintf(file_info.date_directory, sizeof(file_info.date_directory), "/%s", file_info.dates); //formats it so that 
   
      // Check for hardware/system errors
     fr = start();
@@ -144,7 +148,7 @@ PRIVATE FRESULT start()
 { //This is the kick off function where the pico tries to mount onto the USB stick.
 
     FRESULT fr;
-    fr = f_mount(fs, "", 1);
+    fr = f_mount(fs, "0:", 1);
     return(fr); //sets off whole reaction
 }
 
@@ -158,70 +162,94 @@ PRIVATE FRESULT no_path(FRESULT fr) // create a path in the root directory
 PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr)
 {
     DIR dir;
-    int ndir;
     FILINFO fno;
-    fr = f_opendir(&dir,"/");
-    char subbuff[8];
 
+    exists_check.path_exists = false;
 
-    if(fr == FR_OK)
+    fr = f_opendir(&dir, "/");
+    if (fr != FR_OK)
+        return fr;
+
+    while (1)
     {
-        ndir = 0;
-            fr = f_readdir(&dir, &fno);
-            if(fno.fname[0] == 0) break;
-            if(fno.fattrib & AM_DIR) {
-                memcpy( subbuff, &fno.fname[0], 7 ); //comes uptil 6th 0 to 6
-                subbuff[7] = '\0';
-                if(strncmp(subbuff, file_info.dates,7) == 0) // Check if the directory name matches the date.  Since that will be the one files will be based on
-                {
-                    fr = FR_OK;
-                    exists_check.path_exists = true;
-                }
-                else
-                {
-                    fr = FR_NO_PATH;
-                    exists_check.path_exists = false;
-                }
-            }
-            
+        fr = f_readdir(&dir, &fno);
 
+        if (fr != FR_OK)
+            break;
+
+        if (fno.fname[0] == 0)
+            break;  // end of directory
+
+        // skip . and ..
+        if (strcmp(fno.fname, ".") == 0 || strcmp(fno.fname, "..") == 0)
+            continue;
+
+        // skip hidden/system
+        if (fno.fattrib & (AM_HID | AM_SYS))
+            continue;
+
+        // only directories
+        if (fno.fattrib & AM_DIR)
+        {
+            if (strcmp(fno.fname, file_info.dates) == 0)
+            {
+                exists_check.path_exists = true;
+                break;  
+            }
+        }
     }
 
-    return(fr);
+    if (fno.fname[0] == 0)
+    {
+        fr = FR_NO_PATH;
+    }
+
+    f_closedir(&dir);
+
+    return fr;
 }
 
 PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr)
 {
      DIR dir;
      FILINFO fno;
-     int nfile;
      FIL fp;
+     TCHAR path_date_name[15];
+     strcpy(path_date_name,file_info.times); //gets the time
+     strcat(path_date_name,".txt");         //
+     UINT count;
 
-     TCHAR *root_directory = "/";
-     strlcat(root_directory, file_info.dates,sizeof(file_info.times));
-
-     fr = f_opendir(&dir,root_directory);
-     if(fr == FR_OK)
-     {
-        nfile = 0;
-        fr = f_stat(file_info.times,&fno);
+  //  fr = f_opendir(&dir,file_info.date_directory); //opendir hsa to open an existing directory. 
+        fr = f_stat(file_info.date_directory,&fno); //GETS info in the fno to be used later
         switch(fr)
         {
             case FR_OK: // when its FR_OK the the file exists, so merely need to add to it
-            fr = f_open(&fp, file_info.times, FA_WRITE|FA_OPEN_APPEND);
-            if(fr == FR_OK)
-            {
+             if (fno.fattrib & AM_DIR){
+                fr = f_chdir(file_info.date_directory); //changes the directory to date directory 
+                fr = f_open(&fp, path_date_name,FA_WRITE|FA_CREATE_NEW);
+                if(fr == FR_OK){
+                     fr = f_write(&fp,give_array_address(),get_queue_size(),&count);
+                     exists_check.file_exists = true;
+                    }
+             }
+            else{
+                fr = f_open(&fp, path_date_name, FA_WRITE|FA_OPEN_APPEND);
+                if(fr == FR_OK){
                 fr = f_puts((TCHAR *)give_array_address(),&fp);
-            }
+                exists_check.path_exists = false; //resets the flag to default false
+                }
 
+            }
             break;
 
             case FR_NO_FILE:
             fr = FR_NO_FILE;
             break;
+            
         }
-        
-     }
+    
+    f_unmount(file_info.date_directory);                 /* Unmount the default drive */
+
 
      return(fr); 
 }
@@ -261,12 +289,32 @@ PRIVATE FRESULT invalid_object(FRESULT fr)
 
 PRIVATE FRESULT not_enabled(FRESULT fr)
 {
-    ;
+    FATFS *fs;     /* Ponter to the filesystem object */
+    FIL fp;
+
+    if(!exists_check.file_exists)
+    {
+         fs = malloc(sizeof (FATFS));   /* Get work area for the volume */
+         f_mount(fs, file_info.date_directory, 0);            /* Mount the default drive */
+
+         fr = f_open(&fp, file_info.times, FA_WRITE|FA_CREATE_NEW);
+        if(fr == FR_OK){
+            fr = f_puts((TCHAR *)give_array_address(),&fp);
+            exists_check.file_exists = true;
+            }
+    }
+
+
+        f_mount(fs, file_info.date_directory, 0);            /* Re-mount the default drive to reinitialize the filesystem */
+
+        f_unmount("");                 /* Unmount the default drive */
+        free(fs);
+   
+
 }
 
 PRIVATE FRESULT no_filesystem(FRESULT fr)
 {
-   
     uint8_t work[FF_MAX_SS];
     f_mkfs("", NULL, work, sizeof(work));   /* makes file system here*/
     return(f_mount(&fatfs, "0:", 1));                 /*makes another attempt at mounting it*/
@@ -658,5 +706,3 @@ PRIVATE bool scan_files(char* path)
 
 //     fr = f_getcwd(cwd, BUFSIZE); 
 // }
-
-

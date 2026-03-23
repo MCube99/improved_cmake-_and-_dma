@@ -32,10 +32,9 @@ PUBLIC uint8_t* give_array_address()
 
 
 
-
-PUBLIC BYTE get_queue_size()
+PUBLIC int get_queue_size()
 {
-    return myQueue.buffer[0]; // return the current size of the queue, which is stored in the first element of the buffer
+    return(sizeof(myQueue.buffer));
 }
 
 PUBLIC bool check_data()
