@@ -78,6 +78,7 @@
 
 volatile bool csn_high = true;
 
+
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
 //--------------------------------------------------------------------+
@@ -92,10 +93,6 @@ void led_blinking_task(void);
 int main(void) {
 
    stdio_init_all();
- 
-  
-  
-
   timer_hw->dbgpause = 0; 
  
 
@@ -143,20 +140,14 @@ int main(void) {
     led_blinking_task();
     
 
-    if(!csn_high) // the reading depends when the button is pressed, so when it goes high. This nots it
+    if(!csn_high) // the reading depends when the button is pressed, so when it goes high. Also set in file processing when its all fdone
     {
         file_processing_main();
     }
     else  //  
     {
-       continue; //if csn is still high, meaning reading is still happening, so continue
+       continue; //if csn is still high or set high
     }
-
-  
-       
-    
-   
-     
   }
 
   return 0;

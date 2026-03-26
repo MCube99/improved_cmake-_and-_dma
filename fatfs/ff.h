@@ -280,6 +280,7 @@ typedef enum {
     FR_INVALID_DRIVE = 84,
     FR_NOT_ENOUGH_CORE = 85,
     FR_INVALID_PARAMETER = 86,
+	FR_ALL_DONE			= 87, //WHEN ITS ALL DONE
 
     /* Restart normal error sequence */
     FR_OK = 0,

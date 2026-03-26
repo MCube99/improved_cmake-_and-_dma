@@ -21,7 +21,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// Example of an SPI bus slave using the PL022 SPI interface
+
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -73,13 +73,13 @@ PRIVATE void gpio_clear_events(uint gpio, uint32_t events) {
 PRIVATE void myIRQHandler(uint gpio, uint32_t events) 
 {
 
-    if(events & GPIO_IRQ_EDGE_FALL)
+    if(events & GPIO_IRQ_EDGE_FALL) //simulate csn falling
     {
         dma_start_channel_mask(1u << pio_spi.dma_chan); // Set up DMA to transfer data from PIO to memory when CSN goes low, indicating the start of an SPI transaction
         csn_high = true; // Set flag to indicate that CSN is low (active)
     }
 
-    if(events & GPIO_IRQ_EDGE_RISE)
+    if(events & GPIO_IRQ_EDGE_RISE) 
     {
         if(check_data()) // Check if data has been transferred to the buffer and is ready to be processed
         {
@@ -115,7 +115,7 @@ PUBLIC void pio_dma_setup(void)
     //Tranfers 8-bits at a time
     channel_config_set_transfer_data_size(&pio_spi.pio_dma_chan_config, DMA_SIZE_8); //sets the size of each DMA transfer to 32 bits
     channel_config_set_read_increment(&pio_spi.pio_dma_chan_config, false); //Disabled when reading from peripheral, as the source address is fixed
-    channel_config_set_write_increment(&pio_spi.pio_dma_chan_config, true); 
+    channel_config_set_write_increment(&pio_spi.pio_dma_chan_config, true); //Writing into array, so set to true. 
     channel_config_set_dreq(&pio_spi.pio_dma_chan_config, DREQ_PIO0_RX0); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
 
      dma_channel_configure(

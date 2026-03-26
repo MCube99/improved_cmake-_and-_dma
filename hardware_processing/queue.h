@@ -22,3 +22,6 @@ PUBLIC void queue_init();
 PUBLIC uint8_t* give_array_address();
 PUBLIC int get_queue_size();
 PUBLIC bool check_data();
+PUBLIC uint8_t* give_array_address_for_file_writing();
+PUBLIC void set_array_index(int difference);
+PUBLIC uint8_t* get_array_for_readings();
