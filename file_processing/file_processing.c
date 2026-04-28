@@ -151,7 +151,7 @@ PRIVATE FRESULT ok(FRESULT fr)
     if(exists_check.file_exists && exists_check.path_exists)
     {
         fr = FR_ALL_DONE;
-        csn_high = true;
+        flag_info |= ~CSN_USB_EVENT; // Set the CSN_USB_EVENT flag to indicate that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
         return(fr);
     }
 }
@@ -252,12 +252,12 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) //one of the big
 
 
     char *buffer = file_info.starting_pointer;
-    buffer = extract_ohm(buffer, ohms, sizeof(file_info.dates)); //want to pass pointer and then modify pointer to pooubt ti bextl
-    buffer = extract_voltage(buffer, voltage, sizeof(file_info.dates));
-    buffer = extract_current(buffer, current, sizeof(file_info.dates));
-    buffer = extract_test_time(buffer, test_time, sizeof(file_info.dates));
-    buffer = extract_comment(buffer, comment, sizeof(file_info.dates));
-    buffer = extract_state(buffer, state, sizeof(file_info.dates));
+    buffer = extract_ohm(buffer, ohms, sizeof(ohms)); //want to pass pointer and then modify pointer to pooubt ti bextl
+    buffer = extract_voltage(buffer, voltage, sizeof(voltage));
+    buffer = extract_current(buffer, current, sizeof(current));
+    buffer = extract_test_time(buffer, test_time, sizeof(test_time));
+    buffer = extract_comment(buffer, comment, sizeof(comment));
+    buffer = extract_state(buffer, state, sizeof(state));
     
     //extract_voltage(buffer, voltage, size_t size); // this is for the next value, and so on and so fort
 
@@ -588,9 +588,9 @@ PRIVATE char* extract_time(const char *in, char *time, size_t size)
         if(isspace(*p))
             continue;
 
-        if(*p == ':'){
+         if(*p == ':'){
             *p = '-';
-        }
+        } 
 
         time[i++] = *p;
     }

@@ -7,7 +7,9 @@
                 "C:/Users/Mypc/.pico-sdk/sdk/2.2.0/**",
                 "C:/Users/Mypc/.pico-sdk/toolchain/14_2_Rel1/arm-none-eabi/include",
                 "C:/Users/Mypc/.pico-sdk/toolchain/14_2_Rel1/lib/gcc/arm-none-eabi/14.2.1/include",
-                "C:/Users/Mypc/.pico-sdk/toolchain/14_2_Rel1/lib/gcc/arm-none-eabi/14.2.1/include-fixed"
+                "C:/Users/Mypc/.pico-sdk/toolchain/14_2_Rel1/lib/gcc/arm-none-eabi/14.2.1/include-fixed",
+                "C:/PicoSDK/src/rp2_common",
+                "C:/PicoSDK/src/rp2_common/hardware_pio/include/hardware"
             ],
             "forcedInclude": [
                 "C:/Users/Mypc/.pico-sdk/sdk/2.2.0/src/common/pico_base_headers/include/pico.h",
@@ -15,7 +17,9 @@
             ],
             "defines": [],
             "compilerPath": "C:/Users/Mypc/.pico-sdk/toolchain/14_2_Rel1/bin/arm-none-eabi-gcc.exe",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "compileCommands": [
+                "${workspaceFolder}/build/compile_commands.json"
+            ],
             "cStandard": "c17",
             "cppStandard": "c++14",
             "intelliSenseMode": "gcc-arm"

@@ -19,9 +19,9 @@
 // typedef struct queue_type * Queue;
 
 PUBLIC void queue_init();
-PUBLIC uint8_t* give_array_address();
+PUBLIC uint8_t* give_array_address(void);
 PUBLIC int get_queue_size();
-PUBLIC bool check_data();
-PUBLIC uint8_t* give_array_address_for_file_writing();
+PUBLIC void check_data();
+PUBLIC uint8_t*  give_array_address_for_file_writing(void);
 PUBLIC void set_array_index(int difference);
 PUBLIC uint8_t* get_array_for_readings();

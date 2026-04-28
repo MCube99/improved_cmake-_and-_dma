@@ -87,8 +87,8 @@
 
 // Enable Host stack
 #define CFG_TUH_ENABLED       1
-
 #define CFG_TUD_ENABLED       0 
+#define CFG_TUH_RPI_PIO_USB   0 // decided we dont need this since its a host 
 
 
 #if CFG_TUSB_MCU == OPT_MCU_RP2040
@@ -97,7 +97,7 @@
 
   // host roothub port is 1 if using either pio-usb or max3421
 #if (defined(CFG_TUH_RPI_PIO_USB) && CFG_TUH_RPI_PIO_USB) || (defined(CFG_TUH_MAX3421) && CFG_TUH_MAX3421)
-   #define BOARD_TUH_RHPORT      1
+   #define BOARD_TUH_RHPORT_KEYBOARD      1
   #endif
 #endif
 
@@ -110,6 +110,10 @@
 #ifndef BOARD_TUH_RHPORT
 #define BOARD_TUH_RHPORT      0
 #endif
+
+
+
+
 
 // RHPort max operational speed can defined by board.mk
 #ifndef BOARD_TUH_MAX_SPEED

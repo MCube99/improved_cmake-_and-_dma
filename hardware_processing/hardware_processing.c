@@ -31,19 +31,22 @@
 #include "hardware_processing.h"
 #include "hardware/clocks.h"
 #include "file_processing.h"
-#include "queue.h"
+#include "queue.h"          
 #include "hardware/sync.h"
 #include "pico/time.h"
 #include "hardware/structs/iobank0.h"
 #include "clocked_input.pio.h"
+#include "keyboard_input.pio.h"
 #include "hardware/dma.h"
+#include "hardware/gpio.h"
 
-#define spi_default                         spi0
-#define PICO_DEFAULT_SPI_SCK_PIN            3   // SPI clock, same as master
-#define PICO_DEFAULT_SPI_RX_PIN             2
-#define PICO_DEFAULT_SPI_TX_PIN             5
-#define PICO_DEFAULT_SPI_CSN_PIN            4    
-#define DEBUG_PIN                           6
+
+#define PICO_DEFAULT_START          2
+#define PICO_DEFAULT_SPI_RX_PIN   ((PICO_DEFAULT_START)      + 0)   // 2 
+#define PICO_DEFAULT_SPI_SCK_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
+#define PICO_DEFAULT_SPI_CSN_PIN   ((PICO_DEFAULT_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
+#define PICO_DEFAULT_SPI_TX_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → send from slave
+#define USB_HOST_POWER_PIN                  18   // This is correct for Adafruit RP2040 USB Host Feather
 
 
 #define PIO_SERIAL_CLKDIV                   10.f
@@ -51,7 +54,7 @@
 //#define PICO_DEFAULT_SPI_SCK_PIN            2   // SPI clock, same as master
 //#define PICO_DEFAULT_SPI_RX_PIN             0   // MOSI from master → receive on slave
 //#define PICO_DEFAULT_SPI_TX_PIN             3   // MISO to master → send from slave
-//#define PICO_DEFAULT_SPI_CSN_PIN            1   // Chip select
+//#define PICO_DEFAULT_SPI_CSN_PIN            1   // Chip select                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 //   // GPIO pin for SPI interrupt line from master
 
 typedef struct {
@@ -61,7 +64,13 @@ typedef struct {
     dma_channel_config pio_dma_chan_config; // DMA channel configuration for PIO transfers
 } pio_spi_t;
 
+typedef struct {
+    PIO pio;
+    uint sm;
+} pio_keyboard_t;
+
 static pio_spi_t pio_spi; 
+static pio_keyboard_t pio_keyboard;
 
 PRIVATE void myIRQHandler(uint gpio, uint32_t events); 
 
@@ -70,32 +79,29 @@ PRIVATE void gpio_clear_events(uint gpio, uint32_t events) {
 }
 
 
-PRIVATE void myIRQHandler(uint gpio, uint32_t events) 
-{
-
-    if(events & GPIO_IRQ_EDGE_FALL) //simulate csn falling
+PRIVATE void myIRQHandler(uint gpio, uint32_t events) {
+    static uint8_t count = 0;
+    if(events & GPIO_IRQ_EDGE_FALL) //simulate csn falling. This is becaue spi in pico is fubared so an alternative has to be set up. 
     {
+        ++count;
         dma_start_channel_mask(1u << pio_spi.dma_chan); // Set up DMA to transfer data from PIO to memory when CSN goes low, indicating the start of an SPI transaction
-        csn_high = true; // Set flag to indicate that CSN is low (active)
+
+         if(count>=2 && (flag_info & (KEYBOARD_BYTE_RECEIVED_EVENT))) // this is when the master has sent the size byte and the data byte, so we can start reading the keyboard data. This is necessary because the keyboard data is sent after the SPI transaction, so we need to wait until the SPI transaction is complete before we can start reading the keyboard data.
+        {
+           count = 2; // Reset count to 2 to ensure that we stay in this state until the SPI transaction is complete and the keyboard data is read. This prevents us from accidentally starting to read keyboard data before the SPI transaction is complete, which could lead to data corruption or other issues.
+           flag_info |= KEYBOARD_SEND_EVENT; // Clear the CSN_USB_EVENT flag to indicate that we are now in the state of reading keyboard data, not SPI data. This is important for the main loop to function correctly, as it relies on these flags to determine when to read from the SPI and when to read from the keyboard.
+        }    
     }
 
-    if(events & GPIO_IRQ_EDGE_RISE) 
+    if(events & GPIO_IRQ_EDGE_RISE) //this should be when it finishes writing  
     {
-        if(check_data()) // Check if data has been transferred to the buffer and is ready to be processed
-        {
-             csn_high = false; // Set flag to indicate that CSN is high (inactive) 
-        }
-        else
-        {
-            csn_high = true; // If data is not ready, keep the flag indicating that CSN is low (active) to allow for further processing or retries
-        }
+        check_data(); // Check if the SPI transaction is complete and the data in the buffer is ready to be processed. This function will set the appropriate flags in the flag_info variable, which will be checked in the main loop to determine when to read from the SPI and when to read from the keyboard.
     }
 }
 
 
-PUBLIC void pio_dma_setup(void)
-{
-    pio_spi.pio = pio0;
+PUBLIC void pio_dma_setup(void) {
+    pio_spi.pio = pio1;
 
     uint offset = pio_add_program(pio_spi.pio, &clocked_input_program);
 
@@ -116,9 +122,10 @@ PUBLIC void pio_dma_setup(void)
     channel_config_set_transfer_data_size(&pio_spi.pio_dma_chan_config, DMA_SIZE_8); //sets the size of each DMA transfer to 32 bits
     channel_config_set_read_increment(&pio_spi.pio_dma_chan_config, false); //Disabled when reading from peripheral, as the source address is fixed
     channel_config_set_write_increment(&pio_spi.pio_dma_chan_config, true); //Writing into array, so set to true. 
-    channel_config_set_dreq(&pio_spi.pio_dma_chan_config, DREQ_PIO0_RX0); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
-
-     dma_channel_configure(
+   // channel_config_set_dreq(&pio_spi.pio_dma_chan_config, DREQ_PIO1_RX0); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
+//    channel_config_set_dreq( &pio_spi.pio_dma_chan_config, DREQ_PIO1_RX0 + pio_spi.sm); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
+    channel_config_set_dreq(&pio_spi.pio_dma_chan_config, pio_get_dreq(pio_spi.pio, pio_spi.sm, false)); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
+    dma_channel_configure(
         pio_spi.dma_chan, 
         &pio_spi.pio_dma_chan_config,
         give_array_address(), // Destination address where data is written to memory
@@ -128,6 +135,35 @@ PUBLIC void pio_dma_setup(void)
 
 }
 
+PUBLIC void pio_keyboard_setup(void) {
+    PIO pio;
+    uint sm;
+    uint offset;
+
+    offset = pio_add_program(pio_keyboard.pio, &keyboard_input_program);
+
+    bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&keyboard_input_program, &pio, &sm, &offset, PICO_DEFAULT_SPI_TX_PIN, 1, true);
+    pio_keyboard.pio = pio;
+    pio_keyboard.sm = sm;
+    hard_assert(success);
+    
+     keyboard_input_program_init(
+        pio_keyboard.pio,
+        pio_keyboard.sm,
+        offset,
+        PICO_DEFAULT_SPI_TX_PIN,
+        PICO_DEFAULT_SPI_SCK_PIN
+    );
+
+}
+
+PUBLIC PIO return_pio() {
+    return pio_keyboard.pio;
+}
+
+PUBLIC uint return_sm() {
+    return pio_keyboard.sm;
+}
 
 
 
@@ -156,7 +192,7 @@ PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled) {
 }
 
 
-PUBLIC int return_channel()
-{
+PUBLIC int return_channel(){
     return pio_spi.dma_chan; // Return the DMA channel number used for PIO transfers
 }
+
