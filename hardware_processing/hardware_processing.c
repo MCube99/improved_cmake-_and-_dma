@@ -41,14 +41,6 @@
 #include "hardware/gpio.h"
 
 
-#define PICO_DEFAULT_START          2
-#define PICO_DEFAULT_SPI_RX_PIN   ((PICO_DEFAULT_START)      + 0)   // 2 
-#define PICO_DEFAULT_SPI_SCK_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
-#define PICO_DEFAULT_SPI_CSN_PIN   ((PICO_DEFAULT_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
-#define PICO_DEFAULT_SPI_TX_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → send from slave
-#define USB_HOST_POWER_PIN                  18   // This is correct for Adafruit RP2040 USB Host Feather
-
-
 #define PIO_SERIAL_CLKDIV                   10.f
 
 //#define PICO_DEFAULT_SPI_SCK_PIN            2   // SPI clock, same as master
@@ -80,22 +72,16 @@ PRIVATE void gpio_clear_events(uint gpio, uint32_t events) {
 
 
 PRIVATE void myIRQHandler(uint gpio, uint32_t events) {
-    static uint8_t count = 0;
     if(events & GPIO_IRQ_EDGE_FALL) //simulate csn falling. This is becaue spi in pico is fubared so an alternative has to be set up. 
     {
-        ++count;
         dma_start_channel_mask(1u << pio_spi.dma_chan); // Set up DMA to transfer data from PIO to memory when CSN goes low, indicating the start of an SPI transaction
-
-         if(count>=2 && (flag_info & (KEYBOARD_BYTE_RECEIVED_EVENT))) // this is when the master has sent the size byte and the data byte, so we can start reading the keyboard data. This is necessary because the keyboard data is sent after the SPI transaction, so we need to wait until the SPI transaction is complete before we can start reading the keyboard data.
-        {
-           count = 2; // Reset count to 2 to ensure that we stay in this state until the SPI transaction is complete and the keyboard data is read. This prevents us from accidentally starting to read keyboard data before the SPI transaction is complete, which could lead to data corruption or other issues.
-           flag_info |= KEYBOARD_SEND_EVENT; // Clear the CSN_USB_EVENT flag to indicate that we are now in the state of reading keyboard data, not SPI data. This is important for the main loop to function correctly, as it relies on these flags to determine when to read from the SPI and when to read from the keyboard.
-        }    
     }
 
     if(events & GPIO_IRQ_EDGE_RISE) //this should be when it finishes writing  
     {
+    //    gpio_set_irq_active(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL|GPIO_IRQ_EDGE_RISE, false); //i will be continually blasted with this interrupt as long as the CSN pin is high, so I need to disable it until I am done processing the data from the SPI transaction. 
         check_data(); // Check if the SPI transaction is complete and the data in the buffer is ready to be processed. This function will set the appropriate flags in the flag_info variable, which will be checked in the main loop to determine when to read from the SPI and when to read from the keyboard.
+   //     gpio_set_irq_active(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL|GPIO_IRQ_EDGE_RISE, true); // Re-enable GPIO interrupts after we are done processing the data from the SPI transaction. This is important to ensure that we can continue to receive interrupts for future SPI transactions and keyboard inputs, allowing the program to function correctly and efficiently without data corruption or other issues.
     }
 }
 
@@ -152,7 +138,8 @@ PUBLIC void pio_keyboard_setup(void) {
         pio_keyboard.sm,
         offset,
         PICO_DEFAULT_SPI_TX_PIN,
-        PICO_DEFAULT_SPI_SCK_PIN
+        PICO_DEFAULT_SPI_SCK_PIN,
+        PICO_DEFAULT_SPI_CSN_PIN
     );
 
 }

@@ -7,48 +7,42 @@
 
 .program keyboard_input
 
-; 
-; Repeatedly get one word of data from the TX FIFO, stalling when the FIFO is
-; empty. Write the least significant bit to the OUT pin group.
+
 
 setup:
-    set x, 2        ; this is a counter to count how many times this has been hit
-   
+    set x, 8
+    wait 0 pin 1 ; wait fpr csn pin
 
-wait_twice:
-    wait 0 pin 1      ; CSN goes low → start transaction. First round waits for it to go down once 
-    wait 1 pin 1      ; CSN goes high again 
-    wait 0 pin 1      ; CSN goes low again
-    
-
-loop:
-    pull
+output_data:
     wait 0 pin 0
     wait 1 pin 0
+    jmp x--,data_push
+    jmp pin setup
+
+data_push:
     out pins, 1
-    jmp loop
+    jmp output_data
 
 % c-sdk {
-static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, uint data_out_pin, uint clock_pin) {
+static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, uint data_out_pin, uint clock_pin, uint jump_pin) {
     pio_sm_config c = keyboard_input_program_get_default_config(offset);
 
-    // Map the state machine's OUT pin group to one pin, namely the `pin`
-    // parameter to this function.
+    pio_sm_set_consecutive_pindirs(pio, sm, clock_pin, 2, false); //sets input pin 
+    pio_sm_set_consecutive_pindirs(pio, sm, data_out_pin, 1, true); // sets output pin 
+
+    sm_config_set_in_pins(&c, clock_pin);   // sets them as input pin
+    sm_config_set_out_pins(&c, data_out_pin, 1); // seta them as outpin pin
+
+    sm_config_set_out_shift(&c,
+    true,   // shift_right = LSB first or MSB depending on choice
+    true,   // autopull
+    8       // threshold = 8 bits. Should be a character level.
+    );
+
+    pio_gpio_init(pio, data_out_pin);
 
 
-    sm_config_set_out_pins(&c, data_out_pin, 1); //this maps osr (data from pull to output into the pin )
-
-    // Map the state machine's IN pin group to one pin, namely the `pin`
-    // parameter to this function.
-    sm_config_set_in_pins(&c,clock_pin); 
-    pio_sm_set_consecutive_pindirs(pio, sm, clock_pin, 2, false); // clock pin and csn pin next  to ech other in this scenario
-    
-    pio_gpio_init(pio, data_out_pin); //only need to do this when outputting. Don't need to do this when pin is recieving data from the outside. So don't need to do this for 
-
-    // Load our configuration, and jump to the start of the program
     pio_sm_init(pio, sm, offset, &c);
-    // Set the state machine running
     pio_sm_set_enabled(pio, sm, true);
 }
 %}
-

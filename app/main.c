@@ -86,10 +86,11 @@ static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was ui
 
 static void process_kbd_report(hid_keyboard_report_t const *report);
 static char* convert_to_string(const volatile uint8_t *ch);
+PRIVATE uint8_t reverse_bits(uint8_t value);
 void clear_array(char* message);
 
 
-volatile uint8_t flag_info = 0; // This variable is used to store the state of the different events that can occur in the program, such as when the SPI transaction is complete and when keyboard data is received. The main loop will check this variable to determine when to read from the SPI and when to read from the keyboard, ensuring that the program functions correctly and efficiently without data corruption or other issues.
+volatile uint32_t flag_info = 0; // This variable is used to store the state of the different events that can occur in the program, such as when the SPI transaction is complete and when keyboard data is received. The main loop will check this variable to determine when to read from the SPI and when to read from the keyboard, ensuring that the program functions correctly and efficiently without data corruption or other issues.
 
 
 
@@ -123,11 +124,25 @@ int main(void)
     msc_app_task();
     led_blinking_task();
 
-    if (flag_info & CSN_USB_EVENT) // This means that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
+
+    // This section is atomic, in the sense that it cannot be interrupted by the GPIO interrupt handler, which is important to ensure that we don't accidentally trigger an interrupt while we are in the middle of processing the SPI or keyboard data, which could lead to data corruption or other issues. By disabling interrupts during this section, we can ensure that the program functions correctly and efficiently without any issues related to interrupt handling.
+    // Need to prevent flag_info from being modified by the interrupt handler.
+
+    uint32_t flags;
+    uint32_t irq_state = save_and_disable_interrupts();  // disable interrupts (core-local)
+    flags = flag_info;                                   // atomic snapshot
+    flag_info = 0;                                       // or clear specific bits
+    restore_interrupts(irq_state);                       // restore previous state
+
+    
+    
+    if (flags & CSN_USB_EVENT) // This means that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
     {
       file_processing_main();
     }
   }
+
+  sleep_ms(1); 
 
   return 0;
 }
@@ -266,19 +281,36 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
             break;
         }
 
+        ch = reverse_bits(ch);
+
         // if (keyboard_reading && (ch >= 32 && ch <= 126)) for future
 
         // Only forward if active
-        if ((flag_info & KEYBOARD_SEND_EVENT) && (ch >= 32 && ch <= 126))
+
+        //  if ((flag_info & KEYBOARD_SEND_EVENT) && (ch >= 32 && ch <= 126))
+        
+        if ((flag_info & (KEYBOARD_BYTE_RECEIVED_EVENT)))
         {
-           
-            pio_sm_put_blocking(return_pio(), return_sm(), ch);
+             uint32_t irq_state = save_and_disable_interrupts(); //Same as above, need to prevent interrupts from modifying the flags when firing
+             flag_info &= ~KEYBOARD_BYTE_RECEIVED_EVENT;        // turn off the interrupts
+             restore_interrupts(irq_state);                     //Re-enable GPIO interrupts after we are done writing to the buffer and updating the flags. This is important to ensure that we can continue to receive interrupts for future keyboard inputs and SPI transactions, allowing the program to function correctly and efficiently without data corruption or other issues.
+             pio_sm_put_blocking(return_pio(), return_sm(), ch);
         }
     }
 
     prev_report = *report;
 }
-   
+ 
+
+PRIVATE uint8_t reverse_bits(uint8_t value) {
+    uint8_t result = 0;
+    for (int i = 0; i < 8; i++) {
+        result <<= 1; // Shift result left to make room for the next bit
+        result |= (value & 1); // Add the least significant bit of value to result
+        value >>= 1; // Shift value right to process the next bit
+    }
+    return result;
+}
 
   
 /* static char* convert_to_string(const volatile uint8_t *ch)

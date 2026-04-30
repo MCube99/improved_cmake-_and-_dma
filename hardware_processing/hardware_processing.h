@@ -15,8 +15,13 @@
 
 #define CSN_USB_EVENT                         1<<0
 #define KEYBOARD_BYTE_RECEIVED_EVENT          1<<1
-#define KEYBOARD_SEND_EVENT                   1<<2
-#define KEYBOARD_INVALID_CHARACTER            1<<3
+#define KEYBOARD_INVALID_CHARACTER            1<<2
+
+#define PICO_DEFAULT_START          2
+#define PICO_DEFAULT_SPI_RX_PIN   ((PICO_DEFAULT_START)      + 0)   // 2 
+#define PICO_DEFAULT_SPI_SCK_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
+#define PICO_DEFAULT_SPI_CSN_PIN   ((PICO_DEFAULT_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
+#define PICO_DEFAULT_SPI_TX_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → send from slave
 
 
 typedef uint8_t  BYTE;
@@ -38,5 +43,5 @@ PUBLIC uint return_sm();
 
 
 
-extern volatile uint8_t flag_info;
+extern volatile uint32_t flag_info;
 
