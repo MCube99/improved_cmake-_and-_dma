@@ -16,7 +16,7 @@
                 "${workspaceFolder}/build/generated/pico_base/pico/config_autogen.h"
             ],
             "defines": [],
-            "compilerPath": "C:/Users/Mypc/.pico-sdk/toolchain/14_2_Rel1/bin/arm-none-eabi-gcc.exe",
+            "compilerPath": "C:/arm-none-eabi/bin/arm-none-eabi-gcc.exe",
             "compileCommands": [
                 "${workspaceFolder}/build/compile_commands.json"
             ],

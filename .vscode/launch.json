@@ -1,56 +1,3 @@
-// {
-//     "version": "0.2.0",
-//     "configurations": [
-//         {
-//             "name": "Pico Debug (Cortex-Debug)",
-//             "cwd": "${userHome}/.pico-sdk/openocd/0.12.0+dev/scripts",
-//             "executable": "${command:raspberry-pi-pico.launchTargetPath}",
-//             "request": "launch",
-//             "type": "cortex-debug",
-//             "servertype": "openocd",
-//             "serverpath": "${userHome}/.pico-sdk/openocd/0.12.0+dev/openocd.exe",
-//             "gdbPath": "${command:raspberry-pi-pico.getGDBPath}",
-//             "device": "${command:raspberry-pi-pico.getChipUppercase}",
-//             "configFiles": [
-//                 "interface/picoprobe.cfg",
-//                  "target/rp2040.cfg"   
-//                 // "interface/cmsis-dap.cfg",
-//                 // "target/${command:raspberry-pi-pico.getTarget}.cfg"
-//             ],
-//             "svdFile": "${userHome}/.pico-sdk/sdk/2.2.0/src/${command:raspberry-pi-pico.getChip}/hardware_regs/${command:raspberry-pi-pico.getChipUppercase}.svd",
-//             "runToEntryPoint": "main",
-//             // Fix for no_flash binaries, where monitor reset halt doesn't do what is expected
-//             // Also works fine for flash binaries
-//             "overrideLaunchCommands": [
-//                 "monitor reset init",
-//                 "load \"${command:raspberry-pi-pico.launchTargetPath}\""
-//             ],
-//             "openOCDLaunchCommands": [
-//                 "adapter speed 5000"
-//             ]
-//         },
-//         {
-//             "name": "Pico Debug (Cortex-Debug with external OpenOCD)",
-//             "cwd": "${workspaceRoot}",
-//             "executable": "${command:raspberry-pi-pico.launchTargetPath}",
-//             "request": "launch",
-//             "type": "cortex-debug",
-//             "servertype": "external",
-//             "gdbTarget": "localhost:3333",
-//             "gdbPath": "${command:raspberry-pi-pico.getGDBPath}",
-//             "device": "${command:raspberry-pi-pico.getChipUppercase}",
-//             "svdFile": "${userHome}/.pico-sdk/sdk/2.2.0/src/${command:raspberry-pi-pico.getChip}/hardware_regs/${command:raspberry-pi-pico.getChipUppercase}.svd",
-//             "runToEntryPoint": "main",
-//             // Fix for no_flash binaries, where monitor reset halt doesn't do what is expected
-//             // Also works fine for flash binaries
-//             "overrideLaunchCommands": [
-//                 "monitor reset init",
-//                 "load \"${command:raspberry-pi-pico.launchTargetPath}\""
-//             ]
-//         },
-//     ]
-// }
-
 {
     "version": "0.2.0",
     "configurations": [
@@ -60,9 +7,11 @@
             "request": "launch",
 
             "cwd": "${workspaceFolder}",
-            "executable": "${command:cmake.launchTargetPath}",
+            "executable": "C:/msc_file_explorer/build/pico-release/app/app_main.elf",
 
             "servertype": "openocd",
+            "serverpath": "C:/openocd/bin/openocd.exe",
+
             "device": "RP2040",
 
             "configFiles": [
@@ -71,18 +20,21 @@
             ],
 
             "serverArgs": [
+                "-s", "C:/openocd/share/openocd/scripts",
                 "-c", "adapter speed 5000"
-            ],
-
-            "postLaunchCommands": [
-                "monitor reset halt"
             ],
 
             "runToEntryPoint": "main",
 
-            "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
+            "gdbPath": "C:/arm-none-eabi/bin/arm-none-eabi-gdb.exe",
 
-            "svdFile": "C:/PICOSDK/src/rp2040/hardware_regs/rp2040.svd",
+            "svdFile": "C:/pico-sdk/src/rp2040/hardware_regs/rp2040.svd",
+
+            "gdbTarget": "localhost:50000",
+
+            "postLaunchCommands": [
+                "monitor reset halt"
+            ],
 
             "showDevDebugOutput": "raw"
         }

@@ -13,9 +13,7 @@
 #define BUF_LEN                               256
 #define NUMBER_OF_BYTES                       BUF_LEN 
 
-#define CSN_USB_EVENT                         1<<0
-#define KEYBOARD_BYTE_RECEIVED_EVENT          1<<1
-#define KEYBOARD_INVALID_CHARACTER            1<<2
+
 
 #define PICO_DEFAULT_START          2
 #define PICO_DEFAULT_SPI_RX_PIN   ((PICO_DEFAULT_START)      + 0)   // 2 
@@ -43,5 +41,5 @@ PUBLIC uint return_sm();
 
 
 
-extern volatile uint32_t flag_info;
-
+extern volatile bool usb_check;
+extern volatile bool keyboard_check;

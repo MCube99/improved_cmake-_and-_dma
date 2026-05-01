@@ -65,10 +65,31 @@ static pio_spi_t pio_spi;
 static pio_keyboard_t pio_keyboard;
 
 PRIVATE void myIRQHandler(uint gpio, uint32_t events); 
+PRIVATE void pioIRQ();
 
 PRIVATE void gpio_clear_events(uint gpio, uint32_t events) {
     gpio_acknowledge_irq(gpio,events);
 }
+
+PRIVATE void pioIRQ(){ 
+
+    if(pio_interrupt_get(pio_keyboard.pio,3))
+    {
+        keyboard_check = false;
+        pio_interrupt_clear(pio_keyboard.pio,3);
+    }
+
+    if(pio_interrupt_get(pio_keyboard.pio, 1))
+    {
+        keyboard_check = true;
+        if(usb_check)
+        {
+            usb_check = false;
+        }
+        pio_interrupt_clear(pio_keyboard.pio,1);
+    }
+}
+
 
 
 PRIVATE void myIRQHandler(uint gpio, uint32_t events) {
@@ -156,10 +177,16 @@ PUBLIC uint return_sm() {
 
 
 PUBLIC void set_gpio_pins(){
+    static uint PIO_IRQ;    // NVIC ARM CPU interrupt number SS
+
     gpio_init(PICO_DEFAULT_SPI_CSN_PIN );
     gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN , GPIO_IN);
     gpio_pull_up(PICO_DEFAULT_SPI_CSN_PIN); // Pull-up to ensure a defined state when not driven
+    PIO_IRQ = pio_keyboard.pio ? PIO1_IRQ_0 : PIO0_IRQ_0;  // Selects the NVIC PIO_IRQ to us
     gpio_set_irq_enabled_with_callback(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL|GPIO_IRQ_EDGE_RISE, true, &myIRQHandler);
+    pio_set_irq0_source_mask_enabled(pio_keyboard.pio, (1u << 0) | (1u << 3), true);
+    irq_set_exclusive_handler(PIO_IRQ, pioIRQ);
+    irq_set_enabled(PIO_IRQ, true);                    //enabling the PIO1_IRQ_0
 }
 
 
@@ -182,4 +209,5 @@ PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled) {
 PUBLIC int return_channel(){
     return pio_spi.dma_chan; // Return the DMA channel number used for PIO transfers
 }
+
 

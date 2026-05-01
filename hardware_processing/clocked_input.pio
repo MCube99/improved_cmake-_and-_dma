@@ -24,7 +24,7 @@ bitloop:
     wait 0 pin 1
     wait 1 pin 1
     in pins, 1
-    jmp pin setup
+    jmp pin setup ;if csn goes high, then jump, otherwise dont
 .wrap
 
 

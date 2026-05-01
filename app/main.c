@@ -64,7 +64,6 @@
 #include "msc_app.h"
 #include "file_processing.h"
 #include "hardware_processing.h"
-#include "pio_usb.h"
 #include "queue.h"
 #include "pico/stdlib.h"
 #include "hid.h"
@@ -90,8 +89,8 @@ PRIVATE uint8_t reverse_bits(uint8_t value);
 void clear_array(char* message);
 
 
-volatile uint32_t flag_info = 0; // This variable is used to store the state of the different events that can occur in the program, such as when the SPI transaction is complete and when keyboard data is received. The main loop will check this variable to determine when to read from the SPI and when to read from the keyboard, ensuring that the program functions correctly and efficiently without data corruption or other issues.
-
+volatile bool usb_check = false; 
+volatile bool keyboard_check = false;
 
 
 /*------------- MAIN -------------*/
@@ -112,9 +111,9 @@ int main(void)
 
   board_init_after_tusb();
   queue_init();
-  set_gpio_pins();
   pio_dma_setup();
   pio_keyboard_setup();
+  set_gpio_pins();
 
   msc_app_init();
 
@@ -128,15 +127,10 @@ int main(void)
     // This section is atomic, in the sense that it cannot be interrupted by the GPIO interrupt handler, which is important to ensure that we don't accidentally trigger an interrupt while we are in the middle of processing the SPI or keyboard data, which could lead to data corruption or other issues. By disabling interrupts during this section, we can ensure that the program functions correctly and efficiently without any issues related to interrupt handling.
     // Need to prevent flag_info from being modified by the interrupt handler.
 
-    uint32_t flags;
-    uint32_t irq_state = save_and_disable_interrupts();  // disable interrupts (core-local)
-    flags = flag_info;                                   // atomic snapshot
-    flag_info = 0;                                       // or clear specific bits
-    restore_interrupts(irq_state);                       // restore previous state
 
     
     
-    if (flags & CSN_USB_EVENT) // This means that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
+    if (usb_check) // This means that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
     {
       file_processing_main();
     }
@@ -277,7 +271,6 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
         // STOP condition (highest priority)
         if (ch == ESC || ch == ENTER || ch == '\r' || ch == '\n')
         {
-            flag_info |= KEYBOARD_INVALID_CHARACTER; // Set the KEYBOARD_INVALID_CHARACTER flag to indicate that an invalid character was received. This can be used in the main loop to trigger actions that should occur when an invalid character is received, such as ignoring the input or sending an error message back to the master.
             break;
         }
 
@@ -289,12 +282,9 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
 
         //  if ((flag_info & KEYBOARD_SEND_EVENT) && (ch >= 32 && ch <= 126))
         
-        if ((flag_info & (KEYBOARD_BYTE_RECEIVED_EVENT)))
+        if (keyboard_check) // Only forward if we have received keyboard data, which is indicated by the keyboard_check flag being set to true. This is important to ensure that we only forward valid keyboard data and not random data that could be in the buffer, which could lead to data corruption or other issues.
         {
-             uint32_t irq_state = save_and_disable_interrupts(); //Same as above, need to prevent interrupts from modifying the flags when firing
-             flag_info &= ~KEYBOARD_BYTE_RECEIVED_EVENT;        // turn off the interrupts
-             restore_interrupts(irq_state);                     //Re-enable GPIO interrupts after we are done writing to the buffer and updating the flags. This is important to ensure that we can continue to receive interrupts for future keyboard inputs and SPI transactions, allowing the program to function correctly and efficiently without data corruption or other issues.
-             pio_sm_put_blocking(return_pio(), return_sm(), ch);
+              pio_sm_put_blocking(return_pio(), return_sm(), ch); // Send the character to the PIO state machine for processing. This is necessary to ensure that the keyboard data is processed correctly and efficiently without any issues related to timing or data corruption. By using the PIO state machine, we can offload the processing of the keyboard data from the main CPU, allowing for more efficient handling of the data and better overall performance of the program. 
         }
     }
 
