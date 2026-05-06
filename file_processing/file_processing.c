@@ -152,6 +152,8 @@ PRIVATE FRESULT ok(FRESULT fr)
     {
         fr = FR_ALL_DONE;
         usb_check = false; 
+        return(fr);
+
     }
 }
 

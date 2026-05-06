@@ -64,7 +64,6 @@
 #include "msc_app.h"
 #include "file_processing.h"
 #include "hardware_processing.h"
-#include "pio_usb.h"
 #include "queue.h"
 #include "pico/stdlib.h"
 #include "hid.h"
@@ -112,9 +111,9 @@ int main(void)
 
   board_init_after_tusb();
   queue_init();
-  set_gpio_pins();
   pio_dma_setup();
   pio_keyboard_setup();
+  set_gpio_pins();
 
   msc_app_init();
 
@@ -283,11 +282,11 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
 
         //  if ((flag_info & KEYBOARD_SEND_EVENT) && (ch >= 32 && ch <= 126))
         
-        if (keyboard_check) // Only forward if we have received keyboard data, which is indicated by the keyboard_check flag being set to true. This is important to ensure that we only forward valid keyboard data and not random data that could be in the buffer, which could lead to data corruption or other issues.
-        {
-              keyboard_check = false;
-              pio_sm_put_blocking(return_pio(), return_sm(), ch); // Send the character to the PIO state machine for processing. This is necessary to ensure that the keyboard data is processed correctly and efficiently without any issues related to timing or data corruption. By using the PIO state machine, we can offload the processing of the keyboard data from the main CPU, allowing for more efficient handling of the data and better overall performance of the program. 
-        }
+     
+        pio_sm_put_blocking(return_pio(), return_sm(), ch); // Send the character to the PIO state machine for processing. This is necessary to ensure that the keyboard data is processed correctly and efficiently without any issues related to timing or data corruption. By using the PIO state machine, we can offload the processing of the keyboard data from the main CPU, allowing for more efficient handling of the data and better overall performance of the program. 
+        uint32_t status = save_and_disable_interrupts(); // Disable interrupts to ensure atomicity of the following operations, which is important to prevent data corruption or other issues that could arise from concurrent access to shared resources such as the buffer and flags. By disabling interrupts, we can ensure that the program functions correctly and efficiently without any issues related to interrupt handling.k
+        keyboard_check = false;
+        restore_interrupts(status); // Restore interrupts after we are done processing the keyboard data, which is important to allow the program to continue functioning correctly and efficiently without any issues related to interrupt handling. By restoring interrupts, we can ensure that the program can continue to receive interrupts for future keyboard inputs and SPI transactions, allowing for efficient handling of the data and better overall performance of the program.
     }
 
     prev_report = *report;
