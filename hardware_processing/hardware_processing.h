@@ -33,13 +33,12 @@ PUBLIC void set_gpio_pins();
 PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled);
 PUBLIC void pio_dma_setup(void);
 PUBLIC void pio_keyboard_setup(void);
-PUBLIC void usb_host_power_enable(void);
 
 PUBLIC int return_channel();
-PUBLIC PIO return_pio();
-PUBLIC uint return_sm();
-
-
+PUBLIC PIO return_keyboard_pio();
+PUBLIC uint return_keyboard_sm();
+PUBLIC PIO return_spi_pio();
+PUBLIC uint return_spi_sm();
 
 extern volatile bool usb_check;
 extern volatile bool keyboard_check;

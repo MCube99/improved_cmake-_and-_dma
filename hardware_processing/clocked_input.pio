@@ -17,8 +17,8 @@
 ; edge is observed, so a clock ratio of at least input_clk < clk_sys / 6 is
 ; recommended for good sampling alignment.
 setup: 
-    wait 0 pin 2
-    jmp irq_stall
+    irq wait 0 ;dma triggers here from main pio event handler
+    jmp bitloop
     
 .wrap_target
 bitloop:
@@ -28,26 +28,19 @@ bitloop:
     jmp pin process_data
 .wrap
 
-irq_stall:
-    irq wait 1 ;dma triggers here from main pio event handler
-    jmp bitloop
-    
 process_data:
-    irq wait 0  
-    nop [1]
-    set pins, 1 
+    irq set 1
     jmp setup;
 
 
 
 % c-sdk {
-static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uint pin, uint jmp_pin, uint out_pin) {
+static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uint pin, uint jmp_pin) {
     pio_sm_config c = clocked_input_program_get_default_config(offset);
 
     // Set the IN base pin to the provided `pin` parameter. This is the data
     // pin, and the next-numbered GPIO is used as the clock pin.
     sm_config_set_in_pins(&c, pin);
-    sm_config_set_set_pins(&c, out_pin,1); //to sync up with the state machine for keyboard 
     sm_config_set_jmp_pin(&c, jmp_pin);
 
     // Set the pin directions to input at the PIO
@@ -55,7 +48,6 @@ static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uin
     // Connect these GPIOs to this PIO block
     pio_gpio_init(pio, pin);
     pio_gpio_init(pio, pin + 1);
-    pio_gpio_init(pio, out_pin);
    
     // Shifting to left matches the customary MSB-first ordering of SPI.
     sm_config_set_in_shift(

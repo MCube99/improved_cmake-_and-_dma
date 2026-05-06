@@ -41,18 +41,18 @@ PUBLIC inline void check_data(void) {
     uint8_t first = myQueue.buffer[0];
 
     if (difference == (first + 1)) {
-        uint32_t status = save_and_disable_interrupts(); // Disable interrupts to ensure atomicity of the following operations, which is important to prevent data corruption or other issues that could arise from concurrent access to shared resources such as the buffer and flags. By disabling interrupts, we can ensure that the program functions correctly and efficiently without any issues related to interrupt handling.
         usb_check = true;
         keyboard_check = false;
-        restore_interrupts(status); // Restore interrupts after we are done processing the SPI data, which is important to allow the program to continue functioning correctly and efficiently without any issues related to interrupt handling. By restoring interrupts, we can ensure that the program can continue to receive interrupts for future SPI transactions and keyboard inputs, allowing for efficient handling of the data and better overall performance of the program.
     }
 
-    else if (first == GARY_CODE) {
+    else if (first == GARY_CODE ) {
         // need to clear the interrupt to make sure that the keyboard_input.pio can start
-        uint32_t status = save_and_disable_interrupts(); // Disable interrupts to ensure atomicity of the following operations, which is important to prevent data corruption or other issues that could arise from concurrent access to shared resources such as the buffer and flags. By disabling interrupts, we can ensure that the program functions correctly and efficiently without any issues related to interrupt handling.
-        usb_check = false; // Set the CSN_USB_EVENT flag to indicate that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
-        keyboard_check = true; // Set the KEYBOARD_EVENT flag to indicate that the data in the buffer is from the keyboard, not the SPI, so we can start processing the keyboard data and writing it to the USB. This is necessary since both the keyboard and SPI write into the same buffer, so we need to differentiate between them to ensure that we process the data correctly and efficiently without any issues related to data corruption or other issues.
-        restore_interrupts(status); // Restore interrupts after we are done processing the SPI data, which is important to allow the program to continue functioning correctly and efficiently without any issues related to interrupt handling. By restoring interrupts, we can ensure that the program can continue to receive interrupts for future SPI transactions and keyboard inputs, allowing for efficient handling of the data and better overall performance of the program.
+        if(pio_interrupt_get(return_spi_pio(), 1)) {
+            pio_interrupt_clear(return_keyboard_pio(), 0);
+            usb_check = false; // Set the CSN_USB_EVENT flag to indicate that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
+            keyboard_check = true; // Set the KEYBOARD_EVENT flag to indicate that the data in the buffer is from the keyboard, not the SPI, so we can start processing the keyboard data and writing it to the USB. This is necessary since both the keyboard and SPI write into the same buffer, so we need to differentiate between them to ensure that we process the data correctly and efficiently without any issues related to data corruption or other issues.
+        }
+      
     }
 }// End of queue.c file:
 

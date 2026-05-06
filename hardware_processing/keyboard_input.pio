@@ -11,8 +11,8 @@
 
 setup:
     set x, 8
-    irq wait 0 ;sets irq and waits for it to be cleared. 
-    wait 0 pin 2 ; wait for csn pin 
+    irq wait 1 ;sets irq and waits for it to be cleared. 
+    wait 0 pin 1; wait for csn pin 
 output_data:
     wait 0 pin 0
     wait 1 pin 0
@@ -26,7 +26,7 @@ data_push:
 % c-sdk {
 static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, uint data_out_pin, uint clock_pin) {
     pio_sm_config c = keyboard_input_program_get_default_config(offset);
-    pio_sm_set_consecutive_pindirs(pio, sm, clock_pin, 2, false); //sets input pin 
+    pio_sm_set_consecutive_pindirs(pio, sm, clock_pin, 2, false); //sets input pin as 0 and 1
     pio_sm_set_consecutive_pindirs(pio, sm, data_out_pin, 1, true); // sets output pin 
 
     sm_config_set_in_pins(&c, clock_pin);   // sets them as input pin

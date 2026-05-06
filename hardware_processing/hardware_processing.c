@@ -43,122 +43,62 @@
 
 #define PIO_SERIAL_CLKDIV                   10.f
 
+//#define PICO_DEFAULT_SPI_SCK_PIN            2   // SPI clock, same as master
+//#define PICO_DEFAULT_SPI_RX_PIN             0   // MOSI from master → receive on slave
+//#define PICO_DEFAULT_SPI_TX_PIN             3   // MISO to master → send from slave
+//#define PICO_DEFAULT_SPI_CSN_PIN            1   // Chip select                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+//   // GPIO pin for SPI interrupt line from master
+
 typedef struct {
     PIO pio;
     uint sm;
     int dma_chan; // DMA channel for PIO transfers
     dma_channel_config pio_dma_chan_config; // DMA channel configuration for PIO transfers
-    uint PIO_IRQ; // PIO interrupt number for SPI
 } pio_spi_t;
 
 typedef struct {
     PIO pio;
     uint sm;
-    uint PIO_IRQ; // PIO interrupt number for keyboard
 } pio_keyboard_t;
 
 static pio_spi_t pio_spi; 
 static pio_keyboard_t pio_keyboard;
 
 PRIVATE void myIRQHandler(uint gpio, uint32_t events); 
-PRIVATE void pioIRQ();
-PRIVATE PIO return_pio_for_spi();
-PUBLIC void set_gpio_pins();
-
 
 PRIVATE void gpio_clear_events(uint gpio, uint32_t events) {
     gpio_acknowledge_irq(gpio,events);
 }
+PUBLIC void set_gpio_pins(){
+    static uint PIO_IRQ;    // NVIC ARM CPU interrupt number SS
 
-PRIVATE void pioIRQ() {
-    // Clear the PIO interrupt to ensure that we can receive future interrupts from the PIO, which is important for efficient handling of the data and better overall performance of the program. By clearing the interrupt, we can ensure that we can continue to receive interrupts for future SPI transactions and keyboard inputs without any issues related to interrupt handling.
-    if(pio_interrupt_get(pio_spi.pio, 0)) {
-  //      dma_start_channel_mask(1u << pio_spi.dma_chan);
-        pio_interrupt_clear(pio_spi.pio, 0);
-        if(gpio_get(PICO_DEFAULT_KEYBOARD_PIN)==1){
-            pio_interrupt_clear(pio_keyboard.pio, 1);
-        }
-    }
-
-    else if(pio_interrupt_get(pio_spi.pio, 1)) {
-        // Clear the PIO interrupt to ensure that we can receive future interrupts from the PIO, which is important for efficient handling of the data and better overall performance of the program. By clearing the interrupt, we can ensure that we can continue to receive interrupts for future SPI transactions and keyboard inputs without any issues related to interrupt handling.
-        check_data(); // Check the data in the buffer to see if we have received new data from the SPI or keyboard, which is important to ensure that we can start processing the data and writing it to the USB as soon as possible without any issues related to timing or data corruption. By checking the data, we can ensure that we can efficiently handle the data and provide a better overall performance of the program.
-    }
-
-    else if(pio_interrupt_get(pio_keyboard.pio, 0)) {
-        // Clear the PIO interrupt to ensure that we can receive future interrupts from the PIO, which is important for efficient handling of the data and better overall performance of the program. By clearing the interrupt, we can ensure that we can continue to receive interrupts for future SPI transactions and keyboard inputs without any issues related to interrupt handling.
-        if(keyboard_check){
-            pio_interrupt_clear(pio_keyboard.pio, 1);
-        } 
-    }
-   
-    
-    pio_interrupt_clear(return_pio_for_spi(), 0);
-}
-
-
-//PRIVATE void irq_handler(void)
-//{
-    //uint pin = PICO_DEFAULT_SPI_CSN_PIN;
-    //uint shift = 4 * (pin & 7);
-    //uint32_t mask = (GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL) << shift;
-
-    //// Read raw interrupt status
-    //uint32_t status = iobank0_hw->intr[pin >> 3];
-
-    //// Check FALLING edge (HIGH → LOW)
-    //if (status & (GPIO_IRQ_EDGE_FALL << shift)) {
-
-        //bool level = gpio_get(pin);  // read actual level (should be 0)
-
-        //if (!level) {
-            //// CONFIRMED LOW
-            //// CSN asserted → start transaction
-        //}
-    //}
-
-    //// Check RISING edge (LOW → HIGH)
-    //if (status & (GPIO_IRQ_EDGE_RISE << shift)) {
-
-        //bool level = gpio_get(pin);  // should be 1
-
-        //if (level) {
-            //// CONFIRMED HIGH
-            //// CSN deasserted → end transaction
-        //}
-    //}
-
-    //// Clear interrupt (VERY IMPORTANT)
-    //iobank0_hw->intr[pin >> 3] = mask;
-//}
-
-
-PUBLIC void set_gpio_pins() {
     gpio_init(PICO_DEFAULT_SPI_CSN_PIN );
     gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN , GPIO_IN);
     gpio_pull_up(PICO_DEFAULT_SPI_CSN_PIN); // Pull-up to ensure a defined state when not driven
-    
-    gpio_init(PICO_DEFAULT_KEYBOARD_PIN );
-    gpio_set_dir(PICO_DEFAULT_KEYBOARD_PIN , GPIO_IN);
-    gpio_pull_down(PICO_DEFAULT_KEYBOARD_PIN); // Pull-down to ensure a defined state when not driven
-} 
+    gpio_set_irq_enabled_with_callback(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL|GPIO_IRQ_EDGE_RISE, true, &myIRQHandler);
+}
 
-    // This is to setup the GPIO interrupts. It is initially disabled. No clue as to how it works however LOL.
-    // Reference: https://forums.raspberrypi.com/viewtopic.php?t=325355
-   // irq_set_enabled(IO_IRQ_BANK0, false);
-    //uint pin =PICO_DEFAULT_SPI_CSN_PIN;
-    //iobank0_hw->intr[pin >> 3] =
-    //(GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL)
-    //<< (4 * (pin & 7));
-    //irq_set_priority(IO_IRQ_BANK0, PICO_HIGHEST_IRQ_PRIORITY);
-    //hw_set_bits(&iobank0_hw->proc1_irq_ctrl.inte[pin>>3], GPIO_IRQ_EDGE_RISE|GPIO_IRQ_EDGE_FALL << 4*(pin&7));
-    //irq_set_exclusive_handler(IO_IRQ_BANK0, irq_handler);
-    //irq_set_enabled(IO_IRQ_BANK0, true);
-   //// gpio_set_irq_enabled_with_callback(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL|GPIO_IRQ_EDGE_RISE, true, &myIRQHandler);
+
+
+PRIVATE void myIRQHandler(uint gpio, uint32_t events) {
+    if(events & GPIO_IRQ_EDGE_FALL) //simulate csn falling. This is becaue spi in pico is fubared so an alternative has to be set up. 
+    {
+        dma_start_channel_mask(1u << pio_spi.dma_chan); // Set up DMA to transfer data from PIO to memory when CSN goes low, indicating the start of an SPI transaction
+        pio_interrupt_clear(pio_spi.pio, 0); // Clear the PIO interrupt for the SPI transaction to allow the clocked_input.pio to start and write the SPI data into the buffer. This is necessary to ensure that we can continue to receive SPI transactions and process them correctly without any issues related to data corruption or other issues.
+    }
+
+    if(events & GPIO_IRQ_EDGE_RISE) //this should be when it finishes writing  
+    {
+    //    gpio_set_irq_active(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL|GPIO_IRQ_EDGE_RISE, false); //i will be continually blasted with this interrupt as long as the CSN pin is high, so I need to disable it until I am done processing the data from the SPI transaction. 
+        check_data(); // Check if the SPI transaction is complete and the data in the buffer is ready to be processed. This function will set the appropriate flags in the flag_info variable, which will be checked in the main loop to determine when to read from the SPI and when to read from the keyboard.
+   //     gpio_set_irq_active(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL|GPIO_IRQ_EDGE_RISE, true); // Re-enable GPIO interrupts after we are done processing the data from the SPI transaction. This is important to ensure that we can continue to receive interrupts for future SPI transactions and keyboard inputs, allowing the program to function correctly and efficiently without data corruption or other issues.
+    }
+}
+
 
 PUBLIC void pio_dma_setup(void) {
-    pio_spi.pio = pio1; // Use PIO 1 for SPI
-    pio_spi.PIO_IRQ = pio_get_irq_num(pio_spi.pio, 0); // Get the appropriate IRQ number for the PIO instance and interrupt index 0, which is important to ensure that we can set the correct interrupt handler for the PIO interrupts. By getting the correct IRQ number, we can ensure that we can efficiently handle the data and provide a better overall performance of the program.
+    pio_spi.pio = pio1;
+
     uint offset = pio_add_program(pio_spi.pio, &clocked_input_program);
 
     pio_spi.sm = pio_claim_unused_sm(pio_spi.pio, true);
@@ -168,20 +108,18 @@ PUBLIC void pio_dma_setup(void) {
         pio_spi.sm,
         offset,
         PICO_DEFAULT_SPI_RX_PIN,
-        PICO_DEFAULT_SPI_CSN_PIN,
-		PICO_DEFAULT_KEYBOARD_PIN
+        PICO_DEFAULT_SPI_CSN_PIN
     );
 
-   pio_set_irq0_source_mask_enabled(pio_spi.pio, pis_interrupt0|pis_interrupt1, true); // Enable both interrupt sources for the PIO, which is important to ensure that we can receive interrupts for both SPI transactions and keyboard inputs without any issues related to interrupt handling. By enabling both interrupt sources, we can efficiently handle the data and provide a better overall performance of the program.
-   irq_set_exclusive_handler(pio_spi.PIO_IRQ, pioIRQ); // Set the interrupt handler for the PIO interrupts to the pioIRQ function, which is important to ensure that we can efficiently handle the data and provide a better overall performance of the program. By setting the exclusive handler, we can ensure that the pioIRQ function is called whenever there is an interrupt from the PIO, allowing us to efficiently process the data and write it to the USB without any issues related to timing or data corruption.
-   irq_set_enabled(pio_spi.PIO_IRQ, true); // Enable the PIO interrupts, which is important to ensure that we can receive interrupts for both SPI transactions and keyboard inputs without any issues related to interrupt handling. By enabling the interrupts, we can efficiently handle the data and provide a better overall performance of the program. 
     // Claim DMA channel
     pio_spi.dma_chan = dma_claim_unused_channel(true);
     pio_spi.pio_dma_chan_config = dma_channel_get_default_config(pio_spi.dma_chan);
     //Tranfers 8-bits at a time
     channel_config_set_transfer_data_size(&pio_spi.pio_dma_chan_config, DMA_SIZE_8); //sets the size of each DMA transfer to 32 bits
     channel_config_set_read_increment(&pio_spi.pio_dma_chan_config, false); //Disabled when reading from peripheral, as the source address is fixed
-    channel_config_set_write_increment(&pio_spi.pio_dma_chan_config, true); //Writing into array, so set to true.  // channel_config_set_dreq(&pio_spi.pio_dma_chan_config, DREQ_PIO1_RX0); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.  //    channel_config_set_dreq( &pio_spi.pio_dma_chan_config, DREQ_PIO1_RX0 + pio_spi.sm); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
+    channel_config_set_write_increment(&pio_spi.pio_dma_chan_config, true); //Writing into array, so set to true. 
+   // channel_config_set_dreq(&pio_spi.pio_dma_chan_config, DREQ_PIO1_RX0); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
+//    channel_config_set_dreq( &pio_spi.pio_dma_chan_config, DREQ_PIO1_RX0 + pio_spi.sm); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
     channel_config_set_dreq(&pio_spi.pio_dma_chan_config, pio_get_dreq(pio_spi.pio, pio_spi.sm, false)); //Configures the DMA channel to be triggered by the PIO's RX FIFO for the specific state machine. This means that a DMA transfer will occur whenever there is data in the RX FIFO of the PIO state machine, allowing for efficient data handling without CPU intervention.
     dma_channel_configure(
         pio_spi.dma_chan, 
@@ -194,32 +132,56 @@ PUBLIC void pio_dma_setup(void) {
 }
 
 PUBLIC void pio_keyboard_setup(void) {
-    pio_keyboard.pio = pio1; // Use PIO 1 for SPI
-    pio_keyboard.PIO_IRQ = pio_get_irq_num(pio_keyboard.pio, 0); // Get the appropriate IRQ number for the PIO instance and interrupt index 0, which is important to ensure that we can set the correct interrupt handler for the PIO interrupts. By getting the correct IRQ number, we can ensure that we can efficiently handle the data and provide a better overall performance of the program.
-    uint offset = pio_add_program(pio_keyboard.pio, &keyboard_input_program);
-    pio_keyboard.sm = pio_claim_unused_sm(pio_keyboard.pio, true);
-    keyboard_input_program_init(
+    PIO pio;
+    uint sm;
+    uint offset;
+
+    offset = pio_add_program(pio_keyboard.pio, &keyboard_input_program);
+
+    bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&keyboard_input_program, &pio, &sm, &offset, PICO_DEFAULT_SPI_TX_PIN, 1, true);
+    pio_keyboard.pio = pio;
+    pio_keyboard.sm = sm;
+    hard_assert(success);
+
+    pio_set_irq0_source_enabled(pio_keyboard.pio, pis_interrupt0, true);
+    irq_add_shared_handler(PIO1_IRQ_0, rotary_up_callback, 0);
+    irq_set_enabled(PIO1_IRQ_0, true);
+    pio_set_irq1_source_enabled(pio_keyboard.pio, pis_interrupt1, true);
+    irq_add_shared_handler(PIO1_IRQ_1, rotary_down_callback, 0);
+    irq_set_enabled(PIO1_IRQ_1, true);
+
+  
+     keyboard_input_program_init(
         pio_keyboard.pio,
         pio_keyboard.sm,
         offset,
         PICO_DEFAULT_SPI_TX_PIN,
-        PICO_DEFAULT_SPI_SCK_PIN);
-    pio_set_irq1_source_mask_enabled(pio_keyboard.pio, pis_interrupt0|pis_interrupt1, true); // Enable both interrupt sources for the PIO, which is important to ensure that we can receive interrupts for both SPI transactions and keyboard inputs without any issues related to interrupt handling. By enabling both interrupt sources, we can efficiently handle the data and provide a better overall performance of the program.
-   irq_set_exclusive_handler(pio_keyboard.PIO_IRQ, pioIRQ); // Set the interrupt handler for the PIO interrupts to the pioIRQ function, which is important to ensure that we can efficiently handle the data and provide a better overall performance of the program. By setting the exclusive handler, we can ensure that the pioIRQ function is called whenever there is an interrupt from the PIO, allowing us to efficiently process the data and write it to the USB without any issues related to timing or data corruption.
-   irq_set_enabled(pio_keyboard.PIO_IRQ, true); // Enable the PIO interrupts, which is important to ensure that we can receive interrupts for both SPI transactions and keyboard inputs without any issues related to interrupt handling. By enabling the interrupts, we can efficiently handle the data and provide a better overall performance of the program. 
-   
+        PICO_DEFAULT_SPI_SCK_PIN
+    );
 }
 
-PUBLIC PIO return_pio() {
+PRIVATE void keyboard_callback() {
+    
+}
+
+PUBLIC PIO return_keyboard_pio() {
     return pio_keyboard.pio;
 }
-PRIVATE PIO return_pio_for_spi() {
+
+PUBLIC uint return_keyboard_sm() {
+    return pio_keyboard.sm;
+}
+
+PUBLIC PIO return_spi_pio() {
     return pio_spi.pio;
 }
 
-PUBLIC uint return_sm() {
-    return pio_keyboard.sm;
+PUBLIC uint return_spi_sm() {
+    return pio_spi.sm;
 }
+
+
+
 PUBLIC int return_channel(){
     return pio_spi.dma_chan; // Return the DMA channel number used for PIO transfers
 }
@@ -238,7 +200,5 @@ PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled) {
         hw_clear_bits(en_reg, events);
     }
 }
-
-
 
 
