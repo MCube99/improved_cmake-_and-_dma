@@ -10,15 +10,19 @@
 
 
 setup:
-    set x, 8
-    wait 0 pin 1 ; wait fpr csn pin
+    set x, 8 
+    wait 0 pin 2 //csn pin 
+
+
 
 output_data:
+    irq wait 1 ; should start the  on. This is good because it takes advantage of the length of time between csn and the first inputs
     wait 0 pin 0
     wait 1 pin 0
     jmp x--,data_push
     irq wait 3
     jmp pin setup
+
 
 data_push:
     out pins, 1
@@ -33,6 +37,7 @@ static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, ui
 
     sm_config_set_in_pins(&c, clock_pin);   // sets them as input pin
     sm_config_set_out_pins(&c, data_out_pin, 1); // seta them as outpin pin
+    sm_config_set_jmp_pin(&c, jump_pin);
 
     sm_config_set_out_shift(&c,
     true,   // shift_right = LSB first or MSB depending on choice
@@ -41,9 +46,7 @@ static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, ui
     );
 
     pio_gpio_init(pio, data_out_pin);
-
-
     pio_sm_init(pio, sm, offset, &c);
-    pio_sm_set_enabled(pio, sm, true);
+    
 }
 %}

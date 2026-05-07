@@ -184,7 +184,9 @@ PUBLIC void set_gpio_pins(){
     gpio_pull_up(PICO_DEFAULT_SPI_CSN_PIN); // Pull-up to ensure a defined state when not driven
     PIO_IRQ = pio_keyboard.pio ? PIO1_IRQ_0 : PIO0_IRQ_0;  // Selects the NVIC PIO_IRQ to us
     gpio_set_irq_enabled_with_callback(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL|GPIO_IRQ_EDGE_RISE, true, &myIRQHandler);
-    pio_set_irq0_source_mask_enabled(pio_keyboard.pio, (1u << 0) | (1u << 3), true);
+    pio_set_irq0_source_enabled(pio_keyboard.pio, pis_interrupt0, true);
+    pio_set_irq0_source_enabled(pio_keyboard.pio, pis_interrupt3, true);
+    
     irq_set_exclusive_handler(PIO_IRQ, pioIRQ);
     irq_set_enabled(PIO_IRQ, true);                    //enabling the PIO1_IRQ_0
 }

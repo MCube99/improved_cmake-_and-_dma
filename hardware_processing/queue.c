@@ -5,6 +5,8 @@
 #include "hardware/sync.h"
 #include "hardware/dma.h"
 #include "hardware_processing.h"
+#include "hardware/pio.h"
+
 
 
 
@@ -46,11 +48,14 @@ PUBLIC inline void check_data(void) {
     uint8_t first = myQueue.buffer[0];
 
     if (difference == (first + 1)) {
+       
         usb_check = true;
+        keyboard_check = false;
+        
     }
     else if (first == GARY_CODE) {
-        keyboard_check = true;
-        usb_check = false;
+
+        pio_interrupt_set(return_pio(), 2);  // sets IRQ flag 1
     }
 }
 

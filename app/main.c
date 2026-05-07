@@ -271,6 +271,7 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
         // STOP condition (highest priority)
         if (ch == ESC || ch == ENTER || ch == '\r' || ch == '\n')
         {
+            keyboard_check = false;
             break;
         }
 
