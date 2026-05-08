@@ -150,7 +150,7 @@ set(PICO_SDK_PATH "H:/pico_sdk" CACHE PATH "Path to the Raspberry Pi Pico SDK" F
 include(pico_sdk_import.cmake)
 
 project(msc_file_explorer C CXX ASM)
-
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 

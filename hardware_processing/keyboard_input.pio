@@ -3,41 +3,35 @@
 ;
 ; SPDX-License-Identifier: BSD-3-Clause
 ;
-.pio_version 0 // only requires PIO version 0
-
+;  //  irq wait 2
 .program keyboard_input
 
-
-
 setup:
-    set x, 8 
-    wait 0 pin 2 //csn pin 
+    set x, 7
+    wait 0 pin 1
 
-
-
-output_data:
-    irq wait 1 ; should start the  on. This is good because it takes advantage of the length of time between csn and the first inputs
+bitloop:
     wait 0 pin 0
     wait 1 pin 0
-    jmp x--,data_push
-    irq wait 3
-    jmp pin setup
 
-
-data_push:
     out pins, 1
-    jmp output_data
+
+    jmp x-- bitloop
+
+wait_csn_release:
+    jmp pin setup
+    jmp wait_csn_release
 
 % c-sdk {
-static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, uint data_out_pin, uint clock_pin, uint jump_pin) {
+static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, uint pin) {
     pio_sm_config c = keyboard_input_program_get_default_config(offset);
 
-    pio_sm_set_consecutive_pindirs(pio, sm, clock_pin, 2, false); //sets input pin 
-    pio_sm_set_consecutive_pindirs(pio, sm, data_out_pin, 1, true); // sets output pin 
+    pio_sm_set_consecutive_pindirs(pio, sm,pin, 2, false); //sets input pin. This means the clock pin and the csn pin
+    pio_sm_set_consecutive_pindirs(pio, sm,pin+2, 1, true); // sets output pin. This means the transmission pin
 
-    sm_config_set_in_pins(&c, clock_pin);   // sets them as input pin
-    sm_config_set_out_pins(&c, data_out_pin, 1); // seta them as outpin pin
-    sm_config_set_jmp_pin(&c, jump_pin);
+    sm_config_set_in_pins(&c, pin);   // PICO_DEFAULT_SPI_SCK_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 1)   //3  
+    sm_config_set_jmp_pin(&c, pin+1); //  PICO_DEFAULT_SPI_CSN_PIN   ((PICO_DEFAULT_SPI_RX_PIN) + 2)
+    sm_config_set_out_pins(&c,pin+2, 1); // PICO_DEFAULT_SPI_TX_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 3)
 
     sm_config_set_out_shift(&c,
     true,   // shift_right = LSB first or MSB depending on choice
@@ -45,8 +39,11 @@ static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, ui
     8       // threshold = 8 bits. Should be a character level.
     );
 
-    pio_gpio_init(pio, data_out_pin);
+    pio_gpio_init(pio, pin+2);
+     sm_config_set_clkdiv(&c, 65535.f);   
     pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+// pin is the serial clock pin and all other pins will be in reference to it. See hardware_processing.h for details
     
 }
 %}

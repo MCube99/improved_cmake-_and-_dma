@@ -2,25 +2,44 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "hardware_processing.h"
 
-// Flags to indicate SPI status
+// -----------------------------------------------------------------------------
+// PACKET TYPES
+// -----------------------------------------------------------------------------
 
+typedef enum {
+    PACKET_NONE,
+    PACKET_USB,
+    PACKET_KEYBOARD
 
-// struct queue_type {
-//     int front;          // read index
-//     int rear;           // write index
-//     int buffer[ BUF_LEN ];
-//     SPI_STATE spi_state; // SPI status flag
-// }; 
+} packet_type_t;
 
-// struct queue_type;
-// // Opaque pointer to queue structure
-// typedef struct queue_type * Queue;
+// -----------------------------------------------------------------------------
+// QUEUE INITIALIZATION
+// -----------------------------------------------------------------------------
 
-PUBLIC void queue_init();
-PUBLIC uint8_t* give_array_address(void);
-PUBLIC int get_queue_size();
-PUBLIC inline void check_data();
-PUBLIC uint8_t*  give_array_address_for_file_writing(void);
+PUBLIC void queue_init(void);
+
+// -----------------------------------------------------------------------------
+// BUFFER ACCESS
+// -----------------------------------------------------------------------------
+
+PUBLIC uint8_t *give_array_address(void);
+
+PUBLIC uint8_t *give_array_address_for_file_writing(void);
+
+PUBLIC int get_queue_size(void);
+
+// -----------------------------------------------------------------------------
+// PACKET CLASSIFICATION
+// -----------------------------------------------------------------------------
+
+PUBLIC packet_type_t classify_packet(void);
+
+// -----------------------------------------------------------------------------
+// OPTIONAL HELPERS
+// -----------------------------------------------------------------------------
+
 PUBLIC void set_array_index(int difference);

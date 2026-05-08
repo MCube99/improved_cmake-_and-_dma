@@ -7,7 +7,7 @@
             "request": "launch",
 
             "cwd": "${workspaceFolder}",
-            "executable": "C:/msc_file_explorer/build/pico-release/app/app_main.elf",
+            "executable": "${workspaceFolder}/build/pico-release/app/app_main.elf",
 
             "servertype": "openocd",
             "serverpath": "C:/openocd/bin/openocd.exe",

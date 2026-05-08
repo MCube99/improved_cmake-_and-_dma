@@ -2,10 +2,6 @@ cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH PARENT_DIR)
 
 add_executable(app_main main.c)
 
-target_sources(app_main PRIVATE
-    C:/tinyusb/src/portable/raspberrypi/pio_usb/hcd_pio_usb.c
-)
-
 target_sources(app_main
      PUBLIC
         FILE_SET HEADERS

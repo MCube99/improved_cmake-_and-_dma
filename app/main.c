@@ -67,6 +67,7 @@
 #include "queue.h"
 #include "pico/stdlib.h"
 #include "hid.h"
+#include "hardware/pio.h"
  
 
 #define BSIZE 64
@@ -275,34 +276,38 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
             break;
         }
 
-        ch = reverse_bits(ch);
-
+        ch = reverse_bits(ch);  
         // if (keyboard_reading && (ch >= 32 && ch <= 126)) for future
 
         // Only forward if active
 
         //  if ((flag_info & KEYBOARD_SEND_EVENT) && (ch >= 32 && ch <= 126))
         
-        if (keyboard_check) // Only forward if we have received keyboard data, which is indicated by the keyboard_check flag being set to true. This is important to ensure that we only forward valid keyboard data and not random data that could be in the buffer, which could lead to data corruption or other issues.
-        {
-              pio_sm_put_blocking(return_pio(), return_sm(), ch); // Send the character to the PIO state machine for processing. This is necessary to ensure that the keyboard data is processed correctly and efficiently without any issues related to timing or data corruption. By using the PIO state machine, we can offload the processing of the keyboard data from the main CPU, allowing for more efficient handling of the data and better overall performance of the program. 
-        }
+    if (keyboard_check) {
+      
+      // Avoid blocking TinyUSB callback context
+      if (!pio_sm_is_tx_fifo_full( return_keyboard_pio(), return_keyboard_sm())) {
+        pio_sm_put( return_keyboard_pio(), return_keyboard_sm(), ch); }
+        pio_interrupt_clear( return_keyboard_pio(), 2);
     }
+}
 
     prev_report = *report;
 }
+
  
 
 PRIVATE uint8_t reverse_bits(uint8_t value) {
-    uint8_t result = 0;
+
+  uint8_t result = 0;
+
     for (int i = 0; i < 8; i++) {
-        result <<= 1; // Shift result left to make room for the next bit
-        result |= (value & 1); // Add the least significant bit of value to result
-        value >>= 1; // Shift value right to process the next bit
+        result <<= 1;
+        result |= (value & 1);
+        value >>= 1;
     }
     return result;
 }
-
   
 /* static char* convert_to_string(const volatile uint8_t *ch)
 {

@@ -151,8 +151,9 @@ PRIVATE FRESULT ok(FRESULT fr)
     if(exists_check.file_exists && exists_check.path_exists)
     {
         fr = FR_ALL_DONE;
-        usb_check = false; // Set the CSN_USB_EVENT flag to indicate that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
+        usb_check = false; 
         return(fr);
+
     }
 }
 
