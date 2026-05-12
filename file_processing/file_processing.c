@@ -85,7 +85,7 @@ PRIVATE char* extract_time(const char *in, char *times, size_t size );
 PRIVATE void extract_date(char *in, char *dates, size_t size);
 PRIVATE char* extract_ohm(char *in, char *ohms, size_t size);
 PRIVATE char* extract_voltage(char *in, char *voltage, size_t size);
-PRIVATE char* extract_current(char *in, char *voltage, size_t size);
+PRIVATE char* extract_current(char *in, char *current, size_t size);
 PRIVATE char* extract_test_time(char *in, char *test_time, size_t size);
 PRIVATE char* extract_comment(char *in, char *comment, size_t size);
 PRIVATE char* extract_state(char *in, char *state, size_t size);
@@ -135,8 +135,7 @@ PUBLIC void file_processing_main( ) { //called file_processing_main because this
 
 ///////////FRESULT functions/////////////////////////
 
-PRIVATE FRESULT ok(FRESULT fr) 
-{// This is the function to check what needs to be done. 
+PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done. 
     if(!exists_check.path_exists)
     {
          fr = FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS;
@@ -157,24 +156,21 @@ PRIVATE FRESULT ok(FRESULT fr)
     }
 }
 
-PRIVATE FRESULT start() 
-{ //This is the kick off function where the pico tries to mount onto the USB stick.
+PRIVATE FRESULT start() { //This is the kick off function where the pico tries to mount onto the USB stick.
 
     FRESULT fr;
     fr = f_mount(fs, "0:", 0);
     return(fr); //sets off whole reaction
 }
 
-PRIVATE FRESULT no_path(FRESULT fr) // create a path in the root directory
-{
+PRIVATE FRESULT no_path(FRESULT fr) {
 
     const char *fname = file_info.dates;
     fr = f_mkdir(fname);
     return fr;
 }
 
-PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr)
-{
+PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr) {
     DIR dir;
     FILINFO fno;
 
@@ -223,8 +219,7 @@ PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr)
     return fr;
 }
 
-PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) //one of the bigger functions
-{
+PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
     FIL fp;
    
     TCHAR temp[64];
@@ -248,7 +243,7 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) //one of the big
     memset(test_time, 0, sizeof(test_time));
     memset(comment, 0, sizeof(comment));
     memset(state, 0, sizeof(state));
- 
+
 
 
 
@@ -320,8 +315,7 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) //one of the big
 
 
 
-PRIVATE FRESULT no_file(FRESULT fr)
-{
+PRIVATE FRESULT no_file(FRESULT fr) {
     DIR dir;                    // Directory
     FILINFO fno;                // File Info
     FIL fp;
@@ -355,8 +349,7 @@ PRIVATE FRESULT no_file(FRESULT fr)
 
 }
 
-PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info)
-{
+PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info) {
     DIR dir;
     FILINFO fno;
     FRESULT fr;
@@ -385,69 +378,57 @@ PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info)
 }
 
 
-PRIVATE FRESULT invalid_name(FRESULT fr)
-{
+PRIVATE FRESULT invalid_name(FRESULT fr) {
     ;
 }
 
-PRIVATE FRESULT denied( FRESULT fr)
-{
+PRIVATE FRESULT denied( FRESULT fr) {
     ;
 }
 
-PRIVATE FRESULT exist(FRESULT fr)
-{
+PRIVATE FRESULT exist(FRESULT fr) {
     fr = FR_OK;
     return(fr);
 }
 
-PRIVATE FRESULT invalid_object(FRESULT fr)
-{
+PRIVATE FRESULT invalid_object(FRESULT fr) {
     ;
 }
 
-PRIVATE FRESULT not_enabled(FRESULT fr)
-{
+PRIVATE FRESULT not_enabled(FRESULT fr) {
 
 }
 
-PRIVATE FRESULT no_filesystem(FRESULT fr)
-{
+PRIVATE FRESULT no_filesystem(FRESULT fr) {
     uint8_t work[FF_MAX_SS];
     f_mkfs("", NULL, work, sizeof(work));   /* makes file system here*/
     return(f_mount(&fatfs, "0:", 1));                 /*makes another attempt at mounting it*/
 }
 
-PRIVATE FRESULT mkfs_aborted(FRESULT fr)
-{
+PRIVATE FRESULT mkfs_aborted(FRESULT fr) {
     ;
 }
 
-PRIVATE FRESULT timeout(FRESULT fr)
-{
+PRIVATE FRESULT timeout(FRESULT fr) {
     ;
 }
 
-PRIVATE FRESULT locked(FRESULT fr)
-{
+PRIVATE FRESULT locked(FRESULT fr) {
     ;
 }
 
-PRIVATE FRESULT too_many_open_files(FRESULT fr)
-{
+PRIVATE FRESULT too_many_open_files(FRESULT fr) {
     ;
 }
 
-PRIVATE FRESULT start_error(FRESULT fr)
-{
+PRIVATE FRESULT start_error(FRESULT fr) {
     ;
 }
 
 ///////////Helper functions/////////////////////////
 
 
-static void get_file_info()
-{
+static void get_file_info() {
     FRESULT fr;
     FILINFO fno;
     const char *fname = "TRTEST";
@@ -515,8 +496,7 @@ static void get_file_info()
 
 //// Extraction Function /////////////
 
-PRIVATE void extract_date_directory(const char *in, char *dates_directory, size_t size)
-{
+PRIVATE void extract_date_directory(const char *in, char *dates_directory, size_t size) {
    memset(dates_directory,0,size);
    dates_directory[0] = '/';
    dates_directory[size-1]='\0';
@@ -547,8 +527,7 @@ PRIVATE void extract_date_directory(const char *in, char *dates_directory, size_
 
 }
 
-PRIVATE void extract_date( char *in, char *dates, size_t size)
-{
+PRIVATE void extract_date( char *in, char *dates, size_t size) {
     memset(dates,0,size);
     dates[size-1]='\0';
     char *end = strchr(in,'/');  
@@ -574,8 +553,7 @@ PRIVATE void extract_date( char *in, char *dates, size_t size)
    }
 }
 
-PRIVATE char* extract_time(const char *in, char *time, size_t size)
-{
+PRIVATE char* extract_time(const char *in, char *time, size_t size) {
     memset(time,0,size);
     time[size-1] = '\0';
     char *start = strchr(in, ',');
@@ -602,8 +580,7 @@ PRIVATE char* extract_time(const char *in, char *time, size_t size)
 
 }
 
-PRIVATE char* extract_ohm(char *in, char *ohms, size_t size)
-{
+PRIVATE char* extract_ohm(char *in, char *ohms, size_t size) {
     memset(ohms, 0, size);
 
     
@@ -634,8 +611,7 @@ PRIVATE char* extract_ohm(char *in, char *ohms, size_t size)
     return ptr;
 }
 
-PRIVATE char* extract_voltage(char *in, char *voltage, size_t size)
-{
+PRIVATE char* extract_voltage(char *in, char *voltage, size_t size) {
     memset(voltage, 0, size);
 
     char *ptr = strchr(in, ',');    //1st comma
@@ -664,8 +640,7 @@ PRIVATE char* extract_voltage(char *in, char *voltage, size_t size)
 
 }
 
-PRIVATE char* extract_current(char *in, char *current, size_t size)
-{
+PRIVATE char* extract_current(char *in, char *current, size_t size) {
     memset(current, 0, size);
 
     char *ptr = strchr(in, ',');    //1st comma
@@ -693,8 +668,7 @@ PRIVATE char* extract_current(char *in, char *current, size_t size)
 
 }
 
-PRIVATE char* extract_test_time(char *in, char *test_time, size_t size)
-{
+PRIVATE char* extract_test_time(char *in, char *test_time, size_t size) {
     memset(test_time, 0, size);
 
     char *ptr = strchr(in, ',');    //1st comma
@@ -724,8 +698,7 @@ PRIVATE char* extract_test_time(char *in, char *test_time, size_t size)
 }
 
 
-PRIVATE char* extract_comment(char *in, char *comment, size_t size)
-{
+PRIVATE char* extract_comment(char *in, char *comment, size_t size) {
     memset(comment, 0, size);
 
     char *ptr = strchr(in, ',');    //1st comma
@@ -752,8 +725,7 @@ PRIVATE char* extract_comment(char *in, char *comment, size_t size)
     return ptr;
 }
 
-PRIVATE char* extract_state(char *in, char *state, size_t size)
-{
+PRIVATE char* extract_state(char *in, char *state, size_t size) {
     memset(state, 0, size);
 
     char *ptr = strchr(in, ',');    //1st comma
