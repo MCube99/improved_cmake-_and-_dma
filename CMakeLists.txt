@@ -154,6 +154,13 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+add_compile_options(
+        -Wall                # Enable most warning messages
+        -Wno-format          # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
+        -Wno-unused-function # we have some for the docs that aren't called
+        )
+
+
 
 # function(check_pico_tinyusb_paths)
 
@@ -167,10 +174,7 @@ pico_sdk_init()
 # function(check_pico_sdk_paths)
 
 
-
 # endfunction()
-
-
 
 include_directories(tusb_config) ##include in all
 add_subdirectory(fatfs)
@@ -178,5 +182,3 @@ add_subdirectory(hardware_processing)
 add_subdirectory(file_processing)
 add_subdirectory(tusb_src)
 add_subdirectory(app)
-
-

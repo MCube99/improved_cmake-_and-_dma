@@ -92,6 +92,7 @@ void clear_array(char* message);
 
 volatile bool usb_check = false; 
 volatile bool keyboard_check = false;
+volatile bool size_byte_set = false;
 
 
 /*------------- MAIN -------------*/
@@ -113,7 +114,7 @@ int main(void)
   board_init_after_tusb();
   queue_init();
   pio_dma_setup();
-  pio_keyboard_setup();
+ //io_keyboard_setup();
   set_gpio_pins();
 
   msc_app_init();
@@ -272,8 +273,9 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
         // STOP condition (highest priority)
         if (ch == ESC || ch == ENTER || ch == '\r' || ch == '\n')
         {
-            keyboard_check = false;
-            break;
+           pio_sm_put_blocking( return_spi_pio(), return_spi_sm(), KEYBOARD_ESCAPE); //puts the first byte of the packet into the PIO state machine for processing
+           keyboard_check = false;
+           break;
         }
 
         ch = reverse_bits(ch);  
@@ -284,110 +286,110 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
         //  if ((flag_info & KEYBOARD_SEND_EVENT) && (ch >= 32 && ch <= 126))
         
     if (keyboard_check) {
-      
-      // Avoid blocking TinyUSB callback context
-      if (!pio_sm_is_tx_fifo_full( return_keyboard_pio(), return_keyboard_sm())) {
-        pio_sm_put( return_keyboard_pio(), return_keyboard_sm(), ch); }
-        pio_interrupt_clear( return_keyboard_pio(), 2);
-    }
-}
-
-    prev_report = *report;
-}
-
- 
-
-PRIVATE uint8_t reverse_bits(uint8_t value) {
-
-  uint8_t result = 0;
-
-    for (int i = 0; i < 8; i++) {
-        result <<= 1;
-        result |= (value & 1);
-        value >>= 1;
-    }
-    return result;
-}
-  
-/* static char* convert_to_string(const volatile uint8_t *ch)
-{
-
-    static char read[40]; // persistent buffer
-    
-    read[39] = '\0';
-    static uint8_t i = 0; //recalls how many time the function is calle and stores it. 
-      // Stop adding if buffer is full or an escape key is received
-
-    if (*ch == ESC || *ch == END_OF_TEXT || *ch == CANCEL || *ch == ENTER || i ==39 )
-    {
-      flag_check = FLAG_ESCAPE;
-      i=0;
-      return read;
-    }
-
-    if (i < 39 )  // ensure space for '\0'
-     {
-       read[i++] = (char)*ch; 
-       flag_check = FLAG_NOT_ESCAPE;
-     }
-}
-
-void clear_array(char* message)
-{
-    while(*message)
-    {
-        *message = '\0';
-        message++;
-    }
-} */
-
-
-
-
-/* static void process_kbd_report(hid_keyboard_report_t const *report)
-{
-  static hid_keyboard_report_t prev_report = { 0, 0, {0} }; // previous report to check key released
-  FILE *fptr;
-  char buffer[BSIZE];
-
-  fptr = fopen("usbhost.txt", "w");
-  //------------- example code ignore control (non-printable) key affects -------------//
-  for(uint8_t i=0; i<6; i++)
-  {
-    if ( report->keycode[i] )
-    {
-      if ( find_key_in_report(&prev_report, report->keycode[i]) )
-      {
-        // exist in previous report means the current key is holding
-      }else
-      {
-        // not existed in previous report means the current key is pressed
-        bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
-        char ch = keycode2ascii[report->keycode[i]][is_shift ? 1 : 0];
-        //Maybe need to do something here to get it to output only characters 
+          //spi_slave_writing();
         
-        putchar(ch);
-        putchar('\n');
-        if ( ch == '\r' ) putchar('\n'); // added new line for enter key
-
-        fflush(stdout); // flush right away, else nanolib will wait for newline
+        // Avoid blocking TinyUSB callback context
+        if (!pio_sm_is_tx_fifo_full( return_spi_pio(), return_spi_sm())) {
+          pio_sm_put_blocking( return_spi_pio(), return_spi_sm(), ch); }
       }
-    }
-    // TODO example skips key released
   }
 
-  prev_report = *report;
-} */
+      prev_report = *report;
+  }
+
+  
+
+  PRIVATE uint8_t reverse_bits(uint8_t value) {
+
+    uint8_t result = 0;
+
+      for (int i = 0; i < 8; i++) {
+          result <<= 1;
+          result |= (value & 1);
+          value >>= 1;
+      }
+      return result;
+  }
+    
+  /* static char* convert_to_string(const volatile uint8_t *ch)
+  {
+
+      static char read[40]; // persistent buffer
+      
+      read[39] = '\0';
+      static uint8_t i = 0; //recalls how many time the function is calle and stores it. 
+        // Stop adding if buffer is full or an escape key is received
+
+      if (*ch == ESC || *ch == END_OF_TEXT || *ch == CANCEL || *ch == ENTER || i ==39 )
+      {
+        flag_check = FLAG_ESCAPE;
+        i=0;
+        return read;
+      }
+
+      if (i < 39 )  // ensure space for '\0'
+      {
+        read[i++] = (char)*ch; 
+        flag_check = FLAG_NOT_ESCAPE;
+      }
+  }
+
+  void clear_array(char* message)
+  {
+      while(*message)
+      {
+          *message = '\0';
+          message++;
+      }
+  } */
 
 
-////Miscallaneous/////
 
-///
-    /*      else if (ch == '\r' || ch == '\n')  // handle newline
-                {
-                    putchar('\n');
-                    fprintf(fptr, '\n');
-                } */
-                // fflush(fptr);    // flush file output immediately
-                // fflush(stdout);  // flush terminal output
+
+  /* static void process_kbd_report(hid_keyboard_report_t const *report)
+  {
+    static hid_keyboard_report_t prev_report = { 0, 0, {0} }; // previous report to check key released
+    FILE *fptr;
+    char buffer[BSIZE];
+
+    fptr = fopen("usbhost.txt", "w");
+    //------------- example code ignore control (non-printable) key affects -------------//
+    for(uint8_t i=0; i<6; i++)
+    {
+      if ( report->keycode[i] )
+      {
+        if ( find_key_in_report(&prev_report, report->keycode[i]) )
+        {
+          // exist in previous report means the current key is holding
+        }else
+        {
+          // not existed in previous report means the current key is pressed
+          bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
+          char ch = keycode2ascii[report->keycode[i]][is_shift ? 1 : 0];
+          //Maybe need to do something here to get it to output only characters 
+          
+          putchar(ch);
+          putchar('\n');
+          if ( ch == '\r' ) putchar('\n'); // added new line for enter key
+
+          fflush(stdout); // flush right away, else nanolib will wait for newline
+        }
+      }
+      // TODO example skips key released
+    }
+
+    prev_report = *report;
+  } */
+
+
+  ////Miscallaneous/////
+
+  ///
+      /*      else if (ch == '\r' || ch == '\n')  // handle newline
+                  {
+                      putchar('\n');
+                      fprintf(fptr, '\n');
+                  } */
+                  // fflush(fptr);    // flush file output immediately
+                  // fflush(stdout);  // flush terminal output
 //              }

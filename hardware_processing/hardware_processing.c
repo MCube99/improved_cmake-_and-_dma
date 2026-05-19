@@ -14,7 +14,6 @@
 #include "queue.h"
 
 #include "clocked_input.pio.h"
-#include "keyboard_input.pio.h"
 
 // -----------------------------------------------------------------------------
 // STRUCTURES
@@ -24,22 +23,15 @@ typedef struct {
     PIO pio;
     uint sm;
     int dma_chan;
+    uint32_t size;
     dma_channel_config dma_cfg;
-
 } pio_spi_t;
-
-typedef struct {
-    PIO pio;
-    uint sm;
-
-} pio_keyboard_t;
 
 // -----------------------------------------------------------------------------
 // GLOBALS
 // -----------------------------------------------------------------------------
 
 static pio_spi_t pio_spi;
-static pio_keyboard_t pio_keyboard;
 
 static volatile bool spi_irq_disabled = false;
 
@@ -72,13 +64,30 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
     gpio_acknowledge_irq(PICO_DEFAULT_SPI_CSN_PIN,events);
 
     // -------------------------------------------------------------------------
-    // CSn LOW -> START DMA
+    // CSn LOW -> START DMA AND CHECK STAGES 
     // -------------------------------------------------------------------------
 
     if (events & GPIO_IRQ_EDGE_FALL) {
-        dma_start_channel_mask(1u << pio_spi.dma_chan);
+
+        if(pio_interrupt_get(return_spi_pio(), 0)) {
+            pio_interrupt_clear(return_spi_pio(), 0);
         }
-    
+
+
+        if(pio_interrupt_get(return_spi_pio(), 1)) {
+            pio_interrupt_clear(return_spi_pio(), 1);
+        }
+
+
+        if(pio_interrupt_get(return_spi_pio(), 2)) {	
+            pio_interrupt_clear(return_spi_pio(), 2);
+            dma_start_channel_mask(1u << return_channel());
+        }
+
+        if(keyboard_check) {	
+            pio_interrupt_clear(return_spi_pio(), 2);
+        }        
+    }
 
     // -------------------------------------------------------------------------
     // CSn HIGH -> PROCESS PACKET
@@ -89,8 +98,8 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
         
         switch (type) {
         case PACKET_USB:
-            usb_check = true;
             keyboard_check = false;
+
             if (spi_irq_disabled) 
             { 
                 gpio_set_irq_active(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true);
@@ -121,18 +130,30 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
 
 PUBLIC void set_gpio_pins(void)
 {
+    // CSN pin setup
     gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
-
-    gpio_set_dir( PICO_DEFAULT_SPI_CSN_PIN, GPIO_IN);
-
+    gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IN);
     gpio_pull_up(PICO_DEFAULT_SPI_CSN_PIN);
 
-    gpio_acknowledge_irq( PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE);
+    // Map PIO pins
+    pio_gpio_init(return_spi_pio(), PICO_DEFAULT_SPI_RX_PIN);
+    pio_gpio_init(return_spi_pio(), PICO_DEFAULT_SPI_SCK_PIN);
+    pio_gpio_init(return_spi_pio(), PICO_DEFAULT_SPI_TX_PIN);
+    
 
-    gpio_set_irq_enabled( PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true);
+    // Clear any pending interrupts FIRST
+    gpio_acknowledge_irq(PICO_DEFAULT_SPI_CSN_PIN,
+        GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE);
 
-    irq_set_exclusive_handler( IO_IRQ_BANK0, my_gpio_isr);
+    // Set ISR
+    irq_set_exclusive_handler(IO_IRQ_BANK0, my_gpio_isr);
 
+    // Enable GPIO interrupt on CSN
+    gpio_set_irq_enabled(PICO_DEFAULT_SPI_CSN_PIN,
+        GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE,
+        true);
+
+    // Enable IRQ bank
     irq_set_enabled(IO_IRQ_BANK0, true);
 }
 
@@ -144,9 +165,10 @@ PUBLIC void pio_dma_setup(void)
 {
     pio_spi.pio = pio0;
 
+    pio_spi.sm = pio_claim_unused_sm( pio_spi.pio, true);
+
     uint offset = pio_add_program( pio_spi.pio, &clocked_input_program);
 
-    pio_spi.sm = pio_claim_unused_sm( pio_spi.pio, true);
 
     clocked_input_program_init(
         pio_spi.pio,
@@ -177,46 +199,59 @@ PUBLIC void pio_dma_setup(void)
     );
 }
 
+
+// -----------------------------------------------------------------------------
+// size_DETECT_SETUP
+// -----------------------------------------------------------------------------
+
+PUBLIC void pio_size_setup(void)
+{}
+
+
 // -----------------------------------------------------------------------------
 // KEYBOARD PIO
 // -----------------------------------------------------------------------------
 
-PUBLIC void pio_keyboard_setup(void)
-{
-    pio_keyboard.pio = pio0;
+//PUBLIC void pio_keyboard_setup(void)
+//
+//   pio_keyboard.pio = pio1;
+//
+//   pio_keyboard.sm =
+//       pio_claim_unused_sm(
+//           pio_keyboard.pio,
+//           true
+//       );
+//
+//   uint offset = pio_add_program(
+//       pio_keyboard.pio,
+//       &keyboard_input_program
+//   );
+//
+//   keyboard_input_program_init(
+//       pio_keyboard.pio,
+//       pio_keyboard.sm,
+//       offset,
+//       PICO_DEFAULT_SPI_RX_PIN
+//   );
 
-    pio_keyboard.sm =
-        pio_claim_unused_sm(
-            pio_keyboard.pio,
-            true
-        );
 
-    uint offset = pio_add_program(
-        pio_keyboard.pio,
-        &keyboard_input_program
-    );
+//PUBLIC void spi_slave_writing(void)
+//{
+     //spi_init(spi_default, 1000 * 1000);
+    //spi_set_slave(spi_default, true);
+    //gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
+    //gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
+    //gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
+    //gpio_set_function(PICO_DEFAULT_SPI_CSN_PIN, GPIO_FUNC_SPI);
+    //// Make the SPI pins available to picotool
+    //bi_decl(bi_4pins_with_func(PICO_DEFAULT_SPI_RX_PIN, PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, PICO_DEFAULT_SPI_CSN_PIN, GPIO_FUNC_SPI));
 
-    keyboard_input_program_init(
-        pio_keyboard.pio,
-        pio_keyboard.sm,
-        offset,
-        PICO_DEFAULT_SPI_SCK_PIN
-    );
-}
+    
+//}
 
 // -----------------------------------------------------------------------------
 // ACCESSORS
 // -----------------------------------------------------------------------------
-
-PUBLIC PIO return_keyboard_pio(void)
-{
-    return pio_keyboard.pio;
-}
-
-PUBLIC uint return_keyboard_sm(void)
-{
-    return pio_keyboard.sm;
-}
 
 PUBLIC PIO return_spi_pio(void)
 {
@@ -231,4 +266,12 @@ PUBLIC uint return_spi_sm(void)
 PUBLIC int return_channel(void)
 {
     return pio_spi.dma_chan;
+}
+
+PUBLIC void set_size(uint32_t size) {
+    pio_spi.size = size;
+}
+
+PUBLIC uint32_t get_size(void){
+    return pio_spi.size;
 }

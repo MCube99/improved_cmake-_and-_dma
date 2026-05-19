@@ -20,7 +20,11 @@
 #define PICO_DEFAULT_SPI_SCK_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
 #define PICO_DEFAULT_SPI_CSN_PIN   ((PICO_DEFAULT_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
 #define PICO_DEFAULT_SPI_TX_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → send from slave
-#define PICO_DEFAULT_KEYBOARD_PIN ((PICO_DEFAULT_SPI_RX_PIN) + 4)   //6             // GPIO pin for keyboard input
+#define GARY_CODE                   254
+#define KEYBOARD_ESCAPE             0x0F
+
+//////////////////////////// DEFINED GPIO FOR PIO STATE MACHINES ////////////////////////////
+#define PICO_DEFAULT_SYNC_PIN     ((PICO_DEFAULT_SPI_RX_PIN) + 4)   //6             
 
 typedef uint8_t  BYTE;
 typedef uint16_t WORD;
@@ -32,19 +36,21 @@ typedef uint32_t DWORD;
 PUBLIC void set_gpio_pins();
 PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled);
 PUBLIC void pio_dma_setup(void);
-PUBLIC void pio_keyboard_setup(void);
+PUBLIC void queue_init();
+PUBLIC void set_size(uint32_t size);
+//PUBLIC void spi_slave_writing(void);
 
-PUBLIC int return_channel();
-PUBLIC PIO return_keyboard_pio();
-PUBLIC uint return_keyboard_sm();
 PUBLIC PIO return_spi_pio();
 PUBLIC uint return_spi_sm();
+PUBLIC int return_channel();
 
-PUBLIC void queue_init();
-PUBLIC uint8_t* give_array_address(void);
+
 PUBLIC int get_queue_size();
-PUBLIC inline void check_data();
+PUBLIC uint32_t get_size(void);
+
+PUBLIC uint8_t* give_array_address(void);
 PUBLIC uint8_t*  give_array_address_for_file_writing(void);
 
 extern volatile bool usb_check;
 extern volatile bool keyboard_check;
+extern volatile bool size_set;
