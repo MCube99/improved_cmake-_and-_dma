@@ -11,10 +11,17 @@
 
 typedef enum {
     PACKET_NONE,
+    PACKET_START,
     PACKET_USB,
     PACKET_KEYBOARD
-
 } packet_type_t;
+
+
+// -----------------------------------------------------------------------------
+// EXTERN VARIABLES 
+// -----------------------------------------------------------------------------
+
+extern volatile packet_type_t current_packet;
 
 // -----------------------------------------------------------------------------
 // QUEUE INITIALIZATION
@@ -36,7 +43,7 @@ PUBLIC int get_queue_size(void);
 // PACKET CLASSIFICATION
 // -----------------------------------------------------------------------------
 
-PUBLIC packet_type_t classify_packet(void);
+PUBLIC packet_type_t classify_packet();
 
 // -----------------------------------------------------------------------------
 // OPTIONAL HELPERS

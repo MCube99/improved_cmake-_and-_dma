@@ -1,0 +1,12 @@
+.program csn_edge 
+
+.pio_version 0
+
+.wrap_target
+
+wait 0 gpio 4
+irq nowait 0    	// signal sm1
+
+wait 1 gpio 4
+
+.wrap

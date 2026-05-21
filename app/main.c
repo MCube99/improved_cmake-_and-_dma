@@ -113,6 +113,7 @@ int main(void)
 
   board_init_after_tusb();
   queue_init();
+  pio_sync_setup();
   pio_dma_setup();
  //io_keyboard_setup();
   set_gpio_pins();
@@ -121,9 +122,11 @@ int main(void)
 
   while (1)
   {
+    classify_packet();
     tuh_task();
     msc_app_task();
     led_blinking_task();
+    classify_packet();
 
 
     // This section is atomic, in the sense that it cannot be interrupted by the GPIO interrupt handler, which is important to ensure that we don't accidentally trigger an interrupt while we are in the middle of processing the SPI or keyboard data, which could lead to data corruption or other issues. By disabling interrupts during this section, we can ensure that the program functions correctly and efficiently without any issues related to interrupt handling.
@@ -136,6 +139,7 @@ int main(void)
     {
       file_processing_main();
     }
+
   }
 
   sleep_ms(1); 

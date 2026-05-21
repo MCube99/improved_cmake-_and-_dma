@@ -2,47 +2,46 @@
 
 .program clocked_input
 
-.define public USB_KEY 0x1F
-
-initial_setup:
-    irq wait 0
-
-constant_sets:
-    set y, USB_KEY
+byte_setup:
     set x, 8
+    irq set 1 ;will be cleared when 
+    wait 0 irq 0 ; set by the edge detector
 
 get_size_byte:
     wait 0 pin 1
     wait 1 pin 1             
-    in pins, 1;             
+    in pins, 1             
     jmp x--, get_size_byte 
-    push 
-    jmp pin determine_usb_or_keyboard 
+    mov x, isr
+    push iffull block 
+    irq wait 0    ;This is to let the cpu know the size packet is ready
 
 determine_usb_or_keyboard:
-    irq wait 1
     pull block 
-    mov y, osr               ; Via autipull pulls it from pio sm put and then move it here to x for comparison
-    jmp x!=y keyboard_setup   ; If not 0x1F then go to usb 
-    jmp usb_setup
+    mov y, osr
+    jmp !y keyboard_setup
 
 usb_setup:
-    irq wait 2
+    irq set 1
+    wait 0 irq 0 ; this is for 
+    irq wait 1
 
 usb_processing:
     wait 0 pin 1           ; a do while loop of sorts, it keeps 
     wait 1 pin 1
     in pins, 1             ; Shifts bit count bits from source into the INPUT SHIFT REGISTER 
-    push iffull noblock            ; pushes bits from isr to RXFIFO. Does this every byte
-    jmp pin initial_setup  ; warning to jmp to initial setup if csn goes high
+    push  block            ; pushes bits from isr to RXFIFO. Does this every byte
+    jmp pin byte_setup  ; warning to jmp to initial setup if csn goes high
     jmp usb_processing
 
 .wrap_target
 keyboard_setup:
+    irq wait 2
+    wait 1 irq 0
     pull block
     mov x, osr              ; should be 0x0F because I am putting 0x0F in here via sm_put
-    jmp x!=y initial_setup ; if not 0x0F, then
-
+    jmp !x byte_setup ; if not 0x0F, then
+ 
 keyboard_processing: 
     set x, 7               ; for every clock cycle
     wait 0 pin 1

@@ -15,6 +15,7 @@
 
 #include "clocked_input.pio.h"
 
+#include "edge_detector.pio.h"
 // -----------------------------------------------------------------------------
 // STRUCTURES
 // -----------------------------------------------------------------------------
@@ -23,7 +24,7 @@ typedef struct {
     PIO pio;
     uint sm;
     int dma_chan;
-    uint32_t size;
+    uint8_t size;
     dma_channel_config dma_cfg;
 } pio_spi_t;
 
@@ -69,24 +70,15 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
 
     if (events & GPIO_IRQ_EDGE_FALL) {
 
-        if(pio_interrupt_get(return_spi_pio(), 0)) {
-            pio_interrupt_clear(return_spi_pio(), 0);
+        if(current_packet == PACKET_NONE) {
+            current_packet = PACKET_START;
+        }
+
+        if(current_packet == PACKET_USB) {
+            dma_start_channel_mask(1u << return_channel()); 
         }
 
 
-        if(pio_interrupt_get(return_spi_pio(), 1)) {
-            pio_interrupt_clear(return_spi_pio(), 1);
-        }
-
-
-        if(pio_interrupt_get(return_spi_pio(), 2)) {	
-            pio_interrupt_clear(return_spi_pio(), 2);
-            dma_start_channel_mask(1u << return_channel());
-        }
-
-        if(keyboard_check) {	
-            pio_interrupt_clear(return_spi_pio(), 2);
-        }        
     }
 
     // -------------------------------------------------------------------------
@@ -94,27 +86,15 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
     // -------------------------------------------------------------------------
 
     if (events & GPIO_IRQ_EDGE_RISE) {
-        packet_type_t type = classify_packet();
         
-        switch (type) {
+        switch (current_packet) {
         case PACKET_USB:
             keyboard_check = false;
-
-            if (spi_irq_disabled) 
-            { 
-                gpio_set_irq_active(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true);
-                spi_irq_disabled = false;
-            }    
-                break;
+            break;
 
         case PACKET_KEYBOARD:
-
-
             usb_check = false;
             keyboard_check = true;
-
-            gpio_set_irq_active(PICO_DEFAULT_SPI_CSN_PIN,GPIO_IRQ_EDGE_FALL |GPIO_IRQ_EDGE_RISE,false);
-            spi_irq_disabled = true;
             break;
 
         case PACKET_NONE:
@@ -123,6 +103,7 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
         }
     }
 }
+
 
 // -----------------------------------------------------------------------------
 // GPIO SETUP
@@ -197,57 +178,40 @@ PUBLIC void pio_dma_setup(void)
         BUF_LEN,
         false
     );
+
+
+
+}
+
+PUBLIC void read_first_byte()
+{
+    dma_start_channel_mask(1u << return_first_byte_channel()); 
 }
 
 
 // -----------------------------------------------------------------------------
-// size_DETECT_SETUP
-// -----------------------------------------------------------------------------
 
-PUBLIC void pio_size_setup(void)
-{}
+// SYNC PIO MANAGEMENT
 
+PUBLIC void pio_sync_setup(void)
+{
+    uint offset = pio_add_program(pio0, &csn_edge_program);
+    uint sm = pio_claim_unused_sm(pio0, true);
 
-// -----------------------------------------------------------------------------
-// KEYBOARD PIO
-// -----------------------------------------------------------------------------
+    pio_sm_config c = csn_edge_program_get_default_config(offset);
 
-//PUBLIC void pio_keyboard_setup(void)
-//
-//   pio_keyboard.pio = pio1;
-//
-//   pio_keyboard.sm =
-//       pio_claim_unused_sm(
-//           pio_keyboard.pio,
-//           true
-//       );
-//
-//   uint offset = pio_add_program(
-//       pio_keyboard.pio,
-//       &keyboard_input_program
-//   );
-//
-//   keyboard_input_program_init(
-//       pio_keyboard.pio,
-//       pio_keyboard.sm,
-//       offset,
-//       PICO_DEFAULT_SPI_RX_PIN
-//   );
-
-
-//PUBLIC void spi_slave_writing(void)
-//{
-     //spi_init(spi_default, 1000 * 1000);
-    //spi_set_slave(spi_default, true);
-    //gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
-    //gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
-    //gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
-    //gpio_set_function(PICO_DEFAULT_SPI_CSN_PIN, GPIO_FUNC_SPI);
-    //// Make the SPI pins available to picotool
-    //bi_decl(bi_4pins_with_func(PICO_DEFAULT_SPI_RX_PIN, PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, PICO_DEFAULT_SPI_CSN_PIN, GPIO_FUNC_SPI));
-
+    sm_config_set_in_pins(&c, PICO_DEFAULT_SPI_CSN_PIN );
+    pio_gpio_init(pio0, PICO_DEFAULT_SPI_CSN_PIN   );
     
-//}
+    gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IN);
+
+    pio_sm_init(pio0, sm, offset, &c);
+
+// Start SM
+    pio_sm_set_enabled(pio0, sm, true);
+}
+// -----------------------------------------------------------------------------
+
 
 // -----------------------------------------------------------------------------
 // ACCESSORS
@@ -268,10 +232,8 @@ PUBLIC int return_channel(void)
     return pio_spi.dma_chan;
 }
 
+
+
 PUBLIC void set_size(uint32_t size) {
     pio_spi.size = size;
-}
-
-PUBLIC uint32_t get_size(void){
-    return pio_spi.size;
 }
