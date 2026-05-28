@@ -14,6 +14,7 @@ typedef enum {
     PACKET_START,
     PACKET_USB,
     PACKET_KEYBOARD
+
 } packet_type_t;
 
 
@@ -43,8 +44,8 @@ PUBLIC int get_queue_size(void);
 // PACKET CLASSIFICATION
 // -----------------------------------------------------------------------------
 
-PUBLIC packet_type_t classify_packet();
-
+PUBLIC void classify_packet(void);
+PUBLIC void check_usb_transfer(); 
 // -----------------------------------------------------------------------------
 // OPTIONAL HELPERS
 // -----------------------------------------------------------------------------

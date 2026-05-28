@@ -93,7 +93,7 @@ void clear_array(char* message);
 volatile bool usb_check = false; 
 volatile bool keyboard_check = false;
 volatile bool size_byte_set = false;
-
+bool usb_transfer_done = false;
 
 /*------------- MAIN -------------*/
 int main(void)
@@ -113,33 +113,41 @@ int main(void)
 
   board_init_after_tusb();
   queue_init();
-  pio_sync_setup();
+  testIRQPIO(0); 
   pio_dma_setup();
  //io_keyboard_setup();
   set_gpio_pins();
+//  pio_keyboard_setup();
+
 
   msc_app_init();
 
   while (1)
   {
-    classify_packet();
+
+
     tuh_task();
     msc_app_task();
+
     led_blinking_task();
-    classify_packet();
 
-
-    // This section is atomic, in the sense that it cannot be interrupted by the GPIO interrupt handler, which is important to ensure that we don't accidentally trigger an interrupt while we are in the middle of processing the SPI or keyboard data, which could lead to data corruption or other issues. By disabling interrupts during this section, we can ensure that the program functions correctly and efficiently without any issues related to interrupt handling.
-    // Need to prevent flag_info from being modified by the interrupt handler.
-
-
-    
-    
-    if (usb_check) // This means that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
-    {
-      file_processing_main();
+    if(size_byte_set) {
+        classify_packet(); 
     }
 
+
+    if (usb_check) // This means that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
+    {
+        check_usb_transfer();
+        usb_check = false; // reset flag for next transaction
+    }
+
+   if( usb_transfer_done) // This means that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
+    {
+      file_processing_main();
+      usb_transfer_done = false; // reset flag for next transaction
+    }
+    
   }
 
   sleep_ms(1); 
@@ -277,7 +285,7 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
         // STOP condition (highest priority)
         if (ch == ESC || ch == ENTER || ch == '\r' || ch == '\n')
         {
-           pio_sm_put_blocking( return_spi_pio(), return_spi_sm(), KEYBOARD_ESCAPE); //puts the first byte of the packet into the PIO state machine for processing
+           pio_sm_put_blocking( return_spi_pio(), return_spi_sm(), 0); //puts the first byte of the packet into the PIO state machine for processing
            keyboard_check = false;
            break;
         }

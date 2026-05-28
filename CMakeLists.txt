@@ -5,12 +5,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS        OFF)
-set(PICO_TINYUSB_PATH "$ENV{PICO_TINYUSB_PATH}")
+set(PICO_TINYUSB_PATH "$ENV{PICO_TINYUSB_PATH}" CACHE PATH "Path to the TinyUSB path" FORCE)
 message(STATUS "PICO_TINYUSB_PATH: ${PICO_TINYUSB_PATH}")
-set(ENV{PICO_SDK_PATH} "H:/pico_sdk")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(PICO_TOOLCHAIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/toolchains)
 message(STATUS "PICO_TOOLCHAIN_DIR: ${PICO_TOOLCHAIN_DIR}")
+
 
 # Initialise pico_sdk from installed location
 # (note this can come from environment, CMake cache etc)
@@ -24,12 +24,13 @@ endif()
 set(sdkVersion 2.2.0)
 set(toolchainVersion 14_2_Rel1)
 set(picotoolVersion 2.2.0)
-
-
+set(PICO_USE_PREBUILT_PICOTOOL ON CACHE BOOL "" FORCE)
+set(PICOTOOL_FETCH_FROM_GIT OFF CACHE BOOL "" FORCE)
+set(picotool_DIR "H:/picotool/install" CACHE PATH "" FORCE)
+set(PICO_NO_PICOTOOL 1)
 # ====================================================================================
 set(PICO_BOARD pico CACHE STRING "Board type")
 set(PICO_SDK_PATH "H:/pico_sdk" CACHE PATH "Path to the Raspberry Pi Pico SDK" FORCE)
-
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
@@ -41,8 +42,10 @@ pico_sdk_init()
 
 add_compile_options(
         -Wall                # Enable most warning messages
-        -Wno-format          # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
-        -Wno-unused-function # we have some for the docs that aren't called
+        -Wextra              # Enable extra warning messages
+        -Wno-unused-parameter # Warn about unused parameters in functions
+        -Wno-unused-function  # Warn about unused functions
+        -Wno-error=free-nonheap-object
         )
 
 

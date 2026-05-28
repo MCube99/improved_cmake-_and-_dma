@@ -13,7 +13,7 @@
 // -----------------------------------------------------------------------------
 // EXTERN VARIABLE STORAGE
 // -----------------------------------------------------------------------------
- volatile packet_type_t current_packet = PACKET_NONE;
+ volatile packet_type_t current_packet = PACKET_START;
 
 // -----------------------------------------------------------------------------
 // QUEUE STORAGE
@@ -53,64 +53,38 @@ PUBLIC int get_queue_size(void) {
 // PACKET CLASSIFICATION
 // -----------------------------------------------------------------------------
 
-PUBLIC packet_type_t classify_packet() {
-    uint32_t size = 0;
+PUBLIC void classify_packet(void) {
 
-     if (pio_interrupt_get(return_spi_pio(),0)) {
-         pio_interrupt_clear(return_spi_pio(), return_spi_sm());
-         size = pio_sm_get(return_spi_pio(), return_spi_sm());
-         set_size(size);
-        size = pio_sm_get(return_spi_pio(), return_spi_sm());
-        set_size(size);
-      }
- // i//  uint8_t size = size >> 24;
-    
+    if ((return_size() != GARY_CODE )) {
+        pio_sm_put(return_spi_pio(), return_spi_sm(), return_size()); 
+        uint32_t status = save_and_disable_interrupts();
+        current_packet = PACKET_USB;
+        restore_interrupts(status);
+    }
+
+    if (return_size()== GARY_CODE ) {
+        pio_sm_put(return_spi_pio(), return_spi_sm(), 0);
+        current_packet = PACKET_KEYBOARD;
+    }
+
+    else {
+      current_packet = PACKET_NONE;
+    }
+    size_byte_set = false; // reset flag for next packet
+
+}
+
+PUBLIC void check_usb_transfer() {
+
     uintptr_t base = (uintptr_t)&myQueue.buffer[0];
 
     uintptr_t write = dma_hw->ch[return_channel()].write_addr;
 
     uint32_t difference = write - base;
 
-    if(size/2 == difference) {
-        usb_check = true ;
+    if(difference ==  return_size())
+    {
+        usb_transfer_done = true;
+        current_packet = PACKET_NONE;
     }
-//   static uint8_t i = 0; //should never go beyind 2
-
- //  if(myQueue.buffer[i] == 0 || myQueue.buffer[i] ==1)
-  //  {
-//        ++i;
-//    } 
-//        
-//    uint8_t first_usb = myQueue.buffer[i];
-
-    // -------------------------------------------------------------------------
-    // VALID SPI PACKET
-    // -------------------------------------------------------------------------
-
-    if ((size != GARY_CODE && size > 1)) {
-        pio_sm_put(return_spi_pio(), return_spi_sm(), size); 
-        current_packet = PACKET_USB;
-        return PACKET_USB;
-    }
-
-    // -------------------------------------------------------------------------
-    // KEYBOARD PACKET
-    // -------------------------------------------------------------------------
-
-    if (size == GARY_CODE || size == 0) {
-        pio_sm_put(return_spi_pio(), return_spi_sm(), 0);
-        current_packet = PACKET_KEYBOARD;
-        return PACKET_KEYBOARD;
-    }
-
-    else {
-      current_packet = PACKET_NONE;
-      return PACKET_NONE;
-    }
-
-    // -------------------------------------------------------------------------
-    // UNKNOWN / INCOMPLETE PACKET
-    // -------------------------------------------------------------------------
-
-    return PACKET_NONE;
 }

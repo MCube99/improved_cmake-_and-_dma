@@ -2,52 +2,47 @@
 
 .program clocked_input
 
-byte_setup:
-    set x, 8
-    irq set 1 ;will be cleared when 
-    wait 0 irq 0 ; set by the edge detector
+constant_sets:
+    set x, 7    
+    wait 0 gpio 4
 
 get_size_byte:
     wait 0 pin 1
     wait 1 pin 1             
-    in pins, 1             
-    jmp x--, get_size_byte 
-    mov x, isr
-    push iffull block 
-    irq wait 0    ;This is to let the cpu know the size packet is ready
+    in pins, 1;             
+    jmp x--, get_size_byte
+    irq wait 0
 
 determine_usb_or_keyboard:
     pull block 
     mov y, osr
     jmp !y keyboard_setup
-
-usb_setup:
-    irq set 1
-    wait 0 irq 0 ; this is for 
     irq wait 1
+    wait 0 gpio 4
+    
+setting_count_for_usb:
+    set x, 7 
 
 usb_processing:
     wait 0 pin 1           ; a do while loop of sorts, it keeps 
     wait 1 pin 1
     in pins, 1             ; Shifts bit count bits from source into the INPUT SHIFT REGISTER 
-    push  block            ; pushes bits from isr to RXFIFO. Does this every byte
-    jmp pin byte_setup  ; warning to jmp to initial setup if csn goes high
-    jmp usb_processing
+    jmp x-- usb_processing ; goes through every byte size amounts of times. With autopush, should be otputting data everytime the RXFIFO is fulsize amounts of times. With autopush, should be otputting data everytime the RXFIFO is fulll
+    jmp y-- setting_count_for_usb    ; this would have stored data from the mov y, osr which can only come from the mov y, osr
+    jmp pin constant_sets  ; warning to jmp to initial setup if csn goes high
 
 .wrap_target
 keyboard_setup:
-    irq wait 2
-    wait 1 irq 0
-    pull block
-    mov x, osr              ; should be 0x0F because I am putting 0x0F in here via sm_put
-    jmp !x byte_setup ; if not 0x0F, then
- 
+    set y, 7               ; for every clock cycle
+    mov x, osr 
+    jmp !x get_size_byte; will put in 0 if its an escape character or something, and that will cause it to jump to the top 
+
 keyboard_processing: 
-    set x, 7               ; for every clock cycle
+    wait 0 gpio 4
     wait 0 pin 1
     wait 1 pin 1
     out pins, 1
-    jmp x-- keyboard_processing
+    jmp y-- keyboard_processing
 
 .wrap
 
@@ -59,7 +54,7 @@ static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uin
     // Recieving pin master to slave/Gary to a brown man
     sm_config_set_in_pins(&c, pin);  // reading data from the in pin(TX PIN) and use this to fill the isr. 
     pio_sm_set_consecutive_pindirs(pio, sm, pin, 3, false); // Sets it as input. This is for all the pins listed above
-    sm_config_set_in_shift(&c,false,false, 8); // keeps an eye on the data shifted into the isr, and once the threshold is reached(a byte) it outputs it to the RXFIFO 
+    sm_config_set_in_shift(&c,false,true, 8); // keeps an eye on the data shifted into the isr, and once the threshold is reached(a byte) it outputs it to the RXFIFO 
     sm_config_set_jmp_pin(&c, pin + 2); // csn pin and it jumps high
 
     // pin      = data    1
@@ -75,7 +70,7 @@ static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uin
     sm_config_set_out_shift(&c,true,false, 8);
 
     pio_sm_init(pio, sm, offset, &c);
-    pio_sm_set_enabled(pio, sm, true);
+    pio_sm_set_enabled(pio,sm,true);
 
 }
 

@@ -33,12 +33,8 @@ typedef uint32_t DWORD;
 
 
 
-PUBLIC void set_gpio_pins();
-PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled);
 PUBLIC void pio_dma_setup(void);
-PUBLIC void pio_sync_setup(void);
 PUBLIC void queue_init();
-PUBLIC void set_size(uint32_t size);
 PUBLIC void read_first_byte(void);
 //PUBLIC void spi_slave_writing(void);
 
@@ -46,9 +42,17 @@ PUBLIC PIO return_spi_pio();
 PUBLIC uint return_spi_sm();
 PUBLIC int return_channel();
 PUBLIC int return_first_byte_channel(void);
+PUBLIC uint32_t return_size();
+
+
+PUBLIC void set_gpio_pins();
+PUBLIC void set_size(uint32_t size);
+PUBLIC void set_pio_irq(uint pio_irq);
+PUBLIC void testIRQPIO(uint pioNum); 
 
 PUBLIC int get_queue_size();
 PUBLIC uint32_t get_size(void);
+PUBLIC uint get_pio_irq(void);
 
 PUBLIC uint8_t* give_array_address(void);
 PUBLIC uint8_t*  give_array_address_for_file_writing(void);
@@ -57,6 +61,7 @@ extern volatile bool usb_check;
 extern volatile bool keyboard_check;
 extern volatile bool size_set;
 extern volatile bool size_byte_set;
+extern bool usb_transfer_done;
 
 
 

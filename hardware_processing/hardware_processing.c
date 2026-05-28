@@ -15,7 +15,6 @@
 
 #include "clocked_input.pio.h"
 
-#include "edge_detector.pio.h"
 // -----------------------------------------------------------------------------
 // STRUCTURES
 // -----------------------------------------------------------------------------
@@ -24,7 +23,8 @@ typedef struct {
     PIO pio;
     uint sm;
     int dma_chan;
-    uint8_t size;
+    uint32_t size;
+    uint pio_irq;
     dma_channel_config dma_cfg;
 } pio_spi_t;
 
@@ -34,76 +34,29 @@ typedef struct {
 
 static pio_spi_t pio_spi;
 
-static volatile bool spi_irq_disabled = false;
 
 // -----------------------------------------------------------------------------
-// GPIO IRQ CONTROL
+// PIO ISR
 // -----------------------------------------------------------------------------
 
-PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled) {
-    io_bank0_irq_ctrl_hw_t *irq_ctrl_base = get_core_num() ?  
-    &io_bank0_hw->proc1_irq_ctrl : &io_bank0_hw->proc0_irq_ctrl;
-    io_rw_32 *en_reg = &irq_ctrl_base->inte[gpio / 8];
-    events <<= 4 * (gpio % 8);
-    if (enabled)
-    {
-        hw_set_bits(en_reg, events);
-    }
-    else
-    {
-        hw_clear_bits(en_reg, events);
-    }
-}
+PRIVATE void __not_in_flash_func(my_pio_isr)(void) {
 
-// -----------------------------------------------------------------------------
-// GPIO ISR
-// -----------------------------------------------------------------------------
-
-PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
-    uint32_t events =  gpio_get_irq_event_mask(PICO_DEFAULT_SPI_CSN_PIN);
-
-    gpio_acknowledge_irq(PICO_DEFAULT_SPI_CSN_PIN,events);
-
-    // -------------------------------------------------------------------------
-    // CSn LOW -> START DMA AND CHECK STAGES 
-    // -------------------------------------------------------------------------
-
-    if (events & GPIO_IRQ_EDGE_FALL) {
-
-        if(current_packet == PACKET_NONE) {
-            current_packet = PACKET_START;
-        }
-
-        if(current_packet == PACKET_USB) {
-            dma_start_channel_mask(1u << return_channel()); 
-        }
-
-
+    if(pio_interrupt_get(pio_spi.pio,0)) {
+        pio_spi.size = pio_sm_get(pio_spi.pio, pio_spi.sm);
+        size_byte_set = true;
+        pio_interrupt_clear(pio_spi.pio, 0);
     }
 
-    // -------------------------------------------------------------------------
-    // CSn HIGH -> PROCESS PACKET
-    // -------------------------------------------------------------------------
+    if(pio_interrupt_get(pio_spi.pio,1)) { // This is the one to use to detect whether its usb or keyboard transfer 
+        pio_interrupt_clear(pio_spi.pio, 1);
+        dma_start_channel_mask(1u << return_channel()); 
+        usb_check = true;
+    }
 
-    if (events & GPIO_IRQ_EDGE_RISE) {
-        
-        switch (current_packet) {
-        case PACKET_USB:
-            keyboard_check = false;
-            break;
+    if(pio_interrupt_get(pio_spi.pio,2)) { // making this for usb use in the future
 
-        case PACKET_KEYBOARD:
-            usb_check = false;
-            keyboard_check = true;
-            break;
-
-        case PACKET_NONE:
-        default:
-            break;
-        }
     }
 }
-
 
 // -----------------------------------------------------------------------------
 // GPIO SETUP
@@ -111,6 +64,9 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
 
 PUBLIC void set_gpio_pins(void)
 {
+    uint PIO_IRQ = PIO0_IRQ_0;
+    set_pio_irq(PIO_IRQ);
+
     // CSN pin setup
     gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
     gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IN);
@@ -120,43 +76,58 @@ PUBLIC void set_gpio_pins(void)
     pio_gpio_init(return_spi_pio(), PICO_DEFAULT_SPI_RX_PIN);
     pio_gpio_init(return_spi_pio(), PICO_DEFAULT_SPI_SCK_PIN);
     pio_gpio_init(return_spi_pio(), PICO_DEFAULT_SPI_TX_PIN);
+
     
+    pio_set_irq0_source_mask_enabled(return_spi_pio(), 3840, true); // setting all 4 at once
+    irq_set_exclusive_handler(get_pio_irq(), my_pio_isr);
+    irq_set_enabled(PIO_IRQ, true); // Clear any pending interrupts FIRST
+}
 
-    // Clear any pending interrupts FIRST
-    gpio_acknowledge_irq(PICO_DEFAULT_SPI_CSN_PIN,
-        GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE);
+PUBLIC void testIRQPIO(uint pioNum) {
+    PIO PIO_O = pioNum ? pio1 : pio0; //Selects the pio instance (0 or 1 for pioNUM)
+    uint PIO_IRQ = pioNum ? PIO1_IRQ_0 : PIO0_IRQ_0;  // Selects the NVIC PIO_IRQ to use
 
-    // Set ISR
-    irq_set_exclusive_handler(IO_IRQ_BANK0, my_gpio_isr);
+    pio_spi.pio = PIO_O;
+    pio_spi.pio_irq = PIO_IRQ;
 
-    // Enable GPIO interrupt on CSN
-    gpio_set_irq_enabled(PICO_DEFAULT_SPI_CSN_PIN,
-        GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE,
-        true);
+		
+    // Our assembled program needs to be loaded into this PIO's instruction
+    // memory. This SDK function will find a location (offset) in the
+    // instruction memory where there is enough space for our program. We need
+    // to remember this location!
+    uint offset = pio_add_program( pio_spi.pio, &clocked_input_program);
 
-    // Enable IRQ bank
-    irq_set_enabled(IO_IRQ_BANK0, true);
+    // Find a free state machine on our chosen PIO (erroring if there are
+    // none). Configure it to run our program, and start it, using the
+    // helper function we included in our .pio file.
+    uint SM = pio_claim_unused_sm(PIO_O, true);
+    pio_spi.sm = SM;
+    clocked_input_program_init(
+        PIO_O,
+        SM,
+        offset,
+        PICO_DEFAULT_SPI_RX_PIN);
+
+//enables IRQ for the statemachine - setting IRQ0_INTE - interrupt enable register
+    //pio_set_irq0_source_enabled(PIO_O, pis_interrupt0, true); // sets IRQ0
+    //pio_set_irq0_source_enabled(PIO_O, pis_interrupt1, true); // sets IRQ1
+	//pio_set_irq0_source_enabled(PIO_O, pis_interrupt2, true); // sets IRQ2
+	//pio_set_irq0_source_enabled(PIO_O, pis_interrupt3, true); // sets IRQ3
+  //*********or************	
+    pio_sm_restart(PIO_O, SM);
+	pio_set_irq0_source_mask_enabled(PIO_O, 3840, true); //setting all 4 at once
+	
+    irq_set_exclusive_handler(PIO_IRQ, my_pio_isr);  //Set the handler in the NVIC
+    irq_set_enabled(PIO_IRQ, true);                    //enabling the PIO1_IRQ_0
+
 }
 
 // -----------------------------------------------------------------------------
 // PIO + DMA SETUP
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------
 
 PUBLIC void pio_dma_setup(void)
 {
-    pio_spi.pio = pio0;
-
-    pio_spi.sm = pio_claim_unused_sm( pio_spi.pio, true);
-
-    uint offset = pio_add_program( pio_spi.pio, &clocked_input_program);
-
-
-    clocked_input_program_init(
-        pio_spi.pio,
-        pio_spi.sm,
-        offset,
-        PICO_DEFAULT_SPI_RX_PIN);
-
     pio_spi.dma_chan = dma_claim_unused_channel(true);
     pio_spi.dma_cfg = dma_channel_get_default_config(pio_spi.dma_chan);
     channel_config_set_transfer_data_size( &pio_spi.dma_cfg, DMA_SIZE_8);
@@ -167,7 +138,7 @@ PUBLIC void pio_dma_setup(void)
         pio_get_dreq(
             pio_spi.pio,
             pio_spi.sm,
-            false
+            false // false for RX, true for TX. We are recieving data from the state machine, so we set this to false
         )
     );
     dma_channel_configure(
@@ -178,39 +149,9 @@ PUBLIC void pio_dma_setup(void)
         BUF_LEN,
         false
     );
-
-
-
-}
-
-PUBLIC void read_first_byte()
-{
-    dma_start_channel_mask(1u << return_first_byte_channel()); 
 }
 
 
-// -----------------------------------------------------------------------------
-
-// SYNC PIO MANAGEMENT
-
-PUBLIC void pio_sync_setup(void)
-{
-    uint offset = pio_add_program(pio0, &csn_edge_program);
-    uint sm = pio_claim_unused_sm(pio0, true);
-
-    pio_sm_config c = csn_edge_program_get_default_config(offset);
-
-    sm_config_set_in_pins(&c, PICO_DEFAULT_SPI_CSN_PIN );
-    pio_gpio_init(pio0, PICO_DEFAULT_SPI_CSN_PIN   );
-    
-    gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_IN);
-
-    pio_sm_init(pio0, sm, offset, &c);
-
-// Start SM
-    pio_sm_set_enabled(pio0, sm, true);
-}
-// -----------------------------------------------------------------------------
 
 
 // -----------------------------------------------------------------------------
@@ -232,8 +173,22 @@ PUBLIC int return_channel(void)
     return pio_spi.dma_chan;
 }
 
+PUBLIC uint32_t return_size() 
+{
+    return pio_spi.size;
+}
 
-
-PUBLIC void set_size(uint32_t size) {
+PUBLIC void set_size(uint32_t size) 
+{
     pio_spi.size = size;
+}
+
+PUBLIC void set_pio_irq(uint pio_irq) 
+{
+     pio_spi.pio_irq = pio_irq;
+}
+
+PUBLIC uint get_pio_irq(void) 
+{
+    return pio_spi.pio_irq;
 }

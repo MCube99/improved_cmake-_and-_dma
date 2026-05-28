@@ -5,7 +5,6 @@ set(hardware_processing_Headers ${CMAKE_CURRENT_SOURCE_DIR}/hardware_processing.
 
 add_library(hardware_processing STATIC ${hardware_processing_Sources})
 pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/clocked_input.pio)
-pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/edge_detector.pio)
 
 target_include_directories(hardware_processing
     PUBLIC
