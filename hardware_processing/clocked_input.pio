@@ -3,25 +3,27 @@
 .program clocked_input
 
 constant_sets:
-    set x, 7    
+    set x, 8
+    set pindirs, 1 
     wait 0 gpio 4
 
 get_size_byte:
     wait 0 pin 1
     wait 1 pin 1             
     in pins, 1;             
-    jmp x--, get_size_byte
-    irq wait 0
+    jmp x-- get_size_byte
+    jmp pin determine_usb_or_keyboard
 
 determine_usb_or_keyboard:
-    pull block 
+    mov x, isr
+    pull
     mov y, osr
-    jmp !y keyboard_setup
-    irq wait 1
-    wait 0 gpio 4
+    out null, 32
+    jmp x!=y keyboard_setup
     
 setting_count_for_usb:
     set x, 7 
+    wait 0 gpio 4
 
 usb_processing:
     wait 0 pin 1           ; a do while loop of sorts, it keeps 
@@ -29,51 +31,37 @@ usb_processing:
     in pins, 1             ; Shifts bit count bits from source into the INPUT SHIFT REGISTER 
     jmp x-- usb_processing ; goes through every byte size amounts of times. With autopush, should be otputting data everytime the RXFIFO is fulsize amounts of times. With autopush, should be otputting data everytime the RXFIFO is fulll
     jmp y-- setting_count_for_usb    ; this would have stored data from the mov y, osr which can only come from the mov y, osr
+    wait 1 gpio 4
     jmp pin constant_sets  ; warning to jmp to initial setup if csn goes high
 
-.wrap_target
-keyboard_setup:
-    set y, 7               ; for every clock cycle
-    mov x, osr 
-    jmp !x get_size_byte; will put in 0 if its an escape character or something, and that will cause it to jump to the top 
 
-keyboard_processing: 
+keyboard_setup:
+    pull block
+    mov y, osr 
+    jmp !y constant_sets; will put in 0 if its an escape character or something, and that will cause it to jump to the top 
     wait 0 gpio 4
+
+.wrap_target
+keyboard_processing: 
     wait 0 pin 1
     wait 1 pin 1
     out pins, 1
-    jmp y-- keyboard_processing
-
+    jmp pin keyboard_setup
 .wrap
 
 % c-sdk {
 
-static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uint pin) {
+static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uint pin, uint jmp_pin) {
     pio_sm_config c = clocked_input_program_get_default_config(offset);
-
-    // Recieving pin master to slave/Gary to a brown man
-    sm_config_set_in_pins(&c, pin);  // reading data from the in pin(TX PIN) and use this to fill the isr. 
-    pio_sm_set_consecutive_pindirs(pio, sm, pin, 3, false); // Sets it as input. This is for all the pins listed above
-    sm_config_set_in_shift(&c,false,true, 8); // keeps an eye on the data shifted into the isr, and once the threshold is reached(a byte) it outputs it to the RXFIFO 
-    sm_config_set_jmp_pin(&c, pin + 2); // csn pin and it jumps high
-
-    // pin      = data    1
-    // pin + 1  = clock   2
-    // pin + 2  = CSN     3
-
-
-
-
-    // TX pin outputting when the csn goes low and when its time. This is for the keyboard 
+    sm_config_set_in_pins(&c, pin );
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 3, false); // Set the RX, SCK, CSN pins as inputs and the TX pin as output. This is for the state machine to read the data from the master
+    sm_config_set_jmp_pin(&c, jmp_pin);
+    sm_config_set_set_pins(&c,pin + 3, 1 );
     sm_config_set_out_pins(&c, pin + 3, 1);
-    pio_sm_set_consecutive_pindirs(pio, sm, pin + 3, 1, true);
-    sm_config_set_out_shift(&c,true,false, 8);
-
+    sm_config_set_in_shift(&c, false, true, 8);
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio,sm,true);
-
 }
-
 ///To do. Try and implement some irq stuff in the background so that it can communicate with the main c code and I can 
 /// debug from there.
 

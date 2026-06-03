@@ -13,8 +13,8 @@ typedef enum {
     PACKET_NONE,
     PACKET_START,
     PACKET_USB,
-    PACKET_KEYBOARD
-
+    PACKET_KEYBOARD,
+    PACKET_KEYBOARD_PROCESSING
 } packet_type_t;
 
 
@@ -40,6 +40,9 @@ PUBLIC uint8_t *give_array_address_for_file_writing(void);
 
 PUBLIC int get_queue_size(void);
 
+PUBLIC char* convert_to_string(const volatile uint8_t *ch);
+
+PUBLIC void send_data_to_pio_for_keyboard(); 
 // -----------------------------------------------------------------------------
 // PACKET CLASSIFICATION
 // -----------------------------------------------------------------------------
