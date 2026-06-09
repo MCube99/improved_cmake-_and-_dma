@@ -1,7 +1,7 @@
 cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH PARENT_DIR)
 
-set(hardware_processing_Sources ${CMAKE_CURRENT_SOURCE_DIR}/hardware_processing.c ${CMAKE_CURRENT_SOURCE_DIR}/queue.c)
-set(hardware_processing_Headers ${CMAKE_CURRENT_SOURCE_DIR}/hardware_processing.h ${CMAKE_CURRENT_SOURCE_DIR}/queue.h)
+set(hardware_processing_Sources ${CMAKE_CURRENT_SOURCE_DIR}/hardware_processing.c ${CMAKE_CURRENT_SOURCE_DIR}/queue.c ${CMAKE_CURRENT_SOURCE_DIR}/ring_buf.c)
+set(hardware_processing_Headers ${CMAKE_CURRENT_SOURCE_DIR}/hardware_processing.h ${CMAKE_CURRENT_SOURCE_DIR}/queue.h ${CMAKE_CURRENT_SOURCE_DIR}/ring_buf.h)
 
 add_library(hardware_processing STATIC ${hardware_processing_Sources})
 pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/clocked_input.pio)

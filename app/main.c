@@ -68,6 +68,15 @@
 #include "pico/stdlib.h"
 #include "hid.h"
 #include "hardware/pio.h"
+ 
+
+#define BSIZE 64
+#define ESC 27
+#define ENTER 10
+#define END_OF_TEXT 3   //Ctrl+C
+#define CANCEL 24       //Cancel
+
+
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
@@ -76,14 +85,12 @@ void led_blinking_task(void);
 static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was uint8_t originally
 
 static void process_kbd_report(hid_keyboard_report_t const *report);
+static char* convert_to_string(const volatile uint8_t *ch);
 PRIVATE uint8_t reverse_bits(uint8_t value);
 void clear_array(char* message);
 
 
-volatile bool usb_check = false; 
-volatile bool keyboard_check = false;
-volatile bool size_byte_set = false;
-volatile bool usb_transfer_done = false;
+
 
 /*------------- MAIN -------------*/
 int main(void)
@@ -103,59 +110,45 @@ int main(void)
 
   board_init_after_tusb();
   queue_init();
-  //testIRQPIO(0); 
   pio_dma_setup();
  //io_keyboard_setup();
   set_gpio_pins();
 //  pio_keyboard_setup();
-
-
   msc_app_init();
 
-  while (1)
-  {
-
-
-    if(size_byte_set) {
-        classify_packet(); 
-    }
+while (1)
+{
     tuh_task();
     msc_app_task();
-
-    if(size_byte_set) {
-        classify_packet(); 
-    }
     led_blinking_task();
+    event_type_t event;
 
-    if(size_byte_set) {
-        classify_packet(); 
-    }
-
-    if(current_packet == PACKET_KEYBOARD_PROCESSING) {
-        send_data_to_pio_for_keyboard();
-    }
-
-
-    if (usb_check) // This means that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
+    while (dequeue_interrupts(&event))
     {
-        check_usb_transfer();
-      file_processing_main();
+        switch(event)
+        {
+            case EVENT_SIZE_PACKET_RECIEVED:
+                classify_packet();
+                break;
 
-        usb_check = false; // reset flag for next transaction
+            case EVENT_USB_DETECTED:
+                usb_processing_main();
+                file_processing_main();
+                break;
+                
+            case EVENT_KEYBOARD_DETECTED:
+                keyboard_processing();
+                break;
+                
+            case EVENT_PROCESSED:    //FALL THROUGH
+            default:
+                break;
+        }
     }
 
- //if( usb_transfer_done) // This means that the SPI transaction is complete and the data in the buffer is from the SPI, so we can start processing the SPI data and writing it to the USB. This is necessary because we need to wait until the SPI transaction is complete before we can start processing the SPI data, which could lead to data corruption or other issues if we start processing it too early.
- // {
- //   file_processing_main();
- //   usb_transfer_done = false; // reset flag for next transaction
- // }
-    
-  }
-
-  sleep_ms(1); 
-
-  return 0;
 }
+  return 0;
+  }
 
 
 //--------------------------------------------------------------------+
@@ -283,39 +276,15 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
             report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
 
         uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
-        if(keyboard_check) { // only process the keyboard input if the keyboard packet is active, which is determined by the classify_packet function in queue.c, which sets the keyboard_check flag to true when a keyboard packet is received and classified
-          convert_to_string(&ch); // store the character in a global variable for later retrieval and processing
-        } 
+        if(keyboard_check) {
+          enqueue_keyboard(ch);
+        }
+
+        // STOP condition (highest priority)
+
       prev_report = *report;
   }
 }
-
-
-
-/////   // STOP condition (highest priority)
-/////   if (ch == ESC || ch == ENTER || ch == '\r' || ch == '\n') {
-/////       uint32_t status = save_and_disable_interrupts();
-/////       pio_sm_put( return_spi_pio(), return_spi_sm(), 0); //puts the first byte of the packet into the PIO state machine for processing
-/////       restore_interrupts(status);
-/////       current_packet = PACKET_NONE; // reset packet type to none, which is the default state of the system when no packet is being processed
-/////       keyboard_check = false;
-/////       break;
-/////   }
-
-///// //  ch = reverse_bits(ch);  
-/////   // if (keyboard_reading && (ch >= 32 && ch <= 126)) for future
-
-/////   // Only forward if active
-
-/////   //  if ((flag_info & KEYBOARD_SEND_EVENT) && (ch >= 32 && ch <= 126))
-/////   
-/////     //spi_slave_writing();
-/////   // Avoid blocking TinyUSB callback context
-/////     uint32_t status = save_and_disable_interrupts();
-/////     pio_sm_put( return_spi_pio(), return_spi_sm(), ch); //puts the first byte of the packet into the PIO state machine for processing
-/////     restore_interrupts(status);
-
-  
 
   
 
@@ -330,9 +299,6 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
       }
       return result;
   }
-
-
- //PUBLIC volatile uint8_t return_char(uint8_t *char)
     
   /* static char* convert_to_string(const volatile uint8_t *ch)
   {

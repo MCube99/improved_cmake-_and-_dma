@@ -9,48 +9,27 @@
 // PACKET TYPES
 // -----------------------------------------------------------------------------
 
-typedef enum {
-    PACKET_NONE,
-    PACKET_START,
-    PACKET_USB,
-    PACKET_KEYBOARD,
-    PACKET_KEYBOARD_PROCESSING
-} packet_type_t;
+typedef enum
+{
+    EVENT_SIZE_PACKET_RECIEVED=0,
+    EVENT_USB_DETECTED,
+    EVENT_FILE_PROCESSING,
+    EVENT_KEYBOARD_DETECTED,
+    EVENT_PROCESSED
+} event_type_t;
+
+extern bool keyboard_check;
 
 
-// -----------------------------------------------------------------------------
-// EXTERN VARIABLES 
-// -----------------------------------------------------------------------------
-
-extern volatile packet_type_t current_packet;
+PUBLIC void classify_packet(void);
+PUBLIC void keyboard_processing(void);
 
 // -----------------------------------------------------------------------------
 // QUEUE INITIALIZATION
 // -----------------------------------------------------------------------------
 
 PUBLIC void queue_init(void);
-
-// -----------------------------------------------------------------------------
-// BUFFER ACCESS
-// -----------------------------------------------------------------------------
-
-PUBLIC uint8_t *give_array_address(void);
-
-PUBLIC uint8_t *give_array_address_for_file_writing(void);
-
-PUBLIC int get_queue_size(void);
-
-PUBLIC char* convert_to_string(const volatile uint8_t *ch);
-
-PUBLIC void send_data_to_pio_for_keyboard(); 
-// -----------------------------------------------------------------------------
-// PACKET CLASSIFICATION
-// -----------------------------------------------------------------------------
-
-PUBLIC void classify_packet(void);
-PUBLIC void check_usb_transfer(); 
-// -----------------------------------------------------------------------------
-// OPTIONAL HELPERS
-// -----------------------------------------------------------------------------
-
-PUBLIC void set_array_index(int difference);
+PUBLIC bool enqueue_interrupts(event_type_t event);
+PUBLIC bool enqueue_keyboard(uint8_t letter);
+PUBLIC bool dequeue_interrupts(event_type_t *event);
+PUBLIC bool dequeue_keyboard(uint8_t *letter);

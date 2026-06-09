@@ -150,7 +150,8 @@ PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to b
     if(exists_check.file_exists && exists_check.path_exists)
     {
         fr = FR_ALL_DONE;
-        usb_check = false; 
+        event_type_t current_event = EVENT_PROCESSED;
+        enqueue_interrupts(current_event);
         return(fr);
 
     }

@@ -3,37 +3,33 @@
 .program clocked_input
 
 constant_sets:
-    set x, 8
     set pindirs, 1 
+    out null, 32
+    in null, 32
     wait 0 gpio 4
 
 get_size_byte:
     wait 0 pin 1
     wait 1 pin 1             
     in pins, 1;             
-    jmp x-- get_size_byte
+    jmp get_size_byte
     jmp pin determine_usb_or_keyboard
 
 determine_usb_or_keyboard:
-    mov x, isr
-    pull
+    pull block
     mov y, osr
     out null, 32
-    jmp x!=y keyboard_setup
+    jmp !y keyboard_setup
     
 setting_count_for_usb:
-    set x, 7 
     wait 0 gpio 4
 
 usb_processing:
     wait 0 pin 1           ; a do while loop of sorts, it keeps 
     wait 1 pin 1
     in pins, 1             ; Shifts bit count bits from source into the INPUT SHIFT REGISTER 
-    jmp x-- usb_processing ; goes through every byte size amounts of times. With autopush, should be otputting data everytime the RXFIFO is fulsize amounts of times. With autopush, should be otputting data everytime the RXFIFO is fulll
-    jmp y-- setting_count_for_usb    ; this would have stored data from the mov y, osr which can only come from the mov y, osr
-    wait 1 gpio 4
-    jmp pin constant_sets  ; warning to jmp to initial setup if csn goes high
-
+    jmp usb_processing
+    jmp pin constant_sets
 
 keyboard_setup:
     pull block
