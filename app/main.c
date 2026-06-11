@@ -87,7 +87,8 @@ static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was ui
 static void process_kbd_report(hid_keyboard_report_t const *report);
 static char* convert_to_string(const volatile uint8_t *ch);
 PRIVATE uint8_t reverse_bits(uint8_t value);
-void clear_array(char* message);
+
+volatile bool keyboard_ready = false;
 
 
 
@@ -95,6 +96,7 @@ void clear_array(char* message);
 /*------------- MAIN -------------*/
 int main(void)
 {
+  uint32_t status = save_and_disable_interrupts();
   stdio_init_all();   // USB CDC (hardware USB → PC)
  
   timer_hw->dbgpause = 0;
@@ -111,10 +113,10 @@ int main(void)
   board_init_after_tusb();
   queue_init();
   pio_dma_setup();
- //io_keyboard_setup();
+  pio_keyboard_setup();
   set_gpio_pins();
-//  pio_keyboard_setup();
   msc_app_init();
+  restore_interrupts_from_disabled(status);
 
 while (1)
 {
@@ -123,28 +125,42 @@ while (1)
     led_blinking_task();
     event_type_t event;
 
-    while (dequeue_interrupts(&event))
+
+
+    while (dequeue_interrupts(&event)) // this is a guardian, technically. 
     {
-        switch(event)
-        {
-            case EVENT_SIZE_PACKET_RECIEVED:
-                classify_packet();
+      switch(event)
+      {
+          case EVENT_SIZE_PACKET_RECIEVED:
+              classify_packet();
+              break;
+
+          case EVENT_USB_DETECTED:
+                usb_processing_main();
+                event = EVENT_FILE_PROCESSING;
+                enqueue_interrupts(event);
                 break;
 
-            case EVENT_USB_DETECTED:
-                usb_processing_main();
-                file_processing_main();
-                break;
-                
+          case EVENT_FILE_PROCESSING:
+              file_processing_main();
+              event = EVENT_PROCESSED;
+              enqueue_interrupts(event);
+              break;
+
             case EVENT_KEYBOARD_DETECTED:
-                keyboard_processing();
-                break;
+              keyboard_processing_main();
+             // transmit_keyboard_data();
+          //    event = EVENT_KEYBOARD_DETECTED;
+            //  enqueue_interrupts(event);
+       //     transmit_keyboard_data();
+          //    keyboard_processing();
+              break;
                 
             case EVENT_PROCESSED:    //FALL THROUGH
             default:
-                break;
-        }
-    }
+              break;
+      }
+  }
 
 }
   return 0;
@@ -272,19 +288,17 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
         if (find_key_in_report(&prev_report, keycode))
             continue; //filter out key releases and held keys, only process new key presses
 
-        bool const is_shift =
-            report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
+        bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
 
         uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
-        if(keyboard_check) {
-          enqueue_keyboard(ch);
-        }
+        enqueue_keyboard(ch);
+    }
 
         // STOP condition (highest priority)
 
       prev_report = *report;
   }
-}
+
 
   
 

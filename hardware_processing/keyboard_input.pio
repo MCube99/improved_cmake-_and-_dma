@@ -1,38 +1,40 @@
-
 .pio_version 0
 
 .program keyboard_input
-setup:
-    set pindirs, 1
-.wrap_target
+
 keyboard_setup:
-    set y, 7               ; for every clock cycle
-    irq wait 0
-    pull block
+    irq wait 1
+
+.wrap_target
+keyboard_processing:
     wait 0 gpio 4
 
-keyboard_processing: 
+bitloop:
+    out pins, 1
     wait 0 pin 1
     wait 1 pin 1
-    out pins, 1
-    jmp y-- keyboard_processing
-    wait 1 gpio 4
+    jmp !x keyboard_setup
+    jmp !osre bitloop
 .wrap
 
 
 % c-sdk {
-static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, uint pin) {
+static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, uint data_pin, uint jmp_pin)
+{
     pio_sm_config c = keyboard_input_program_get_default_config(offset);
 
+    sm_config_set_out_pins(&c, data_pin, 1);
+    sm_config_set_set_pins(&c, data_pin, 1);
 
+    pio_gpio_init(pio, data_pin);
+    pio_sm_set_consecutive_pindirs(pio, sm, data_pin, 1, true);
 
-    // TX pin outputting when the csn goes low and when its time. This is for the keyboard 
-    sm_config_set_out_pins(&c, pin , 1);
-    pio_sm_set_consecutive_pindirs(pio, sm, pin , 1, true);
-    sm_config_set_out_shift(&c,true,true, 8);
+    sm_config_set_jmp_pin(&c, jmp_pin);
+
+    sm_config_set_out_shift(&c, true, true, 8);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
 
     pio_sm_init(pio, sm, offset, &c);
-    pio_sm_set_enabled(pio,sm,true);
-
-    }
+    pio_sm_set_enabled(pio, sm, true);
+}
 %}

@@ -30,8 +30,8 @@
 //============================================================================
 #include <stdint.h>
 #include <stdbool.h>
-
 #include "ring_buf.h"
+
 
 //............................................................................
 void RingBuf_ctor(RingBuf * const me, RingBufElement sto[], RingBufCtr sto_len) {
@@ -101,4 +101,14 @@ void RingBuf_process_all(RingBuf * const me, RingBufHandler handler) {
         }
         atomic_store_explicit(&me->tail, tail, memory_order_release);
     }
+}
+
+//............................................................................
+bool RingBuf_is_empty(RingBuf * const me) {
+    RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_relaxed);
+    RingBufCtr head = atomic_load_explicit(&me->head, memory_order_acquire);
+    if(head == tail) {
+        return(false);
+    }
+    return(true);
 }

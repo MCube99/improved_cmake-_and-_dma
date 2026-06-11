@@ -17,6 +17,7 @@
 #include "queue.h"
 
 #include "clocked_input.pio.h"
+#include "keyboard_input.pio.h"
 
 // -----------------------------------------------------------------------------
 // STRUCTURES
@@ -30,6 +31,12 @@ typedef struct {
     dma_channel_config dma_cfg;
 } pio_spi_t;
 
+typedef struct {
+    PIO pio;
+    uint sm;
+    uint8_t ch;
+} pio_keyboard_t;
+
 struct usb_payload {
     uint32_t size;
     uint32_t difference;
@@ -41,8 +48,10 @@ struct usb_payload {
 // -----------------------------------------------------------------------------
 
 static pio_spi_t pio_spi;
+static pio_keyboard_t pio_keyboard;
 static struct usb_payload usbPayload;
 
+PRIVATE uint8_t return_keyboard_characters();
 // -----------------------------------------------------------------------------
 // GPIO IRQ CONTROL
 // -----------------------------------------------------------------------------
@@ -70,23 +79,31 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
     uint32_t events =  gpio_get_irq_event_mask(PICO_DEFAULT_SPI_CSN_PIN);
     gpio_acknowledge_irq(PICO_DEFAULT_SPI_CSN_PIN,events); 
     event_type_t current_event;
-    bool checkQueueEmpty = dequeue_interrupts(&current_event);
-    if(!checkQueueEmpty){
-        enqueue_interrupts(current_event = EVENT_SIZE_PACKET_RECIEVED);
-    }
     
     // -------------------------------------------------------------------------
     // CSn LOW -> START DMA AND CHECK STAGES 
 
     if (events & GPIO_IRQ_EDGE_FALL) {
-
-        if(current_event == EVENT_SIZE_PACKET_RECIEVED) {
-            enqueue_interrupts(current_event);
+        dequeue_interrupts(&current_event);
+        
+        
+        switch(current_event) {
+            case EVENT_USB_DETECTED:
+                break;
+            case EVENT_KEYBOARD_DETECTED:
+                if(keyboard_check){
+                    uint32_t status = save_and_disable_interrupts();
+                    pio_sm_put(return_keyboard_pio(),return_keyboard_sm(),(uint32_t)return_keyboard_characters());
+                    restore_interrupts_from_disabled(status);
+                }
+                break;
+            default:
+                uint32_t status = save_and_disable_interrupts();
+                current_event = EVENT_SIZE_PACKET_RECIEVED;
+                enqueue_interrupts(current_event);
+                restore_interrupts_from_disabled(status);
+                break;
         }
-
-        if(current_event == EVENT_KEYBOARD_DETECTED) {
-        }
-
     }
 }
 
@@ -167,6 +184,18 @@ PUBLIC void pio_dma_setup(void)
     );
 
 }
+PUBLIC void pio_keyboard_setup(void){
+    PIO pio = pio0;
+    uint sm = pio_claim_unused_sm(pio, true);
+    pio_keyboard.pio = pio;
+    pio_keyboard.sm = sm;
+    uint offset = pio_add_program( pio, &keyboard_input_program);
+    keyboard_input_program_init(pio,
+        sm,
+        offset,
+        PICO_DEFAULT_SPI_TX_PIN,
+        PICO_DEFAULT_SPI_CSN_PIN);
+}
 
 
 // -----------------------------------------------------------------------------
@@ -185,26 +214,31 @@ PUBLIC int get_buffer_size(void) {
     return usbPayload.buffer[0];
 }
 
+// -----------------------------------------------------------------------------
+// PROCESSING FOR MAIN
+// -----------------------------------------------------------------------------
 PUBLIC void usb_processing_main(void) {
     dma_start_channel_mask(1u << return_channel());
- //   BYTE* start = usbPayload.buffer;
- //   BYTE* counter = usbPayload.buffer;
- //   while(*counter!= '\n')
- //   {
- //       counter++;
- //   }
+}
 
- //   usbPayload.difference = counter - start;
- //   if(--counter == usbPayload.size) {
- //       event_type_t event = EVENT_FILE_PROCESSING;
- //       enqueue(event);
- //   }
-
+PUBLIC void keyboard_processing_main(void) {
+    uint8_t ch;
+    event_type_t classify_event;
+    if(dequeue_keyboard(&ch)){
+        if(ch == '/r') {
+            pio_keyboard.ch = 0;
+            classify_event = EVENT_PROCESSED;
+        }else{
+            pio_keyboard.ch = ch;
+            classify_event = EVENT_KEYBOARD_DETECTED;
+            keyboard_check = true;
+        } 
+        enqueue_interrupts(classify_event);
+    }else{
+        keyboard_check = false;
+    }
 }
                
-// -----------------------------------------------------------------------------
-// KEYBOARD PIO
-// -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 // ACCESSORS
 // -----------------------------------------------------------------------------
@@ -217,6 +251,21 @@ PUBLIC PIO return_spi_pio(void)
 PUBLIC uint return_spi_sm(void)
 {
     return pio_spi.sm;
+}
+
+PUBLIC PIO return_keyboard_pio(void)
+{
+    return pio_keyboard.pio;
+}
+
+PUBLIC uint return_keyboard_sm(void)
+{
+    return pio_keyboard.sm;
+}
+
+PRIVATE uint8_t return_keyboard_characters(void)
+{
+    return pio_keyboard.ch;
 }
 
 PUBLIC void set_size(uint32_t size) {

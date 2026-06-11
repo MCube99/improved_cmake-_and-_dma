@@ -1,24 +1,28 @@
+
 .pio_version 0
 
 .program clocked_input
 
 constant_sets:
-    irq wait 0
+    set pindirs, 1 
     out null, 32
     in null, 32
-    set x, 7
-
     wait 0 gpio 4
 
 get_size_byte:
     wait 0 pin 1
     wait 1 pin 1             
-    in pins, 1 
-    jmp x-- get_size_byte
-    jmp pin setting_count_for_usb
+    in pins, 1;             
+    jmp get_size_byte
+    jmp pin determine_usb_or_keyboard
 
+determine_usb_or_keyboard:
+    pull block
+    mov y, osr
+    out null, 32
+    jmp !y keyboard_setup
+    
 setting_count_for_usb:
-    irq wait 0
     wait 0 gpio 4
 
 usb_processing:
@@ -28,6 +32,21 @@ usb_processing:
     jmp usb_processing
     jmp pin constant_sets
 
+keyboard_setup:
+    irq wait 1
+    wait 0 gpio 4
+    pull block
+    mov y, osr 
+    jmp !y constant_sets; will put in 0 if its an escape character or something, and that will cause it to jump to the top 
+
+.wrap_target
+keyboard_processing: 
+    wait 0 pin 1
+    wait 1 pin 1
+    out pins, 1
+    jmp pin keyboard_setup
+.wrap
+
 % c-sdk {
 
 static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uint pin, uint jmp_pin) {
@@ -35,6 +54,8 @@ static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uin
     sm_config_set_in_pins(&c, pin );
     pio_sm_set_consecutive_pindirs(pio, sm, pin, 3, false); // Set the RX, SCK, CSN pins as inputs and the TX pin as output. This is for the state machine to read the data from the master
     sm_config_set_jmp_pin(&c, jmp_pin);
+    sm_config_set_set_pins(&c,pin + 3, 1 );
+    sm_config_set_out_pins(&c, pin + 3, 1);
     sm_config_set_in_shift(&c, false, true, 8);
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio,sm,true);

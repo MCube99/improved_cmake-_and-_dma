@@ -14,17 +14,17 @@
 // -----------------------------------------------------------------------------
 // QUEUE STORAGE
 // -----------------------------------------------------------------------------
-#define QUEUE_SIZE 16
+#define QUEUE_SIZE 32
 RingBufElement queue_buffer[QUEUE_SIZE];
-RingBuf rb_queue;
+RingBuf interrupt_queue;
 
-RingBufElement keyboard_buffer[16];
+RingBufElement keyboard_buffer[QUEUE_SIZE];
 RingBuf keyboard_queue;
 
-bool keyboard_check = false;
+PRIVATE void pio_send(uint8_t data); 
 
 PUBLIC void queue_init(void){
-    RingBuf_ctor(&rb_queue, queue_buffer, QUEUE_SIZE);
+    RingBuf_ctor(&interrupt_queue, queue_buffer, QUEUE_SIZE);
     RingBuf_ctor(&keyboard_queue, keyboard_buffer, QUEUE_SIZE);
     
     event_type_t current_event = EVENT_SIZE_PACKET_RECIEVED;
@@ -32,7 +32,7 @@ PUBLIC void queue_init(void){
 }
 
 PUBLIC bool enqueue_interrupts(event_type_t event) {
-    bool check = RingBuf_put(&rb_queue, event);
+    bool check = RingBuf_put(&interrupt_queue, event);
     return(check);
 }
 
@@ -41,19 +41,20 @@ PUBLIC bool enqueue_keyboard(uint8_t letter) {
     return(check);
 }
 
-
 PUBLIC bool dequeue_interrupts(event_type_t *event) {
-    bool check = RingBuf_get(&rb_queue, event);
+    bool check = RingBuf_get(&interrupt_queue, event);
     return(check);
 }
-
 
 PUBLIC bool dequeue_keyboard(uint8_t *letter) {
     bool check = RingBuf_get(&keyboard_queue, letter);
     return(check); 
 }
 
-
+///    PUBLIC bool is_queue_empty(void) {
+///        bool check = RingBuf_is_full(&keyboard_queue);
+///        return(check);
+///    }
 
 // -----------------------------------------------------------------------------
 // PROCESSING PLACE
@@ -62,39 +63,54 @@ PUBLIC void classify_packet(void) {
     uint32_t size = pio_sm_get(return_spi_pio(), return_spi_sm());
     set_size(size);
 
-    if ((size == GARY_CODE))
-    {
-        pio_sm_put( return_spi_pio(), return_spi_sm(), 0);
+    if ((size == GARY_CODE)) {
+        if(pio_interrupt_get(return_keyboard_pio(),1)){
+            pio_interrupt_clear(return_keyboard_pio(),1);
+        }
         keyboard_check = true;
         event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
-        enqueue_interrupts(classify_event);
+        if(!enqueue_interrupts(classify_event)) {
+            return;
+        }
     }
-    else if(size > 0 && size < GARY_CODE)
-    {
-        pio_sm_put( return_spi_pio(), return_spi_sm(), size);
-        keyboard_check = false;
+
+    else if(size > 0 && size < GARY_CODE) {
+        if(pio_interrupt_get(return_spi_pio(),0)){
+            pio_interrupt_clear(return_spi_pio(),0);
+        }
         event_type_t classify_event = EVENT_USB_DETECTED;
-        enqueue_interrupts(classify_event);
+        if(!enqueue_interrupts(classify_event)){
+            return;
+        }
     }
 }
 
 
 PUBLIC void keyboard_processing(void) {
   uint8_t ch; 
-  bool check = dequeue_keyboard(&ch);
 
-  if(!check) {
+  if(!dequeue_keyboard(&ch)) {
     return; 
   }
 
   if(ch == '/r') {
     pio_sm_put(return_spi_pio(),return_spi_sm(),0);
-    event_type_t classify_event = EVENT_USB_DETECTED;
+    event_type_t classify_event = EVENT_PROCESSED;
     enqueue_interrupts(classify_event);
 
   } 
 
   else {
-    pio_sm_put(return_spi_pio(),return_spi_sm(),ch);
+    event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
+     enqueue_interrupts(classify_event);
   }
+}
+
+
+PUBLIC void transmit_keyboard_data() {
+    RingBuf_process_all(&keyboard_queue, pio_send);
+}
+
+PRIVATE void pio_send(uint8_t data) {
+    pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)data);
 }
