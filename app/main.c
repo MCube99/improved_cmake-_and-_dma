@@ -133,17 +133,27 @@ while (1)
           case EVENT_SIZE_PACKET_RECIEVED:
               classify_packet();
               break;
+
           case EVENT_USB_DETECTED:
                usb_detection_main();
                 break;
+                
           case EVENT_USB_PROCESSING:
                 bool check = usb_processing_main();
                 if(!check) {
-                  break; }
+                  break;
+                } 
 
           case EVENT_FILE_PROCESSING:
-                file_processing_main();
+                bool finished = file_processing_main();
+                if(!finished) {
+                  break;
+                }
+
+          case EVENT_FILE_PROCESSED:
+                file_processed_main();      
                 break;
+                
           case EVENT_KEYBOARD_DETECTED:
                 keyboard_processing_main();
                 break;

@@ -16,8 +16,8 @@ typedef enum
     EVENT_USB_DETECTED,
     EVENT_USB_PROCESSING,
     EVENT_FILE_PROCESSING,
+    EVENT_FILE_PROCESSED,
     EVENT_KEYBOARD_DETECTED,
-    EVENT_PROCESSED
 } event_type_t;
 
 extern volatile event_type_t event;

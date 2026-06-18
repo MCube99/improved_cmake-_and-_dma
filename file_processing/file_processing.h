@@ -9,4 +9,4 @@ typedef enum
     FILE_CREATED_SUCCESSFUL,
 }FSUCCESS;
 
-PUBLIC void file_processing_main();
+PUBLIC bool file_processing_main();

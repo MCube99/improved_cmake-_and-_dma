@@ -97,7 +97,7 @@ PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info);
  
 // the function below exists to work on the results and errors
 
-PUBLIC void file_processing_main( ) { //called file_processing_main because this function goes in the main.c file
+PUBLIC bool file_processing_main( ) { //called file_processing_main because this function goes in the main.c file
     FRESULT fr;
    // Initialise all date and time stuff early 
    // fr = f_getcwd(file_info.date_directory, strlen(file_info.date_directory)); //gets current directory and drive 
@@ -128,9 +128,16 @@ PUBLIC void file_processing_main( ) { //called file_processing_main because this
         }
          fr = handle_error[fr](fr);
     }
+
+    event_type_t current_event = EVENT_FILE_PROCESSED;
+    enqueue_interrupts(current_event);
+    return(true);
     
 }
 
+PUBLIC void file_processed_main() {
+
+}
 
 
 ///////////FRESULT functions/////////////////////////
@@ -150,8 +157,6 @@ PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to b
     if(exists_check.file_exists && exists_check.path_exists)
     {
         fr = FR_ALL_DONE;
-        event_type_t current_event = EVENT_PROCESSED;
-        enqueue_interrupts(current_event);
         return(fr);
 
     }
