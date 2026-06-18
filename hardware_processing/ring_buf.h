@@ -70,7 +70,6 @@ typedef uint8_t RingBufElement;
 typedef struct {
     RingBufElement *buf; //!< pointer to the start of the ring buffer
     RingBufCtr end;      //!< index of the end of the ring buffer
-
     //! atomic index to where next element will be inserted
     _Atomic(RingBufCtr) head;
 
@@ -84,7 +83,6 @@ RingBufCtr RingBuf_num_free(RingBuf * const me);
 bool RingBuf_put(RingBuf * const me, RingBufElement const el);
 bool RingBuf_get(RingBuf * const me, RingBufElement *pel);
 bool RingBuf_is_empty(RingBuf * const me);
-
 //! Ring buffer callback function for RingBuf_process_all()
 //
 // @details

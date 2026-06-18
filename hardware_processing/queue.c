@@ -14,21 +14,23 @@
 // -----------------------------------------------------------------------------
 // QUEUE STORAGE
 // -----------------------------------------------------------------------------
-#define QUEUE_SIZE 32
-RingBufElement queue_buffer[QUEUE_SIZE];
+#define KEYBOARD_BUFFER_SIZE 32
+#define STATE_AND_QUEUE_SIZE 10
+
+RingBufElement queue_buffer[STATE_AND_QUEUE_SIZE];
 RingBuf interrupt_queue;
 
-RingBufElement keyboard_buffer[QUEUE_SIZE];
+RingBufElement keyboard_buffer[KEYBOARD_BUFFER_SIZE];
 RingBuf keyboard_queue;
 
-PRIVATE void pio_send(uint8_t data); 
+RingBufElement state_buffer[STATE_AND_QUEUE_SIZE];
+RingBuf state_queue;
+
 
 PUBLIC void queue_init(void){
-    RingBuf_ctor(&interrupt_queue, queue_buffer, QUEUE_SIZE);
-    RingBuf_ctor(&keyboard_queue, keyboard_buffer, QUEUE_SIZE);
-    
-    event_type_t current_event = EVENT_SIZE_PACKET_RECIEVED;
-    enqueue_interrupts(current_event);
+    RingBuf_ctor(&interrupt_queue, queue_buffer, STATE_AND_QUEUE_SIZE);
+    RingBuf_ctor(&keyboard_queue, keyboard_buffer, KEYBOARD_BUFFER_SIZE);
+    RingBuf_ctor(&state_queue, state_buffer, STATE_AND_QUEUE_SIZE);
 }
 
 PUBLIC bool enqueue_interrupts(event_type_t event) {
@@ -36,10 +38,12 @@ PUBLIC bool enqueue_interrupts(event_type_t event) {
     return(check);
 }
 
+
 PUBLIC bool enqueue_keyboard(uint8_t letter) {
     bool check = RingBuf_put(&keyboard_queue, letter);
     return(check);
 }
+
 
 PUBLIC bool dequeue_interrupts(event_type_t *event) {
     bool check = RingBuf_get(&interrupt_queue, event);
@@ -51,6 +55,7 @@ PUBLIC bool dequeue_keyboard(uint8_t *letter) {
     return(check); 
 }
 
+
 ///    PUBLIC bool is_queue_empty(void) {
 ///        bool check = RingBuf_is_full(&keyboard_queue);
 ///        return(check);
@@ -60,46 +65,49 @@ PUBLIC bool dequeue_keyboard(uint8_t *letter) {
 // PROCESSING PLACE
 // -----------------------------------------------------------------------------
 PUBLIC void classify_packet(void) {
-    uint32_t size = pio_sm_get(return_spi_pio(), return_spi_sm());
+
+    uint32_t size;
+    event_type_t classify_event;
+    size=pio_sm_get_blocking(return_spi_pio(), return_spi_sm());
     set_size(size);
 
-    if ((size == GARY_CODE)) {
+    if ((size == GARY_CODE || size == GARY_CODE - 1 || size == GARY_CODE + 1)) { // edge cases where due to data transmission there could be wrong things
         if(pio_interrupt_get(return_keyboard_pio(),1)){
             pio_interrupt_clear(return_keyboard_pio(),1);
         }
-        keyboard_check = true;
-        event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
-        if(!enqueue_interrupts(classify_event)) {
-            return;
-        }
+        classify_event = EVENT_KEYBOARD_DETECTED;
     }
 
-    else if(size > 0 && size < GARY_CODE) {
+    else if(size > 5 ) {
+        pio_sm_put(return_spi_pio(),return_spi_sm(),size);
         if(pio_interrupt_get(return_spi_pio(),0)){
             pio_interrupt_clear(return_spi_pio(),0);
         }
-        event_type_t classify_event = EVENT_USB_DETECTED;
-        if(!enqueue_interrupts(classify_event)){
-            return;
-        }
+        classify_event = EVENT_USB_DETECTED;
+    } 
+
+    else{   //should never hit this 
+        pio_sm_clear_fifos(return_spi_pio(), return_spi_sm());
+        pio_sm_restart(return_spi_pio(), return_spi_sm());
+    }
+    
+
+    if(!enqueue_interrupts(classify_event)) {
+        return;
     }
 }
 
-
-PUBLIC void keyboard_processing(void) {
+PUBLIC void keyboard_processing() {
   uint8_t ch; 
 
   if(!dequeue_keyboard(&ch)) {
-    return; 
-  }
+    return; }
 
   if(ch == '/r') {
     pio_sm_put(return_spi_pio(),return_spi_sm(),0);
     event_type_t classify_event = EVENT_PROCESSED;
     enqueue_interrupts(classify_event);
-
   } 
-
   else {
     event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
      enqueue_interrupts(classify_event);
@@ -107,10 +115,3 @@ PUBLIC void keyboard_processing(void) {
 }
 
 
-PUBLIC void transmit_keyboard_data() {
-    RingBuf_process_all(&keyboard_queue, pio_send);
-}
-
-PRIVATE void pio_send(uint8_t data) {
-    pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)data);
-}

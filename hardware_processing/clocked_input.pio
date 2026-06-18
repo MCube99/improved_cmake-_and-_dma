@@ -1,41 +1,50 @@
 .pio_version 0
-
 .program clocked_input
 
-constant_sets:
-    irq wait 0
-    out null, 32
-    in null, 32
-    set x, 7
-
+flush:
+    mov isr, null         ; Clear ISR and input shift counter
+    mov osr, null
     wait 0 gpio 4
 
-get_size_byte:
-    wait 0 pin 1
-    wait 1 pin 1             
-    in pins, 1 
-    jmp x-- get_size_byte
+.wrap_target
+do_bit:
+    wait 0 pin 1          ; Detect rising edge and sample input data
+    wait 1 pin 1          ; (autopush takes care of moving each complete
+    in pins, 1            ; data byte to the FIFO)
+check_chip_select:
     jmp pin setting_count_for_usb
+.wrap
 
 setting_count_for_usb:
+    pull block
+    mov x, osr
     irq wait 0
     wait 0 gpio 4
+
+usb_setup:
+    set y, 7
 
 usb_processing:
     wait 0 pin 1           ; a do while loop of sorts, it keeps 
     wait 1 pin 1
     in pins, 1             ; Shifts bit count bits from source into the INPUT SHIFT REGISTER 
-    jmp usb_processing
-    jmp pin constant_sets
+    jmp y-- usb_processing
+    jmp x-- usb_setup
+    wait 1 gpio 4
+    jmp pin reset
 
+
+reset:
+    irq wait 2
+    jmp flush
 % c-sdk {
 
 static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uint pin, uint jmp_pin) {
     pio_sm_config c = clocked_input_program_get_default_config(offset);
-    sm_config_set_in_pins(&c, pin );
-    pio_sm_set_consecutive_pindirs(pio, sm, pin, 3, false); // Set the RX, SCK, CSN pins as inputs and the TX pin as output. This is for the state machine to read the data from the master
+    sm_config_set_in_pins(&c,pin);
     sm_config_set_jmp_pin(&c, jmp_pin);
-    sm_config_set_in_shift(&c, false, true, 8);
+    sm_config_set_in_shift(&c,false,true, 8);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio,sm,true);
 }

@@ -88,17 +88,15 @@ static void process_kbd_report(hid_keyboard_report_t const *report);
 static char* convert_to_string(const volatile uint8_t *ch);
 PRIVATE uint8_t reverse_bits(uint8_t value);
 
-volatile bool keyboard_ready = false;
-
-
-
+volatile bool main_check = true;
+bool usb_check = false;
 
 /*------------- MAIN -------------*/
 int main(void)
 {
   uint32_t status = save_and_disable_interrupts();
+
   stdio_init_all();   // USB CDC (hardware USB → PC)
- 
   timer_hw->dbgpause = 0;
   board_init();
   
@@ -116,6 +114,7 @@ int main(void)
   pio_keyboard_setup();
   set_gpio_pins();
   msc_app_init();
+
   restore_interrupts_from_disabled(status);
 
 while (1)
@@ -127,39 +126,36 @@ while (1)
 
 
 
-    while (dequeue_interrupts(&event)) // this is a guardian, technically. 
+    while ((main_check && dequeue_interrupts(&event))) // this is a guardian, technically. 
     {
       switch(event)
       {
           case EVENT_SIZE_PACKET_RECIEVED:
               classify_packet();
               break;
-
           case EVENT_USB_DETECTED:
-                usb_processing_main();
-                event = EVENT_FILE_PROCESSING;
-                enqueue_interrupts(event);
+               usb_detection_main();
                 break;
+          case EVENT_USB_PROCESSING:
+                bool check = usb_processing_main();
+                if(!check) {
+                  break; }
 
           case EVENT_FILE_PROCESSING:
-              file_processing_main();
-              event = EVENT_PROCESSED;
-              enqueue_interrupts(event);
-              break;
+                file_processing_main();
+                break;
+          case EVENT_KEYBOARD_DETECTED:
+                keyboard_processing_main();
+                break;
 
-            case EVENT_KEYBOARD_DETECTED:
-              keyboard_processing_main();
-             // transmit_keyboard_data();
-          //    event = EVENT_KEYBOARD_DETECTED;
-            //  enqueue_interrupts(event);
-       //     transmit_keyboard_data();
-          //    keyboard_processing();
-              break;
-                
-            case EVENT_PROCESSED:    //FALL THROUGH
-            default:
+          default:
               break;
       }
+      if(event == EVENT_FILE_PROCESSING ){
+        main_check = true;
+      }
+      main_check = false;
+      break;
   }
 
 }

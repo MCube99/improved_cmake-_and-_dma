@@ -3,18 +3,17 @@
 .program keyboard_input
 
 keyboard_setup:
+    set pindirs, 1
     irq wait 1
-
-.wrap_target
 keyboard_processing:
     wait 0 gpio 4
 
+.wrap_target
 bitloop:
     out pins, 1
-    wait 0 pin 1
     wait 1 pin 1
-    jmp !x keyboard_setup
-    jmp !osre bitloop
+check_chip_select:
+    jmp pin keyboard_processing
 .wrap
 
 
@@ -27,11 +26,9 @@ static inline void keyboard_input_program_init(PIO pio, uint sm, uint offset, ui
     sm_config_set_set_pins(&c, data_pin, 1);
 
     pio_gpio_init(pio, data_pin);
-    pio_sm_set_consecutive_pindirs(pio, sm, data_pin, 1, true);
-
     sm_config_set_jmp_pin(&c, jmp_pin);
 
-    sm_config_set_out_shift(&c, true, true, 8);
+    sm_config_set_out_shift(&c, false,true, 8);
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
 
     pio_sm_init(pio, sm, offset, &c);

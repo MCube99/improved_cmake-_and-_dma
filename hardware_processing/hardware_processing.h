@@ -30,28 +30,27 @@ typedef uint8_t  BYTE;
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
 
-
-
-
-PUBLIC void set_gpio_pins();
+PUBLIC void set_gpio_pins(void);
 PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled);
 PUBLIC void pio_dma_setup(void);
 PUBLIC void pio_keyboard_setup(void);
 PUBLIC void queue_init();
-PUBLIC void usb_processing_main(void);
+PUBLIC void usb_detection_main(void);
+PUBLIC bool usb_processing_main(void);
 PUBLIC void set_size(uint32_t size); 
 PUBLIC void keyboard_processing_main(void);
+PUBLIC void event_processing_main();
 
-PUBLIC PIO return_spi_pio();
-PUBLIC PIO return_keyboard_pio(void);
-PUBLIC uint return_spi_sm();
-PUBLIC uint return_keyboard_sm(void);
-PUBLIC int return_channel();
-PUBLIC uint32_t return_size(void); 
+PUBLIC PIO const return_spi_pio();
+PUBLIC PIO const return_keyboard_pio(void);
+PUBLIC uint const return_spi_sm();
+PUBLIC uint const return_keyboard_sm(void);
+PUBLIC int const return_channel();
+PUBLIC uint32_t const return_size(void); 
 
 PUBLIC int get_queue_size();
-PUBLIC uint8_t* give_array_address(void);
-PUBLIC uint8_t*  give_array_address_for_file_writing(void);
+PUBLIC uint8_t* const give_array_address(void);
+PUBLIC uint8_t* const give_array_address_for_file_writing(void);
 
 // -----------------------------------------------------------------------------
 // BUFFER ACCESS
