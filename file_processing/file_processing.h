@@ -1,7 +1,6 @@
 // file_processing.h
 #pragma once
-
-#include "hardware_processing.h"
+#include "common_header.h"
 
 typedef enum
 {

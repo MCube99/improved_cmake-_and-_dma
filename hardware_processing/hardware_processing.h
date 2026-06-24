@@ -1,44 +1,30 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include "pico/stdlib.h"
+
 #include "hardware/pio.h"
+#include "common_header.h"
 
-
-#define PRIVATE static
-#define PUBLIC  extern  
 
 #define BUF_LEN                               256
 #define NUMBER_OF_BYTES                       BUF_LEN 
+#define GARY_CODE    254                                                   
 
-
-
-#define PICO_DEFAULT_START          2
-#define PICO_DEFAULT_SPI_RX_PIN   ((PICO_DEFAULT_START)      + 0)   // 2 
-#define PICO_DEFAULT_SPI_SCK_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
-#define PICO_DEFAULT_SPI_CSN_PIN   ((PICO_DEFAULT_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
-#define PICO_DEFAULT_SPI_TX_PIN  ((PICO_DEFAULT_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → send from slave
-#define GARY_CODE                   254
-
-
-//////////////////////////// DEFINED GPIO FOR PIO STATE MACHINES ////////////////////////////
-#define PICO_DEFAULT_SYNC_PIN     ((PICO_DEFAULT_SPI_RX_PIN) + 4)   //6             
-
-typedef uint8_t  BYTE;
-typedef uint16_t WORD;
-typedef uint32_t DWORD;
+#define PICO_START          2
+#define PICO_SPI_RX_PIN   ((PICO_START)      + 0)   // 2 
+#define PICO_SPI_SCK_PIN  ((PICO_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
+#define PICO_SPI_CSN_PIN   ((PICO_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
+#define PICO_SPI_TX_PIN  ((PICO_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → send from slave
+#define PICO_SPI_KEYBOARD_PIN ((PICO_SPI_RX_PIN + 5))
 
 PUBLIC void set_gpio_pins(void);
 PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled);
 PUBLIC void pio_dma_setup(void);
 PUBLIC void pio_keyboard_setup(void);
+PUBLIC inline void dma_setup(uint32_t size);
 PUBLIC void queue_init();
-PUBLIC void usb_detection_main(void);
 PUBLIC bool usb_processing_main(void);
 PUBLIC void set_size(uint32_t size); 
-PUBLIC void keyboard_processing_main(void);
+PUBLIC void keyboard_processing_main();
 PUBLIC void event_processing_main();
 
 PUBLIC PIO const return_spi_pio();
@@ -48,19 +34,8 @@ PUBLIC uint const return_keyboard_sm(void);
 PUBLIC int const return_channel();
 PUBLIC uint32_t const return_size(void); 
 
-PUBLIC int get_queue_size();
 PUBLIC uint8_t* const give_array_address(void);
 PUBLIC uint8_t* const give_array_address_for_file_writing(void);
-
-// -----------------------------------------------------------------------------
-// BUFFER ACCESS
-// -----------------------------------------------------------------------------
-
-PUBLIC uint8_t *give_array_address(void);
-
-PUBLIC uint8_t *give_array_address_for_file_writing(void);
-
-PUBLIC int get_queue_size(void);
 
 PUBLIC volatile bool keyboard_ready;
 

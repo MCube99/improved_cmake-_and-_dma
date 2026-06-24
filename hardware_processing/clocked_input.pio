@@ -16,9 +16,9 @@ check_chip_select:
 .wrap
 
 setting_count_for_usb:
+    irq wait 0
     pull block
     mov x, osr
-    irq wait 0
     wait 0 gpio 4
 
 usb_setup:

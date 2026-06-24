@@ -1,44 +1,54 @@
 {
-  "version": 3,
-  "configurePresets": [
-    {
-      "name": "ci-pico-base",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/toolchains/pico_arm_cortex_m0plus_gcc.cmake",
-        "PICO_DEFAULT_GCC_TRIPLE": "arm-none-eabi"
-      }
-    },
-    {
-      "name": "ci-pico-debug",
-      "displayName": "Pico Debug (Ninja)",
-      "inherits": "ci-pico-base",
-      "generator": "Ninja",
-      "binaryDir": "build/pico-debug",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "ci-pico-release",
-      "displayName": "Pico Release (Ninja)",
-      "inherits": "ci-pico-base",
-      "generator": "Ninja",
-      "binaryDir": "build/pico-release",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    }
-  ],
-
-  "buildPresets": [
-    {
-      "name": "pico-debug",
-      "configurePreset": "ci-pico-debug"
-    },
-    {
-      "name": "pico-release",
-      "configurePreset": "ci-pico-release"
-    }
-  ]
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "ci-pico-base",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/toolchains/pico_arm_cortex_m0plus_gcc.cmake",
+                "PICO_DEFAULT_GCC_TRIPLE": "arm-none-eabi"
+            }
+        },
+        {
+            "name": "ci-pico-debug",
+            "displayName": "Pico Debug (Ninja)",
+            "inherits": "ci-pico-base",
+            "generator": "Ninja",
+            "binaryDir": "build/pico-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "ci-pico-release",
+            "displayName": "Pico Release (Ninja)",
+            "inherits": "ci-pico-base",
+            "generator": "Ninja",
+            "binaryDir": "build/pico-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "Custom configure preset",
+            "displayName": "Custom configure preset",
+            "description": "Sets Ninja generator, build and install directory",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "pico-debug",
+            "configurePreset": "ci-pico-debug"
+        },
+        {
+            "name": "pico-release",
+            "configurePreset": "ci-pico-release"
+        }
+    ]
 }

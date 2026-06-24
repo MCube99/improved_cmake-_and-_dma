@@ -85,15 +85,13 @@ void led_blinking_task(void);
 static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was uint8_t originally
 
 static void process_kbd_report(hid_keyboard_report_t const *report);
-static char* convert_to_string(const volatile uint8_t *ch);
 PRIVATE uint8_t reverse_bits(uint8_t value);
 
 volatile bool main_check = true;
-bool usb_check = false;
+volatile bool keyboard_check = false;
 
 /*------------- MAIN -------------*/
-int main(void)
-{
+int main(void) {
   uint32_t status = save_and_disable_interrupts();
 
   stdio_init_all();   // USB CDC (hardware USB → PC)
@@ -124,9 +122,9 @@ while (1)
     led_blinking_task();
     event_type_t event;
 
+////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
 
-
-    while ((main_check && dequeue_interrupts(&event))) // this is a guardian, technically. 
+  while ((main_check && dequeue_interrupts(&event))) // the main check acts as an entry gate
     {
       switch(event)
       {
@@ -134,26 +132,24 @@ while (1)
               classify_packet();
               break;
 
-          case EVENT_USB_DETECTED:
-               usb_detection_main();
-                break;
-                
           case EVENT_USB_PROCESSING:
-                bool check = usb_processing_main();
-                if(!check) {
-                  break;
+                bool usb_finished = usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
+                if(usb_finished) {
+                  main_check = true;
                 } 
+                  break; 
 
           case EVENT_FILE_PROCESSING:
                 bool finished = file_processing_main();
-                if(!finished) {
-                  break;
+                if(finished){// if file processing went perfect, fall through to EVENT PROCESSING
+                  main_check = true;
                 }
-
-          case EVENT_FILE_PROCESSED:
-                file_processed_main();      
                 break;
-                
+
+          case EVENT_DONE:
+                event_processing_main();
+                break;
+
           case EVENT_KEYBOARD_DETECTED:
                 keyboard_processing_main();
                 break;
@@ -161,16 +157,12 @@ while (1)
           default:
               break;
       }
-      if(event == EVENT_FILE_PROCESSING ){
-        main_check = true;
-      }
       main_check = false;
       break;
   }
 
-}
-  return 0;
   }
+}
 
 
 //--------------------------------------------------------------------+

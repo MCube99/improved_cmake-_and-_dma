@@ -7,6 +7,7 @@
 #include <string.h>
 #include "queue.h"
 #include <ctype.h>
+#include "common_header.h"
 
 
 
@@ -107,8 +108,8 @@ PUBLIC bool file_processing_main( ) { //called file_processing_main because this
     memset(file_info.date_directory, 0, sizeof(file_info.date_directory));
 
 
-    uint8_t *buffer = give_array_address();
-    int n = sizeof(file_info.dates)/sizeof(file_info.dates[0]);
+    uint8_t *buffer = give_array_address(); //give_array_address();
+    // int n = sizeof(file_info.dates)/sizeof(file_info.dates[0]);
 
     extract_date_directory(buffer, file_info.date_directory,sizeof(file_info.dates));   // dates used as folder/directory name
     extract_date(buffer, file_info.dates,sizeof(file_info.dates)); // extract time file name
@@ -129,16 +130,19 @@ PUBLIC bool file_processing_main( ) { //called file_processing_main because this
          fr = handle_error[fr](fr);
     }
 
-    event_type_t current_event = EVENT_FILE_PROCESSED;
-    enqueue_interrupts(current_event);
-    return(true);
+    if(fr == FR_ALL_DONE){
+        event_type_t current_event = EVENT_DONE;
+        enqueue_interrupts(current_event);
+        return(true);
+    }
+    else{
+        event_type_t current_event = EVENT_NONE;
+        enqueue_interrupts(current_event);
+        return(false);
+    }
+    
     
 }
-
-PUBLIC void file_processed_main() {
-
-}
-
 
 ///////////FRESULT functions/////////////////////////
 
@@ -322,8 +326,6 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
 
 
 PRIVATE FRESULT no_file(FRESULT fr) {
-    DIR dir;                    // Directory
-    FILINFO fno;                // File Info
     FIL fp;
 
     TCHAR temp[64];
@@ -385,11 +387,11 @@ PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info) {
 
 
 PRIVATE FRESULT invalid_name(FRESULT fr) {
-    ;
+    (void)fr;
 }
 
 PRIVATE FRESULT denied( FRESULT fr) {
-    ;
+    (void)fr;
 }
 
 PRIVATE FRESULT exist(FRESULT fr) {
@@ -398,11 +400,11 @@ PRIVATE FRESULT exist(FRESULT fr) {
 }
 
 PRIVATE FRESULT invalid_object(FRESULT fr) {
-    ;
+    (void)fr;
 }
 
 PRIVATE FRESULT not_enabled(FRESULT fr) {
-
+    (void)fr;
 }
 
 PRIVATE FRESULT no_filesystem(FRESULT fr) {
@@ -412,23 +414,23 @@ PRIVATE FRESULT no_filesystem(FRESULT fr) {
 }
 
 PRIVATE FRESULT mkfs_aborted(FRESULT fr) {
-    ;
+    (void)fr;
 }
 
 PRIVATE FRESULT timeout(FRESULT fr) {
-    ;
+    (void)fr;
 }
 
 PRIVATE FRESULT locked(FRESULT fr) {
-    ;
+    (void)fr;
 }
 
 PRIVATE FRESULT too_many_open_files(FRESULT fr) {
-    ;
+    (void)fr;
 }
 
 PRIVATE FRESULT start_error(FRESULT fr) {
-    ;
+    (void)fr;
 }
 
 ///////////Helper functions/////////////////////////
@@ -502,7 +504,7 @@ static void get_file_info() {
 
 //// Extraction Function /////////////
 
-PRIVATE void extract_date_directory(const char *in, char *dates_directory, size_t size) {
+PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, size_t size) {
    memset(dates_directory,0,size);
    dates_directory[0] = '/';
    dates_directory[size-1]='\0';

@@ -49,7 +49,17 @@ add_compile_options(
         )
 
 
+add_library(project_config INTERFACE)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
+target_compile_definitions(project_config INTERFACE
+    $<$<CONFIG:Debug>:MY_DEBUG>)
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+target_compile_definitions(project_config INTERFACE
+    $<$<CONFIG:Release>:MY_RELEASE>)
+endif()
 # function(check_pico_tinyusb_paths)
 
 #     list(APPEND path_messages "PICO_TINYUSB_PATH: ${PICO_TINYUSB_PATH}")
@@ -64,7 +74,9 @@ add_compile_options(
 
 # endfunction()
 
+
 include_directories(tusb_config) ##include in all
+## add_subdirectory(tusb_config)
 add_subdirectory(fatfs)
 add_subdirectory(hardware_processing)
 add_subdirectory(file_processing)

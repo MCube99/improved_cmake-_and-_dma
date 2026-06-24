@@ -2,11 +2,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+
 #include "queue.h"
-
 #include "hardware/dma.h"
-
-#include "hardware_processing.h"
 #include "hardware/uart.h"
 #include "hardware/sync.h"
 #include "ring_buf.h"
@@ -23,14 +21,9 @@ RingBuf interrupt_queue;
 RingBufElement keyboard_buffer[KEYBOARD_BUFFER_SIZE];
 RingBuf keyboard_queue;
 
-RingBufElement state_buffer[STATE_AND_QUEUE_SIZE];
-RingBuf state_queue;
-
-
 PUBLIC void queue_init(void){
     RingBuf_ctor(&interrupt_queue, queue_buffer, STATE_AND_QUEUE_SIZE);
     RingBuf_ctor(&keyboard_queue, keyboard_buffer, KEYBOARD_BUFFER_SIZE);
-    RingBuf_ctor(&state_queue, state_buffer, STATE_AND_QUEUE_SIZE);
 }
 
 PUBLIC bool enqueue_interrupts(event_type_t event) {
@@ -56,11 +49,6 @@ PUBLIC bool dequeue_keyboard(uint8_t *letter) {
 }
 
 
-///    PUBLIC bool is_queue_empty(void) {
-///        bool check = RingBuf_is_full(&keyboard_queue);
-///        return(check);
-///    }
-
 // -----------------------------------------------------------------------------
 // PROCESSING PLACE
 // -----------------------------------------------------------------------------
@@ -71,26 +59,26 @@ PUBLIC void classify_packet(void) {
     size=pio_sm_get_blocking(return_spi_pio(), return_spi_sm());
     set_size(size);
 
-    if ((size == GARY_CODE || size == GARY_CODE - 1 || size == GARY_CODE + 1)) { // edge cases where due to data transmission there could be wrong things
-        if(pio_interrupt_get(return_keyboard_pio(),1)){
-            pio_interrupt_clear(return_keyboard_pio(),1);
-        }
+    if ((size == GARY_CODE || size == GARY_CODE - 1 || size == GARY_CODE + 1 || size == 0)) { // edge cases where due to data transmission there could be wrong things
+
+        uint32_t status = save_and_disable_interrupts();
+        pio_sm_clear_fifos(return_keyboard_pio(), return_keyboard_sm());
+        keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
+        pio_interrupt_clear(return_keyboard_pio(),1);
         classify_event = EVENT_KEYBOARD_DETECTED;
+        restore_interrupts_from_disabled(status);
     }
 
-    else if(size > 5 ) {
+    else if(size != GARY_CODE ) {
+
+        uint32_t status = save_and_disable_interrupts();
+        pio_interrupt_clear(return_spi_pio(),0);
         pio_sm_put(return_spi_pio(),return_spi_sm(),size);
-        if(pio_interrupt_get(return_spi_pio(),0)){
-            pio_interrupt_clear(return_spi_pio(),0);
-        }
-        classify_event = EVENT_USB_DETECTED;
+        dma_setup(size);
+        classify_event = EVENT_USB_PROCESSING;
+        restore_interrupts_from_disabled(status);
     } 
 
-    else{   //should never hit this 
-        pio_sm_clear_fifos(return_spi_pio(), return_spi_sm());
-        pio_sm_restart(return_spi_pio(), return_spi_sm());
-    }
-    
 
     if(!enqueue_interrupts(classify_event)) {
         return;
@@ -105,7 +93,7 @@ PUBLIC void keyboard_processing() {
 
   if(ch == '/r') {
     pio_sm_put(return_spi_pio(),return_spi_sm(),0);
-    event_type_t classify_event = EVENT_PROCESSED;
+    event_type_t classify_event = EVENT_DONE;
     enqueue_interrupts(classify_event);
   } 
   else {

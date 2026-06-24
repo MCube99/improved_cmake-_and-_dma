@@ -88,7 +88,7 @@ bool RingBuf_is_empty(RingBuf * const me);
 // @details
 // The callback processes one element and runs in the context of
 // RingBuf_process_all().
-//
+//  typedef return_type (*alias_name)(parameter_types and numbers....);
 typedef void (*RingBufHandler)(RingBufElement const el);
 
 void RingBuf_process_all(RingBuf * const me, RingBufHandler handler);

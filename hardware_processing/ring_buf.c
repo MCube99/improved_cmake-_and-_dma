@@ -112,3 +112,21 @@ bool RingBuf_is_empty(RingBuf * const me) {
     }
     return(true);
 }
+
+//............................................................................
+bool KeyboardBuf_get(RingBuf * const me, volatile RingBufElement *pel) {
+    RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_relaxed);
+    RingBufCtr head = atomic_load_explicit(&me->head, memory_order_acquire);
+    if (head != tail) { // buffer NOT empty?
+        *pel = me->buf[tail];
+        ++tail;
+        if (tail == me->end) {
+            tail = 0U;
+        }
+        atomic_store_explicit(&me->tail, tail, memory_order_release);
+        return true;
+    }
+    else {
+        return false; // buffer empty
+    }
+}
