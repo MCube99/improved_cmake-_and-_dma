@@ -15,10 +15,12 @@ target_include_directories(hardware_processing
         ${PARENT_DIR}/file_processing
 )
 
-target_include_directories(common_headers INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/${common_processing_Headers})
+target_include_directories(common_headers INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(hardware_processing
     PRIVATE hardware_spi hardware_sync
     PUBLIC hardware_pio hardware_irq hardware_gpio hardware_dma fatfs_lib
     PUBLIC hardware_uart
     PUBLIC common_headers)
+    
+target_link_libraries(common_headers INTERFACE pico_stdlib)

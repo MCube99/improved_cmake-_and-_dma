@@ -33,6 +33,4 @@ target_link_libraries(app_main PRIVATE file_processing host_storage pico_multico
 
 
 message(STATUS "Linked libs for ${lib_name}: ${LINK_LIBS}")
-
-pico_enable_stdio_uart(app_main 0)
-pico_add_extra_outputs(app_main)
+ 

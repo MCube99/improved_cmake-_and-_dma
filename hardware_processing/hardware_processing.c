@@ -213,7 +213,7 @@ PUBLIC void pio_keyboard_setup(void){
         sm,
         offset,
         PICO_SPI_SCK_PIN,
-        PICO_DEFAULT_SPI_KEYBOARD_PIN);
+        PICO_SPI_KEYBOARD_PIN);
         
 }
 
