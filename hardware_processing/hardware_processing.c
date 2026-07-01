@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-
 #include "pico/stdlib.h"
 
 #include "hardware/gpio.h"
@@ -11,9 +10,10 @@
 #include "hardware/dma.h"
 #include "hardware/sync.h"
 #include "hardware/structs/iobank0.h"
-
 #include "hardware_processing.h"
+#include "hardware/spi.h"
 #include "queue.h"
+#include "pico/binary_info.h"
 
 #include "clocked_input.pio.h"
 #include "keyboard_input.pio.h"
@@ -34,14 +34,9 @@ typedef struct {
     PIO pio;
     uint sm;
     uint8_t ch;
-    uint num;
+    uint8_t num;
 } pio_keyboard_t;
 
-struct usb_payload {
-    uint32_t size;
-    uint32_t difference;
-    BYTE buffer[BUF_LEN];
-};
 
 // -----------------------------------------------------------------------------
 // GLOBALS
@@ -49,26 +44,7 @@ struct usb_payload {
 
 static pio_spi_t pio_spi;
 static pio_keyboard_t pio_keyboard;
-static struct usb_payload usbPayload;
 
-// -----------------------------------------------------------------------------
-// GPIO IRQ CONTROL
-// -----------------------------------------------------------------------------
-
-PUBLIC void gpio_set_irq_active(uint gpio, uint32_t events, bool enabled) {
-    io_bank0_irq_ctrl_hw_t *irq_ctrl_base = get_core_num() ?  
-    &io_bank0_hw->proc1_irq_ctrl : &io_bank0_hw->proc0_irq_ctrl;
-    io_rw_32 *en_reg = &irq_ctrl_base->inte[gpio / 8];
-    events <<= 4 * (gpio % 8);
-    if (enabled)
-    {
-        hw_set_bits(en_reg, events);
-    }
-    else
-    {
-        hw_clear_bits(en_reg, events);
-    }
-}
 
 // -----------------------------------------------------------------------------
 // GPIO ISR
@@ -79,35 +55,16 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
     uint32_t events =  gpio_get_irq_event_mask(PICO_SPI_CSN_PIN);
     gpio_acknowledge_irq(PICO_SPI_CSN_PIN,events); 
 
-    if(keyboard_check){
-        main_check = true;
-        return;  // return early for keyboard since only want to crap out data. No need to dequeue interrupts
-    }
-    
-    event_type_t event;
-    dequeue_interrupts(&event);
     // -------------------------------------------------------------------------
-    // CSn LOW -> START DMA AND CHECK STAGES 
 
     if (events & GPIO_IRQ_EDGE_FALL) {
-        switch(event) {
-            case EVENT_USB_PROCESSING:
-                enqueue_interrupts(EVENT_USB_PROCESSING);
-                break;
-            case EVENT_KEYBOARD_DETECTED:
-                enqueue_interrupts(EVENT_KEYBOARD_DETECTED);
-                break;
-            case EVENT_FILE_PROCESSING:
-                enqueue_interrupts(EVENT_FILE_PROCESSING);
-                break; 
-            default:
-                enqueue_interrupts(EVENT_SIZE_PACKET_RECIEVED);
-                break;
+        if(first_check){ // If hitting IRQ first time
+            enqueue_interrupts(EVENT_SIZE_PACKET_RECIEVED);
+            first_check = false; // No longer first check so false
         }
-        
-    }
 
-    main_check = true;
+    main_check = true; // set main check to true so that the main loop will run. This is to prevent the main loop from running when there is no event to process.
+}
 }
 
 
@@ -115,25 +72,21 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
 // GPIO SETUP
 // -----------------------------------------------------------------------------
 
-PUBLIC void set_gpio_pins(void)
-{
+PUBLIC void set_gpio_pins(void) {
     // CSN pin setup
     gpio_init(PICO_SPI_CSN_PIN);
     gpio_set_dir(PICO_SPI_CSN_PIN, GPIO_IN);
     gpio_pull_up(PICO_SPI_CSN_PIN);
 
-    gpio_init(PICO_DEFAULT_SPI_KEYBOARD_PIN); 
-    gpio_set_dir(PICO_DEFAULT_SPI_KEYBOARD_PIN, true);
-    gpio_set_function(PICO_DEFAULT_SPI_KEYBOARD_PIN, GPIO_FUNC_SIO); 
-    gpio_pull_down(PICO_DEFAULT_SPI_KEYBOARD_PIN);
+    gpio_init(PICO_SPI_KEYBOARD_PIN); 
+    gpio_set_dir(PICO_SPI_KEYBOARD_PIN, true);
+    gpio_set_function(PICO_SPI_KEYBOARD_PIN, GPIO_FUNC_SIO); 
+    gpio_put(PICO_SPI_KEYBOARD_PIN,0);
 
-    // Map PIO pins
-    pio_gpio_init(return_spi_pio(), PICO_SPI_RX_PIN );
-    pio_gpio_init(return_spi_pio(), PICO_SPI_SCK_PIN);
-    pio_gpio_init(return_spi_pio(), PICO_SPI_TX_PIN);
 
-    pio_sm_clear_fifos(return_spi_pio(), return_spi_sm());
+    pio_sm_clear_fifos(return_spi_pio(), return_spi_sm()); // Cleans out any FIFOS
     pio_sm_clear_fifos(return_keyboard_pio(), return_keyboard_sm());
+    pio_sm_drain_tx_fifo(return_keyboard_pio(), return_keyboard_sm());
     // Clear any pending interrupts FIRST
     gpio_acknowledge_irq(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL);
 
@@ -146,16 +99,40 @@ PUBLIC void set_gpio_pins(void)
     // Enable IRQ bank
     irq_set_enabled(IO_IRQ_BANK0, true);
 }
+#ifdef SPI_DEBUG
+PUBLIC void spi_write(){
+    spi_init(spi_default, 1000 * 1000);
+    spi_set_slave(spi_default, true);
+    gpio_set_function(PICO_SPI_RX_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(PICO_SPI_SCK_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(PICO_SPI_TX_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(PICO_SPI_CSN_PIN, GPIO_FUNC_SPI);
+    // Make the SPI pins available to picotool
+    bi_decl(bi_4pins_with_func(PICO_SPI_RX_PIN, PICO_SPI_TX_PIN, PICO_SPI_SCK_PIN, PICO_SPI_CSN_PIN, GPIO_FUNC_SPI));
 
+    uint8_t out_buf[BUF_LEN], in_buf[BUF_LEN];
 
+    // Initialize output buffer
+    for (size_t i = 0; i < BUF_LEN; ++i) {
+        // bit-inverted from i. The values should be: {0xff, 0xfe, 0xfd...}
+        out_buf[i] = ~i;}
 
+    uint8_t ch = 0x1F; 
+    uint32_t num = 0;
+    event_type_t classify_event;
+    if(dequeue_keyboard(&ch)){
+        spi_write_blocking(spi_default, &ch, 1);
+    }
 
+    classify_event = EVENT_KEYBOARD_DETECTED; 
+    enqueue_interrupts(classify_event);
+}
+#endif 
 // -----------------------------------------------------------------------------
 // PIO + DMA SETUP
 // -----------------------------------------------------------------------------
 
-PUBLIC void pio_dma_setup(void)
-{
+PUBLIC void pio_dma_setup(void) {
     PIO pio = pio0;
     uint sm = pio_claim_unused_sm(pio, true);
     pio_spi.pio = pio;
@@ -163,7 +140,7 @@ PUBLIC void pio_dma_setup(void)
 
     uint offset = pio_add_program( pio_spi.pio, &clocked_input_program);
 
-    memset(usbPayload.buffer, 0, sizeof(usbPayload.buffer));
+    memset(give_array_address(), 0, BUF_LEN);
     pio_sm_clear_fifos(pio_spi.pio, pio_spi.sm);
     pio_sm_restart(pio_spi.pio, pio_spi.sm);
     clocked_input_program_init(
@@ -172,8 +149,6 @@ PUBLIC void pio_dma_setup(void)
         offset,
         PICO_SPI_RX_PIN ,
         PICO_SPI_CSN_PIN);
-
-
 }
 
 PUBLIC inline void dma_setup(uint32_t size){
@@ -184,7 +159,7 @@ PUBLIC inline void dma_setup(uint32_t size){
     channel_config_set_write_increment( &pio_spi.dma_cfg, true);
     channel_config_set_dreq(
         &pio_spi.dma_cfg,
-        pio_get_dreq(
+        pio_get_dreq( // get data request
             pio_spi.pio,
             pio_spi.sm,
             false
@@ -193,7 +168,7 @@ PUBLIC inline void dma_setup(uint32_t size){
     dma_channel_configure(
         pio_spi.dma_chan,
         &pio_spi.dma_cfg,
-        usbPayload.buffer,
+        give_array_address(), // buffer to write to 
         &pio_spi.pio->rxf[pio_spi.sm],
         dma_encode_transfer_count(size), // get this every time when classify packet is run.
         false
@@ -207,48 +182,78 @@ PUBLIC void pio_keyboard_setup(void){
     pio_keyboard.pio = pio;
     pio_keyboard.sm = sm;
     uint offset = pio_add_program( pio, &keyboard_input_program);
-    pio_sm_clear_fifos(pio_keyboard.pio, pio_keyboard.sm);
-    pio_sm_restart(pio_keyboard.pio, pio_keyboard.sm);
     keyboard_input_program_init(pio,
         sm,
         offset,
         PICO_SPI_SCK_PIN,
-        PICO_SPI_KEYBOARD_PIN);
+        PICO_SPI_TX_PIN,
+        PICO_SPI_CSN_PIN);
         
 }
 
 // -----------------------------------------------------------------------------
-// BUFFER ACCESSORS
+// PROCESSING PLACE
 // -----------------------------------------------------------------------------
 
-PUBLIC uint8_t *const give_array_address(void) {
-    return usbPayload.buffer;
+PUBLIC void classify_packet(void) {
+
+    uint32_t size;
+    event_type_t classify_event = 0;
+    if(!pio_sm_is_rx_fifo_empty(return_spi_pio(), return_spi_sm())){
+        size = pio_sm_get(return_spi_pio(), return_spi_sm());
+    }
+    else{
+        size = 0;
+    }
+    set_size(size);
+
+    if ((size == GARY_CODE || size == GARY_CODE - 1 || size == GARY_CODE + 1 || size == 0)) { // edge cases where due to data transmission there could be wrong things
+
+        keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
+        classify_event = EVENT_KEYBOARD_DETECTED;
+    }
+
+    else if(size >32 && size < GARY_CODE) {
+
+        if(pio_interrupt_get(return_spi_pio(), 0)){
+            pio_interrupt_clear(return_spi_pio(),0);
+        }
+        pio_sm_put(return_spi_pio(),return_spi_sm(),size);
+        dma_setup(size); //pass size to dma setup so it can set up transfer size
+        classify_event = EVENT_USB_PROCESSING;
+    } 
+    else{
+        classify_event = EVENT_NONE; //Invalid size, so just ignore it and do nothing. This is to prevent the system from crashing due to invalid sizes.
+        first_check = true; // reset the first check so that the next time the ISR triggers, it will enqueue the EVENT SIZE PACKET RECIEVED event. This is to prevent the system from getting stuck in an invalid state due to invalid sizes.
+    }
+
+    
+
+    enqueue_interrupts(classify_event);
 }
 
-PUBLIC uint8_t *const give_array_address_for_file_writing(void) {
-    return &usbPayload.buffer[1];
-}
-
-PUBLIC int get_buffer_size(void) {
-    return usbPayload.buffer[0];
-}
 
 // -----------------------------------------------------------------------------
 // PROCESSING FOR MAIN
 // -----------------------------------------------------------------------------
 PUBLIC bool usb_processing_main(void) {
-    dma_start_channel_mask(1u << return_channel());
-    while (!(dma_hw->intr & 1u << return_channel()))
-        tight_loop_contents();
-    dma_hw->ints0 = 1u << return_channel();
-    
-    uintptr_t base = (uintptr_t)usbPayload.buffer;
+    dma_start_channel_mask(1u << return_channel()); // start the DMA transfer
+    dma_channel_wait_for_finish_blocking(return_channel()); // Wait for the DMA transfer to complete
+
+        // 1. Pause the DMA channel
+    hw_clear_bits(&dma_hw->ch[return_channel()].ctrl_trig, DMA_CH0_CTRL_TRIG_EN_BITS);
+
+        // 2. Now that the DMA channel is paused, we can safely read the write address
+
+    uintptr_t base = (uintptr_t)give_array_address();
     uintptr_t write = dma_hw->ch[return_channel()].write_addr;
     uint32_t difference = write - base;
 
     if(difference ==  return_size())
     {
         enqueue_interrupts(EVENT_FILE_PROCESSING);
+        dma_channel_cleanup(return_channel());
+        dma_channel_unclaim(return_channel());
         return(true);
     }
     else
@@ -258,33 +263,38 @@ PUBLIC bool usb_processing_main(void) {
     }
 }
 
-PUBLIC void keyboard_processing_main() {
-    uint8_t ch = 0; 
+PUBLIC bool keyboard_processing_main() {
+    uint8_t ch = 0x1F; 
     event_type_t classify_event;
-    if(pio_sm_is_tx_fifo_full(return_keyboard_pio(), return_keyboard_sm())){
-        pio_sm_drain_tx_fifo(return_keyboard_pio(), return_keyboard_sm());
+
+    if(pio_interrupt_get(return_keyboard_pio(),1)){
+        pio_interrupt_clear(return_keyboard_pio(),1);
     }
-    if(dequeue_keyboard(&ch)){
-        pio_sm_put_blocking(return_keyboard_pio(), return_keyboard_sm(),ch);
-        if(ch == '\r'){
-            gpio_put(PICO_SPI_KEYBOARD_PIN, 1);
-            classify_event = EVENT_DONE;
-            enqueue_interrupts(classify_event);
-            return; // Simply return early
+    if(!pio_sm_is_tx_fifo_full(return_keyboard_pio(), return_keyboard_sm())){ // guarrd condition to check if the tx fifo is full or not. If it is full, then it will not be able to put any more data into it, so it will just return false and not do anything. This is to prevent the system from crashing due to invalid sizes.
+        if(dequeue_keyboard(&ch)){ //this is the ebent that is triggered when the keyboard is pressed. It will dequeue the letter from the keyboard queue and put it into the tx fifo of the pio. This is to prevent the system from crashing due to invalid sizes.
+            pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), ((uint)ch<<24)); 
         }
     }
-
+    if(ch == '\r'){
+        classify_event = EVENT_DONE;
+        enqueue_interrupts(classify_event);
+        return(true); // Simply return early
+    }
     classify_event = EVENT_KEYBOARD_DETECTED; 
-    pio_keyboard.num = pio_sm_get_tx_fifo_level(return_keyboard_pio(), return_keyboard_sm());
     enqueue_interrupts(classify_event);
-}
+    return(false);
+    }
+
 
         
 
 
-PUBLIC void event_processing_main() {
+PUBLIC bool event_processing_main() {
     if(pio_interrupt_get(return_keyboard_pio(),1)){
-        gpio_put(PICO_SPI_KEYBOARD_PIN, 0);
+        if(pio_interrupt_get(return_spi_pio(), 0)){
+            pio_interrupt_clear(return_spi_pio(), 0);
+        }
+        pio_sm_put(return_spi_pio(),return_spi_sm(), 0); // to reset it
         keyboard_check = false;
     }
 
@@ -317,17 +327,6 @@ PUBLIC PIO const return_keyboard_pio(void)
 PUBLIC uint const return_keyboard_sm(void)
 {
     return pio_keyboard.sm;
-}
-
-
-PUBLIC void set_size(uint32_t size) 
-{
-    usbPayload.size = size;
-}
-
-PUBLIC uint32_t return_size(void) 
-{
-    return usbPayload.size;
 }
 
 PUBLIC int return_channel(void)
