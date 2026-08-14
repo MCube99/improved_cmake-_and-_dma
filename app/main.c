@@ -57,26 +57,14 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include "bsp/board_api.h"
+#include "board_api.h"
 #include "tusb.h"
-
-
 #include "msc_app.h"
 #include "file_processing.h"
 #include "hardware_processing.h"
 #include "queue.h"
 #include "pico/stdlib.h"
 #include "hid.h"
-#include "hardware/pio.h"
- 
-
-#define BSIZE 64
-#define ESC 27
-#define ENTER 10
-#define END_OF_TEXT 3   //Ctrl+C
-#define CANCEL 24       //Cancel
-
-
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
@@ -87,13 +75,15 @@ static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was ui
 static void process_kbd_report(hid_keyboard_report_t const *report);
 PRIVATE uint8_t reverse_bits(uint8_t value);
 
-volatile bool main_check = true;
-volatile bool keyboard_check = false;
+volatile bool main_check = false; // This is a signal event for the main loop. If this is false, then the main loop will not run. It is set to true when the SPI ISR triggers, and it is set to false when the event processing main function runs. This is to prevent the main loop from running when there is no event to process.
+volatile bool first_check = true; // This is a guard condition so that when the ISR triggers for the first time and this is true, the IRQ will enqueue EVENT SIZE PACKET RECIEVED and set this to false.
+volatile bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 
 /*------------- MAIN -------------*/
-int main(void) {
+R555555555555) {
   uint32_t status = save_and_disable_interrupts();
 
+  bool is_file_finished = false;
   stdio_init_all();   // USB CDC (hardware USB → PC)
   timer_hw->dbgpause = 0;
   board_init();
@@ -108,9 +98,10 @@ int main(void) {
 
   board_init_after_tusb();
   queue_init();
+  set_gpio_pins();
   pio_dma_setup();
   pio_keyboard_setup();
-  set_gpio_pins();
+//  pio_read_master_setup();
   msc_app_init();
 
   restore_interrupts_from_disabled(status);
@@ -124,41 +115,52 @@ while (1)
 
 ////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
 
-  while ((main_check && dequeue_interrupts(&event))) // the main check acts as an entry gate
+  while ((main_check && dequeue_interrupts(&event))) // the main check acts as an signal event wheras the dequeueing interupt acts as a guard condition. It has to be true for the state machine to process. 
     {
+      bool is_file_finished = false;
+      bool is_keyboard_finished = false;
+      bool is_usb_finished = false;
+      bool is_event_done = false;
+
       switch(event)
       {
           case EVENT_SIZE_PACKET_RECIEVED:
-              classify_packet();
+              uint32_t status = save_and_disable_interrupts();
+              classify_packet(); // This cannot be interrupted as critical
+              restore_interrupts_from_disabled(status);
               break;
 
           case EVENT_USB_PROCESSING:
-                bool usb_finished = usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
-                if(usb_finished) {
-                  main_check = true;
-                } 
-                  break; 
+                 is_usb_finished = usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
+                if(!is_usb_finished){ //if not correct size break, else fall through to file processing
+                  break; }
 
           case EVENT_FILE_PROCESSING:
-                bool finished = file_processing_main();
-                if(finished){// if file processing went perfect, fall through to EVENT PROCESSING
-                  main_check = true;
-                }
-                break;
-
-          case EVENT_DONE:
-                event_processing_main();
-                break;
+                 is_file_finished = file_processing_main(); // the guard condition is that the usb processing has to be done first, so that the file processing can be done. If the usb processing is not done, then the file processing will not be done. This is to prevent the file processing from being done when there is no data to process.
+                 if(is_file_finished){ //if not correct size break, else fall through to keyboard processing
+                   goto ALL_DONE; }
+                 break;
 
           case EVENT_KEYBOARD_DETECTED:
-                keyboard_processing_main();
-                break;
+               // spi_write();
+                main_check = true; // set main check to true so that the main loop will run. This is to prevent the main loop from running when there is no event to process.
+                is_keyboard_finished = keyboard_processing_main(); //keyboard_processing_main();spi_slave_setup()
+                if(!is_keyboard_finished){ //if not correct size break, else fall through to event processing
+                  break; }
+
+
+          case EVENT_DONE:
+              ALL_DONE:
+                uint32_t status_keyboard = save_and_disable_interrupts(); // wont take any interrupts from either gpio or usb, since this happens when an enter is pressed, so no need to 
+                is_event_done = event_processing_main();
+                restore_interrupts_from_disabled(status_keyboard);
 
           default:
               break;
       }
-      main_check = false;
-      break;
+
+      main_check = false; //reset to false so that the main loop will not run until the next interrupt triggers it. This is to prevent the main loop from running when there is no event to process.
+
   }
 
   }
@@ -288,8 +290,11 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
 
         bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
 
-        uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
-        enqueue_keyboard(ch);
+        if(keyboard_check){ // guard condition
+          uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
+          ch = reverse_bits(ch); // reverse the bits of the character to match the keyboard encoding
+          enqueue_keyboard(ch);
+        }
     }
 
         // STOP condition (highest priority)
@@ -312,85 +317,3 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
       return result;
   }
     
-  /* static char* convert_to_string(const volatile uint8_t *ch)
-  {
-
-      static char read[40]; // persistent buffer
-      
-      read[39] = '\0';
-      static uint8_t i = 0; //recalls how many time the function is calle and stores it. 
-        // Stop adding if buffer is full or an escape key is received
-
-      if (*ch == ESC || *ch == END_OF_TEXT || *ch == CANCEL || *ch == ENTER || i ==39 )
-      {
-        flag_check = FLAG_ESCAPE;
-        i=0;
-        return read;
-      }
-
-      if (i < 39 )  // ensure space for '\0'
-      {
-        read[i++] = (char)*ch; 
-        flag_check = FLAG_NOT_ESCAPE;
-      }
-  }
-
-  void clear_array(char* message)
-  {
-      while(*message)
-      {
-          *message = '\0';
-          message++;
-      }
-  } */
-
-
-
-
-  /* static void process_kbd_report(hid_keyboard_report_t const *report)
-  {
-    static hid_keyboard_report_t prev_report = { 0, 0, {0} }; // previous report to check key released
-    FILE *fptr;
-    char buffer[BSIZE];
-
-    fptr = fopen("usbhost.txt", "w");
-    //------------- example code ignore control (non-printable) key affects -------------//
-    for(uint8_t i=0; i<6; i++)
-    {
-      if ( report->keycode[i] )
-      {
-        if ( find_key_in_report(&prev_report, report->keycode[i]) )
-        {
-          // exist in previous report means the current key is holding
-        }else
-        {
-          // not existed in previous report means the current key is pressed
-          bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
-          char ch = keycode2ascii[report->keycode[i]][is_shift ? 1 : 0];
-          //Maybe need to do something here to get it to output only characters 
-          
-          putchar(ch);
-          putchar('\n');
-          if ( ch == '\r' ) putchar('\n'); // added new line for enter key
-
-          fflush(stdout); // flush right away, else nanolib will wait for newline
-        }
-      }
-      // TODO example skips key released
-    }
-
-    prev_report = *report;
-  } */
-
-
-  ////Miscallaneous/////
-
-  ///
-      /*      else if (ch == '\r' || ch == '\n')  // handle newline
-                  {
-                      putchar('\n');
-                      fprintf(fptr, '\n');
-                  } */
-                  // fflush(fptr);    // flush file output immediately
-                  // fflush(stdout);  // flush terminal output
-//              }

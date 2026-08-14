@@ -4,11 +4,7 @@
 #include <string.h>
 
 #include "queue.h"
-#include "hardware/dma.h"
-#include "hardware/uart.h"
-#include "hardware/sync.h"
 #include "ring_buf.h"
-
 // -----------------------------------------------------------------------------
 // QUEUE STORAGE
 // -----------------------------------------------------------------------------

@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "common_header.h"
-#include "ring_buf.h"
 
 
 // -----------------------------------------------------------------------------

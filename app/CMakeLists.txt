@@ -10,16 +10,17 @@ target_sources(app_main
             ${PARENT_DIR}/file_processing
             ${PARENT_DIR}/hardware_processing
             ${CMAKE_CURRENT_SOURCE_DIR}
+            ${PICO_TINYUSB_PATH}/hw/bsp
         FILES
             ${PARENT_DIR}/file_processing/file_processing.h
-            ${PARENT_DIR}/hardware_processing/common_header.h)
+            ${PICO_TINYUSB_PATH}/hw/bsp/board_api.h)
 
 ## target_include_directories(${EXECUTABLE_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 ##target_compile_definitions(app_main PUBLIC CFG_TUH_ENABLED=1)
 
 
 
-target_link_libraries(app_main PRIVATE file_processing host_storage pico_multicore hardware_clocks file_processing common_header)
+target_link_libraries(app_main PRIVATE file_processing tinyusb_host )
 # target_include_directories(hardware_processing
 #     PUBLIC
 #         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30,7 +31,3 @@ target_link_libraries(app_main PRIVATE file_processing host_storage pico_multico
 #     VS_DEBUGGER_COMMAND $<TARGET_FILE:app_main>
 #     VS_DEBUGGER_COMMAND_ARGUMENTS ""
 # )
-
-
-message(STATUS "Linked libs for ${lib_name}: ${LINK_LIBS}")
- 

@@ -7,7 +7,7 @@ set(common_processing_Headers   ${CMAKE_CURRENT_SOURCE_DIR}/common_header.h)
 add_library(hardware_processing STATIC ${hardware_processing_Sources})
 add_library(common_headers INTERFACE )
 pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/clocked_input.pio)
-pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/keyboard_input.pio)
+pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/keyboard_output.pio)
 
 
 target_sources(hardware_processing PUBLIC 
@@ -25,5 +25,6 @@ target_link_libraries(common_headers INTERFACE pico_stdlib)
 
 target_link_libraries(hardware_processing
     PRIVATE hardware_sync hardware_irq hardware_gpio hardware_dma fatfs_lib hardware_spi
-    PUBLIC common_headers hardware_pio )
+    PUBLIC common_headers hardware_pio)
+
     

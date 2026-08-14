@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS        OFF)
-set(PICO_TINYUSB_PATH "$ENV{PICO_TINYUSB_PATH}" CACHE PATH "Path to the TinyUSB path" FORCE)
 message(STATUS "PICO_TINYUSB_PATH: ${PICO_TINYUSB_PATH}")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(PICO_TOOLCHAIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/toolchains)
@@ -28,10 +27,11 @@ set(PICO_USE_PREBUILT_PICOTOOL ON CACHE BOOL "" FORCE)
 set(PICOTOOL_FETCH_FROM_GIT OFF CACHE BOOL "" FORCE)
 set(picotool_DIR "H:/picotool/install" CACHE PATH "" FORCE)
 set(PICO_NO_PICOTOOL 1)
+set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
 # ====================================================================================
 set(PICO_BOARD pico CACHE STRING "Board type")
 set(PICO_SDK_PATH "H:/pico_sdk" CACHE PATH "Path to the Raspberry Pi Pico SDK" FORCE)
-
+set(PICO_TINYUSB_PATH "${PICO_SDK_PATH}/lib/tinyusb" CACHE PATH "Path to the TinyUSB path" FORCE)
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
@@ -49,17 +49,7 @@ add_compile_options(
         )
 
 
-add_library(project_config INTERFACE)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-target_compile_definitions(project_config INTERFACE
-    $<$<CONFIG:Debug>:MY_DEBUG>)
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-target_compile_definitions(project_config INTERFACE
-    $<$<CONFIG:Release>:MY_RELEASE>)
-endif()
 # function(check_pico_tinyusb_paths)
 
 #     list(APPEND path_messages "PICO_TINYUSB_PATH: ${PICO_TINYUSB_PATH}")

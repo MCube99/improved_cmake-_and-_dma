@@ -8,10 +8,10 @@ flush:
 
 .wrap_target
 do_bit:
-    wait 0 pin 1          ; Detect rising edge and sample input data
-    wait 1 pin 1          ; (autopush takes care of moving each complete
-    in pins, 1            ; data byte to the FIFO)
-check_chip_select:
+    wait 0 pin 1          
+    wait 1 pin 1         ; wait for the first edge to sample data 
+    in pins, 1            ; samples it in via autofull
+check_chip_select:        
     jmp pin setting_count_for_usb
 .wrap
 

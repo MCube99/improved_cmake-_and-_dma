@@ -1,0 +1,29 @@
+{ 
+	"app/*.c": {
+		"type": "app"
+	},
+	"file_processing/*.c": {
+		"type" : "file",
+		"alternate" : "file_processing/{}.h"
+	},
+
+	"hardware_processing/*.c" : {
+		"type" : "hardware",
+		"alternate" : "hardware_processing/{}.h"
+	},
+
+	"hardware_processing/clocked_input.pio" : {
+		"type" : "usb_dma"
+	},
+
+	"hardware_processing/keyboard_output.pio" : {
+		"type" : "keyboard_output"
+	}
+
+	"hardware_processing/common_header.h" : {
+		"type" : "common_header"
+	}
+
+}
+
+

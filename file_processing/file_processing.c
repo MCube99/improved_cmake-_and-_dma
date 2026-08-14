@@ -7,8 +7,9 @@
 #include <string.h>
 #include "queue.h"
 #include <ctype.h>
-#include "common_header.h"
 
+
+//#################################################################### Another state machine implementation ######################################################################### 
 
 
 
@@ -81,7 +82,7 @@ FRESULT (*handle_error[])(FRESULT fr) = {
 };
 
 
-PRIVATE void extract_date_directory(const char *in, char *dates, size_t size);
+PRIVATE void extract_date_directory(const uint8_t *in, char *dates, size_t size);
 PRIVATE char* extract_time(const char *in, char *times, size_t size );
 PRIVATE void extract_date(char *in, char *dates, size_t size);
 PRIVATE char* extract_ohm(char *in, char *ohms, size_t size);
@@ -122,7 +123,7 @@ PUBLIC bool file_processing_main( ) { //called file_processing_main because this
   
      // Check for hardware/system errors
     fr = start();
-// This state machine is mainly for error handling. The ones in the if statement are hardware issues and can't be fixed by me. The ones in the state machine hopefully can.
+// This state machine is mainly for error handling. The ones in the if statement (apart from FR_ALL_DONE) are all hardware errors, so if any of those happen, then the system will break out of the loop and not continue and I have no clue what to do + dont get paid enough to care
     while(1){
         if( fr == FR_DISK_ERR || fr == FR_NOT_READY ||fr == FR_WRITE_PROTECTED || fr == FR_INT_ERR || fr == FR_ALL_DONE ) {
              break; //idk what to do if there is an hardware issue

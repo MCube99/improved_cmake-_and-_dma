@@ -11,13 +11,14 @@
 typedef uint8_t  BYTE;
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
+
 #define BUF_LEN                               256
 #define NUMBER_OF_BYTES                       BUF_LEN 
-#define GARY_CODE                             254                                                   
+#define GARY_CODE                             31                                                 
 
 extern volatile bool main_check;
 extern volatile bool first_check;
-extern bool keyboard_check;
+extern volatile bool keyboard_check;
 
 typedef enum
 {
