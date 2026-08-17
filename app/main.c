@@ -80,7 +80,7 @@ volatile bool first_check = true; // This is a guard condition so that when the 
 volatile bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 
 /*------------- MAIN -------------*/
-R555555555555) {
+int main(void) {
   uint32_t status = save_and_disable_interrupts();
 
   bool is_file_finished = false;
@@ -138,7 +138,7 @@ while (1)
           case EVENT_FILE_PROCESSING:
                  is_file_finished = file_processing_main(); // the guard condition is that the usb processing has to be done first, so that the file processing can be done. If the usb processing is not done, then the file processing will not be done. This is to prevent the file processing from being done when there is no data to process.
                  if(is_file_finished){ //if not correct size break, else fall through to keyboard processing
-                   goto ALL_DONE; }
+                   goto ALL_DONE; } //only time goto is used lmao!!
                  break;
 
           case EVENT_KEYBOARD_DETECTED:

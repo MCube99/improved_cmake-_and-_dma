@@ -36,6 +36,8 @@ typedef struct {
     uint sm;
     uint8_t ch;
     uint8_t num;
+    uint8_t cs_pin;
+    uint offset;
 } pio_keyboard_t;
 
 typedef struct {
@@ -56,10 +58,13 @@ typedef struct {
 // -----------------------------------------------------------------------------
 
 static pio_spi_t pio_spi;
-static pio_keyboard_t pio_keyboard;
+static pio_keyboard_t pio_keyboard = {.cs_pin = PICO_SPI_CSN_PIN};
+static pio_keyboard_t const *spi = &pio_keyboard; // pointer to the pio_keyboard struct, so that it can be used in the pio_spi_read8_blocking function
 static pio_read_master_t pio_read_master;
 
 
+
+void __time_critical_func(pio_spi_read8_blocking)(const pio_keyboard_t *spi, uint8_t *dst, size_t len);
 // -----------------------------------------------------------------------------
 // GPIO ISR
 // -----------------------------------------------------------------------------
@@ -207,14 +212,14 @@ PUBLIC void pio_keyboard_setup(void){
     pio_keyboard.pio = pio;
     pio_keyboard.sm = sm;
     uint offset = pio_add_program(pio,&keyboard_output_program);
+    pio_keyboard.offset = offset;
     pio_sm_clear_fifos(return_keyboard_pio(), return_keyboard_sm());
     
     keyboard_output_program_init(
         pio,
         sm,
         offset,
-        PICO_SPI_RX_PIN,
-        PICO_SPI_JMP_PIN);
+        PICO_SPI_RX_PIN);
 }
 
 PUBLIC inline void dma_setup(uint32_t size){
@@ -255,20 +260,12 @@ PUBLIC void classify_packet(void) {
     set_size(size);
 
     if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
-
-	if(pio_interrupt_get(return_keyboard_pio(), return_keyboard_sm())){
-		pio_interrupt_clear(return_keyboard_pio(), 1); // clear the interrupt for the keyboard output, so it can run
-	}
-
         keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
         classify_event = EVENT_KEYBOARD_DETECTED;
     }
 
     else if(size > GARY_CODE ) {
-
-        if(pio_interrupt_get(return_spi_pio(), 0)){
-            pio_interrupt_clear(return_spi_pio(),0);
-        }
+        pio_interrupt_clear(return_spi_pio(),0);
         pio_sm_put(return_spi_pio(),return_spi_sm(),size);
         dma_setup(size); //pass size to dma setup so it can set up transfer size
         classify_event = EVENT_USB_PROCESSING;
@@ -318,27 +315,26 @@ PUBLIC bool usb_processing_main(void) {
 PUBLIC bool keyboard_processing_main() {
     uint8_t ch = 0x1F; 
     static uint32_t num = 0;
-    event_type_t classify_event;
-   static uint8_t size = 0;
+    event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
+    static uint8_t size = 0;
 
-    if(dequeue_keyboard(&ch)){ // This is the guard condition, if there is no keyboard input, then it will not enter this if statement and not read from Gary or write to it. The event signal is the ISR 
-        classify_event = EVENT_KEYBOARD_DETECTED; // keep on repeatedly coming here until the enter key is pressed.
-        if(!pio_sm_is_rx_fifo_empty(return_keyboard_pio(), return_keyboard_sm())){ // if the fifo is not empty, then it will not write to it, and will wait until the fifo is empty before writing to it. This is to prevent the system from crashing due to invalid sizes.
-         num = pio_sm_get_rx_fifo_level(return_keyboard_pio(), return_keyboard_sm()); // read from the fifo to clear it out, so that the next time it will be empty and can write to it. This is to prevent the system from crashing due to invalid sizes.
+    if(dequeue_keyboard(&ch)){ //start transaction only when character is detected
+        pio_sm_exec_wait_blocking(return_keyboard_pio(), return_keyboard_sm(), pio_encode_wait_gpio(1, PICO_SPI_CSN_PIN )); // Wait for csn to go high
+        pio_sm_exec_wait_blocking(return_keyboard_pio(), return_keyboard_sm(), pio_encode_wait_gpio(0, PICO_SPI_CSN_PIN )); // Wait for csn to go low
+        if(pio_sm_is_tx_fifo_empty(return_keyboard_pio(), return_keyboard_sm())){
+            pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)ch<<24);
+        }else{
+            size = pio_sm_get_tx_fifo_level(return_keyboard_pio(),return_keyboard_sm());
         }
-        if(!pio_sm_is_tx_fifo_full(return_keyboard_pio(), return_keyboard_sm())){ 
-            pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), ((uint32_t)ch) << 24);
+        if(pio_interrupt_get(return_keyboard_pio(), 1 )){
+            pio_interrupt_clear(return_keyboard_pio(), 1); // clear the interrupt for the keyboard output, so it can run
         }
+        num = pio_sm_get(return_keyboard_pio(), return_keyboard_sm()); // read from the fifo 
     }
 
-    if(!gpio_get(PICO_SPI_CSN_PIN)){ // if the csn is low, then it will not read from the fifo, and will wait until the csn is high before reading from it. This is to prevent the system from crashing due to invalid sizes.
-        return(false);
-    }
-	    size = pio_sm_get_pc(return_keyboard_pio(), return_keyboard_sm());
 
     if(ch == '\r'){
         classify_event = EVENT_DONE;
-        gpio_put(PICO_SPI_JMP_PIN,1); // set the keyboard pin high to indicate that the keyboard is done. This is to prevent the system from crashing due to invalid sizes.
         enqueue_interrupts(classify_event);
         return(true); // Simply return early
     }
@@ -361,6 +357,41 @@ PUBLIC bool event_processing_main() {
     }
     enqueue_interrupts(EVENT_NONE);
 
+}
+
+
+void __time_critical_func(pio_spi_read8_blocking)(const pio_keyboard_t *spi, uint8_t *dst, size_t len) {
+    size_t tx_remain = len, rx_remain = len;
+    io_rw_8 *txfifo = (io_rw_8 *) &spi->pio->txf[spi->sm];
+    io_rw_8 *rxfifo = (io_rw_8 *) &spi->pio->rxf[spi->sm];
+    while (tx_remain || rx_remain) {
+        if (tx_remain && !pio_sm_is_tx_fifo_full(spi->pio, spi->sm)) {
+            *txfifo = 0;
+            --tx_remain;
+        }
+        if (rx_remain && !pio_sm_is_rx_fifo_empty(spi->pio, spi->sm)) {
+            *dst++ = *rxfifo;
+            --rx_remain;
+        }
+    }
+}
+
+
+void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_keyboard_t *spi, uint8_t *src, uint8_t *dst,
+                                                         size_t len) {
+    size_t tx_remain = len, rx_remain = len;
+    io_rw_8 *txfifo = (io_rw_8 *) &spi->pio->txf[spi->sm];
+    io_rw_8 *rxfifo = (io_rw_8 *) &spi->pio->rxf[spi->sm];
+    while (tx_remain || rx_remain) {
+        if (tx_remain && !pio_sm_is_tx_fifo_full(spi->pio, spi->sm)) {
+            *txfifo = *src++;
+            --tx_remain;
+        }
+        if (rx_remain && !pio_sm_is_rx_fifo_empty(spi->pio, spi->sm)) {
+            *dst++ = *rxfifo;
+            --rx_remain;
+        }
+    }
 }
                
 // -----------------------------------------------------------------------------

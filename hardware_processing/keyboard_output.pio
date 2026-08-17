@@ -2,43 +2,34 @@
 
 .program keyboard_output
 
-keyboard_setup:
-    
-    irq wait 1
-    pull block; doesnt even start the sm if no data in, since pointless
-    wait 1 gpio 4; wait for csn to be high first and to stop inappropriate starting
-    
 .wrap_target
 keyboard_initial_processing:
-    set x, 7
-    wait 0 gpio 4; Then let it go if its low since then data is pulled. This allows edge detection of csn and to stop inappropriate starting
-    out pins, 1 ; output a bit immediately to be sampled by the master
+    irq wait 1
+    pull block
+    out pins, 1 // do this to immediately output a bit after recieving it
 bitloop:
-    wait 1 gpio 3; skip out on the wait 0 pin 0 since thats not needed if goal is to output immediately after csn goes down. The master will sample here
+    wait 1 gpio 3; // wait for serial clock to go down to shift one bit out
     in pins, 1   ; sample a bit from the master. FULL DUPLEX
-    wait 0 gpio 3; // wait for serial clock to go down to shift one bit out
+    wait 0 gpio 3
     out pins, 1  ; //Shifting out data
-    jmp x-- bitloop ; //Jump to bitloop if output shift register is not empty. 
-    push iffull noblock
+    jmp !osre bitloop ; //Jump to bitloop if output shift register is not empty. 
+    push iffull noblock // push straight out since need to read data from it 
 check_keyboard_select:
-    jmp pin keyboard_setup; // Jump if SPACE character detected
+    wait 1 gpio 4; wait for csn to be high first and to stop inappropriate starting
 .wrap
 
 % c-sdk {
 #include "hardware/gpio.h"    
-static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, uint rx_pin, uint jmp_pin)
+static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, uint rx_pin)
 {
     pio_sm_config c = keyboard_output_program_get_default_config(offset);
     /* Configure the PIO state machine */
       // Set the IN base pin to the provided `pin` parameter. This is the data
     // pin, and the next-numbered GPIO is used as the clock pin.
     sm_config_set_in_pins(&c, rx_pin); // this is setting for ocnfiguring the rx for in 
-
-
-    sm_config_set_in_shift(&c, false,true, 8); //automatically shift data out if 8 bits have been reached 
+    sm_config_set_in_shift(&c, false,false, 8); //automatically shift data 
     sm_config_set_out_pins(&c, rx_pin+3, 1); // This is the output pin. It outputs the character theoretically 
-    sm_config_set_out_shift(&c,false, false, 32 );
-    sm_config_set_jmp_pin(&c, jmp_pin); // This is the jump pin. This will activate when an escape key is pressed
+    sm_config_set_out_shift(&c,false, false, 8 );
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);
 }

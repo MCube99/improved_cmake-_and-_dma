@@ -12,7 +12,7 @@ do_bit:
     wait 1 pin 1         ; wait for the first edge to sample data 
     in pins, 1            ; samples it in via autofull
 check_chip_select:        
-    jmp pin setting_count_for_usb
+    jmp pin setting_count_for_usb ; even  if in the main code it 
 .wrap
 
 setting_count_for_usb:
