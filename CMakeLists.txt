@@ -30,7 +30,7 @@ set(PICO_NO_PICOTOOL 1)
 set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
 # ====================================================================================
 set(PICO_BOARD pico CACHE STRING "Board type")
-set(PICO_SDK_PATH "H:/pico_sdk" CACHE PATH "Path to the Raspberry Pi Pico SDK" FORCE)
+set(PICO_SDK_PATH "C:/pico-sdk" CACHE PATH "Path to the Raspberry Pi Pico SDK" FORCE)
 set(PICO_TINYUSB_PATH "${PICO_SDK_PATH}/lib/tinyusb" CACHE PATH "Path to the TinyUSB path" FORCE)
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)

@@ -32,8 +32,7 @@ PUBLIC void queue_init(void){
 }
 
 PUBLIC bool enqueue_interrupts(event_type_t event) {
-    bool check = RingBuf_put(&interrupt_queue, event);
-    return(check);
+    return(RingBuf_put(&interrupt_queue,(RingBufElement) event));
 }
 
 
@@ -44,7 +43,11 @@ PUBLIC bool enqueue_keyboard(uint8_t letter) {
 
 
 PUBLIC bool dequeue_interrupts(event_type_t *event) {
-    bool check = RingBuf_get(&interrupt_queue, event);
+    RingBufElement raw;
+    bool check = RingBuf_get(&interrupt_queue, &raw);
+    if(check){
+        *event = (event_type_t)raw;
+    }
     return(check);
 }
 

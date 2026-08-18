@@ -81,7 +81,6 @@ volatile bool keyboard_check = false; // This is guard condiiton for the kryboar
 
 /*------------- MAIN -------------*/
 int main(void) {
-  uint32_t status = save_and_disable_interrupts();
 
   bool is_file_finished = false;
   stdio_init_all();   // USB CDC (hardware USB → PC)
@@ -98,13 +97,16 @@ int main(void) {
 
   board_init_after_tusb();
   queue_init();
+
+  uint32_t status = save_and_disable_interrupts();
   set_gpio_pins();
   pio_dma_setup();
+  dma_channel_init_once();
   pio_keyboard_setup();
-//  pio_read_master_setup();
+  restore_interrupts_from_disabled(status);
+
   msc_app_init();
 
-  restore_interrupts_from_disabled(status);
 
 while (1)
 {
@@ -117,43 +119,43 @@ while (1)
 
   while ((main_check && dequeue_interrupts(&event))) // the main check acts as an signal event wheras the dequeueing interupt acts as a guard condition. It has to be true for the state machine to process. 
     {
-      bool is_file_finished = false;
-      bool is_keyboard_finished = false;
-      bool is_usb_finished = false;
-      bool is_event_done = false;
 
       switch(event)
       {
-          case EVENT_SIZE_PACKET_RECIEVED:
-              uint32_t status = save_and_disable_interrupts();
+          case EVENT_SIZE_PACKET_RECIEVED: {
+              uint32_t status_packet = save_and_disable_interrupts();
               classify_packet(); // This cannot be interrupted as critical
-              restore_interrupts_from_disabled(status);
+              restore_interrupts_from_disabled(status_packet);
               break;
+      }
 
-          case EVENT_USB_PROCESSING:
-                 is_usb_finished = usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
+          case EVENT_USB_PROCESSING: {
+                bool is_usb_finished = false;
+                is_usb_finished = usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
                 if(!is_usb_finished){ //if not correct size break, else fall through to file processing
                   break; }
+                }
+                __attribute__((fallthrough));
 
-          case EVENT_FILE_PROCESSING:
+          case EVENT_FILE_PROCESSING: {
+                 bool is_file_finished = false;
                  is_file_finished = file_processing_main(); // the guard condition is that the usb processing has to be done first, so that the file processing can be done. If the usb processing is not done, then the file processing will not be done. This is to prevent the file processing from being done when there is no data to process.
                  if(is_file_finished){ //if not correct size break, else fall through to keyboard processing
                    goto ALL_DONE; } //only time goto is used lmao!!
-                 break;
+                 break; }
 
-          case EVENT_KEYBOARD_DETECTED:
+          case EVENT_KEYBOARD_DETECTED: {
+                bool is_keyboard_finished = false;
                // spi_write();
-                main_check = true; // set main check to true so that the main loop will run. This is to prevent the main loop from running when there is no event to process.
                 is_keyboard_finished = keyboard_processing_main(); //keyboard_processing_main();spi_slave_setup()
                 if(!is_keyboard_finished){ //if not correct size break, else fall through to event processing
                   break; }
+                }
 
 
           case EVENT_DONE:
               ALL_DONE:
-                uint32_t status_keyboard = save_and_disable_interrupts(); // wont take any interrupts from either gpio or usb, since this happens when an enter is pressed, so no need to 
-                is_event_done = event_processing_main();
-                restore_interrupts_from_disabled(status_keyboard);
+                event_processing_main();
 
           default:
               break;
@@ -292,7 +294,6 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
 
         if(keyboard_check){ // guard condition
           uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
-          ch = reverse_bits(ch); // reverse the bits of the character to match the keyboard encoding
           enqueue_keyboard(ch);
         }
     }

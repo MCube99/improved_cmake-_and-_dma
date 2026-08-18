@@ -10,9 +10,9 @@ keyboard_initial_processing:
 bitloop:
     wait 1 gpio 3; // wait for serial clock to go down to shift one bit out
     in pins, 1   ; sample a bit from the master. FULL DUPLEX
-    wait 0 gpio 3
+    wait 0 gpio 3 ; put a data out on this one
     out pins, 1  ; //Shifting out data
-    jmp !osre bitloop ; //Jump to bitloop if output shift register is not empty. 
+    jmp !osre bitloop; //Jump to bitloop if output shift register is not empty. 
     push iffull noblock // push straight out since need to read data from it 
 check_keyboard_select:
     wait 1 gpio 4; wait for csn to be high first and to stop inappropriate starting
