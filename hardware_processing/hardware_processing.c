@@ -29,6 +29,7 @@ typedef struct {
     //uint PIO_IRQc
     int dma_chan;
     dma_channel_config dma_cfg;
+    uint offset;
 } pio_spi_t;
 
 typedef struct {
@@ -39,18 +40,12 @@ typedef struct {
     uint offset;
 } pio_keyboard_t;
 
-typedef struct {
-    PIO pio;
-    uint sm;
-    uint8_t ch;
-} pio_read_master_t;
 
 #define PICO_START          2
 #define PICO_SPI_RX_PIN   ((PICO_START)      + 0)   // 2 
 #define PICO_SPI_SCK_PIN  ((PICO_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
 #define PICO_SPI_CSN_PIN   ((PICO_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
 #define PICO_SPI_TX_PIN  ((PICO_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → slave
-#define PICO_SPI_JMP_PIN ((PICO_SPI_RX_PIN) + 5)   // 7 
 
 // -----------------------------------------------------------------------------
 // GLOBALS
@@ -60,36 +55,30 @@ static pio_spi_t pio_spi;
 static pio_keyboard_t pio_keyboard;
 
 
-
 // -----------------------------------------------------------------------------
 // GPIO ISR
 // -----------------------------------------------------------------------------
+static volatile bool skip_next = true; // // this is for DAC. First csn for usb side is for  DAC 
+static volatile bool already_fired = false; //
 
-PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {    
-    static uint8_t count = 0; // This is the static variable that holds memory, and will be used to determine ISR tiggering times etc
-    uint32_t events =  gpio_get_irq_event_mask(PICO_SPI_CSN_PIN);
-    gpio_acknowledge_irq(PICO_SPI_CSN_PIN,events); 
-    main_check = true; // set main check to true so that the main loop will run. This is to prevent the main loop from running when there is no event to process.
+PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
+    uint32_t events = gpio_get_irq_event_mask(PICO_SPI_CSN_PIN);
+    gpio_acknowledge_irq(PICO_SPI_CSN_PIN, events);
+    main_check = true; // set main check to true so that the main loop will run.
 
-    // -------------------------------------------------------------------------
-    if (events & GPIO_IRQ_EDGE_FALL ) {
-
-        if(keyboard_check ){
-            return; // early return if its keyboard mode or the first official csn for theu sb, since the first proper one is to do with the adc and not the usb.
+    if (events & GPIO_IRQ_EDGE_FALL) {
+        if (keyboard_check || already_fired) {
+            return; // not for me (keyboard mode active), or already fired this cycle
         }
 
-        if(count == 1 && first_check ){ // If hitting IRQ second time. Should only happen once, so this is a guard condition to prevent it from happening again. Only exception is if its set so by the code
-            count = 0; // reset count to 0 so that the next time the ISR triggers, it will enqueue the EVENT SIZE PACKET RECIEVED event. This is to prevent the system from getting stuck in an invalid state due to invalid sizes.
-            enqueue_interrupts(EVENT_SIZE_PACKET_RECIEVED); // starts the whole thing off. 
-            first_check = false; // set to false so that the ISR will not enqueue the event again. This is to prevent the ISR from enqueing the event when the csn is meant for the DAC. We share the same csn pin for both the DAC and the SPI, so when the DAC is being used, the csn will be low, and this ISR will trigger. This is to prevent that from happening.
-        }
-        if(count > 1){
-            count = 0; // reset count to 0 so that the next time the ISR triggers, it will enqueue the EVENT SIZE PACKET RECIEVED event. This is to prevent the system from getting stuck in an invalid state due to invalid sizes.
+        if (skip_next) { 
+            skip_next = false; // this edge presumed not-for-me (e.g. DAC), skip it
+        } else {
+            enqueue_interrupts(EVENT_SIZE_PACKET_RECIEVED); // this edge is the real one
+            already_fired = true; // stay silent until event_processing_main() re-arms us
         }
     }
-    ++count; // goes from 0 to 1, showing first round through the isr
 }
-
 // -----------------------------------------------------------------------------
 // GPIO SETUP
 // -----------------------------------------------------------------------------
@@ -99,11 +88,6 @@ PUBLIC void set_gpio_pins(void) {
     gpio_init(PICO_SPI_CSN_PIN);
     gpio_set_dir(PICO_SPI_CSN_PIN, GPIO_IN);
     gpio_pull_up(PICO_SPI_CSN_PIN);
-// The jmp pin in PIO will be controlled by the PIO and will go high when a keyboard enter is detected. Befire that, itll just be 0
-    gpio_init(PICO_SPI_JMP_PIN); 
-    gpio_set_dir(PICO_SPI_JMP_PIN, true);
-    gpio_set_function(PICO_SPI_JMP_PIN, GPIO_FUNC_SIO); 
-    gpio_put(PICO_SPI_JMP_PIN,0);
 
 // inputs are always available to PIO and SIO, regardless of the direction, or function, unless you explicitly disable the input (enabled by default).
 // so RX pin and SCK pin are always available to the PIO, regardless of the direction or function.
@@ -161,6 +145,7 @@ PUBLIC void pio_dma_setup(void)
     // Store the resources selected by the SDK
     pio_spi.pio = pio;
     pio_spi.sm = sm;
+    pio_spi.offset = offset;
 
     pio_sm_clear_fifos(pio, sm);
 
@@ -172,21 +157,6 @@ PUBLIC void pio_dma_setup(void)
         PICO_SPI_CSN_PIN
     );
 }
-//PUBLIC void pio_read_master_setup(void){
-//    PIO pio = pio0;
-//    uint sm = pio_claim_unused_sm(pio, true);
-//    pio_read_master.pio = pio;
-//    pio_read_master.sm = sm;
-//    uint offset = pio_add_program( pio_read_master.pio, &read_master_program);
-//    pio_sm_clear_fifos(pio, sm);
-//
-//    read_master_program_init(
-//        pio,
-//        sm,
-//        offset,
-//        PICO_SPI_RX_PIN,
-//        PICO_SPI_CSN_PIN);
-//}
 
 PUBLIC void pio_keyboard_setup(void)
 {
@@ -219,6 +189,7 @@ PUBLIC void pio_keyboard_setup(void)
         PICO_SPI_RX_PIN
     );
 }
+
 PUBLIC void dma_channel_init_once(void){
     pio_spi.dma_chan = dma_claim_unused_channel(true);
     pio_spi.dma_cfg = dma_channel_get_default_config(pio_spi.dma_chan);
@@ -270,8 +241,9 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
         classify_event = EVENT_USB_PROCESSING;
     } 
     else{
-        classify_event = EVENT_NONE; //Invalid size, so just ignore it and do nothing. This is to prevent the system from crashing due to invalid sizes.
-        first_check = true; // reset the first check so that the next time the ISR triggers, it will enqueue the EVENT SIZE PACKET RECIEVED event. This is to prevent the system from getting stuck in an invalid state due to invalid sizes.
+        classify_event = EVENT_NONE;
+        skip_next = true;
+        already_fired = false; //Invalid size, so just ignore it and do nothing. This is to prevent the system from crashing due to invalid sizes.
     }
     uint32_t status = save_and_disable_interrupts();
     enqueue_interrupts(classify_event);
@@ -312,59 +284,64 @@ PUBLIC bool usb_processing_main(void) {
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(EVENT_NONE);
         restore_interrupts_from_disabled(status);
+        dma_channel_cleanup(return_channel());
         return(false);
     }
 }
 
 PUBLIC bool keyboard_processing_main() {
-    uint8_t ch;
-    static uint32_t num = 0;
+    uint8_t ch = 0;
     event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
-    static uint8_t size = 0;
-    static uint8_t num1 = 0;
+    static int gary_code_mismatch_count = 0;
 
     if(dequeue_keyboard(&ch)){ //start transaction only when character is detected
             pio_interrupt_clear(return_keyboard_pio(),1);
-            size = pio_sm_get_pc(return_keyboard_pio(), return_keyboard_sm());
             pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)ch << 24);
-           num1 =  pio_sm_get_tx_fifo_level(return_keyboard_pio(), return_keyboard_sm());
+
+            if(ch == '\r'){
+            // Force the SM's PC back to the very start (irq wait 1),
+            // ending the keyboard-shifting loop and re-arming the gate.
+                keyboard_check = false;
+                pio_sm_exec_wait_blocking(return_keyboard_pio(), return_keyboard_sm(),
+                pio_encode_jmp(pio_keyboard.offset)); // offset 0 = keyboard_initial_processing
+                hw_set_bits(&return_keyboard_pio()->irq, 1u << 1); // signal event_processing_main() as before
+                classify_event = EVENT_DONE; // queing up the event
+                uint32_t status = save_and_disable_interrupts();
+                enqueue_interrupts(classify_event);
+                restore_interrupts_from_disabled(status);
+
+                return(true); // Simply return early
+            }
     }
+    if (!pio_sm_is_rx_fifo_empty(return_keyboard_pio(), return_keyboard_sm())) {
+        uint32_t sampled = pio_sm_get(return_keyboard_pio(), return_keyboard_sm());
+        uint8_t sampled_byte = sampled >> 24; // adjust shift based on your in_shift config/justification
+        if (sampled_byte != GARY_CODE) {
+            gary_code_mismatch_count++; // same diagnostic counter idea as before
+    }
+}
 
-    size = pio_sm_get_pc(return_keyboard_pio(), return_keyboard_sm());
-
-    if(ch == '\r'){
-        classify_event = EVENT_DONE;
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(classify_event);
         restore_interrupts_from_disabled(status);
-        return(true); // Simply return early
-    }
-    uint32_t status = save_and_disable_interrupts();
-    enqueue_interrupts(classify_event);
-    restore_interrupts_from_disabled(status);
-    return(false);
+        return(false);
 }
-
 PUBLIC void event_processing_main() {
-    if(pio_interrupt_get(return_keyboard_pio(),1)){
-        gpio_put(PICO_SPI_JMP_PIN,0); // set the keyboard pin low to indicate that the keyboard is done. This is to prevent the system from crashing due to invalid sizes.
+
         if(pio_interrupt_get(return_spi_pio(), 0)){
             pio_interrupt_clear(return_spi_pio(), 0);
-            pio_sm_put(return_spi_pio(),return_spi_sm(), 0); // to reset it
-        }
-        keyboard_check = false;
+            pio_sm_exec_wait_blocking(return_spi_pio(), return_spi_sm(),
+            pio_encode_jmp(pio_spi.offset)); // force PC back to "flush:" — full reset
     }
 
-    if(pio_interrupt_get(return_spi_pio(), 2)){
-        pio_interrupt_clear(return_spi_pio(), 2);
-    }
     uint32_t status = save_and_disable_interrupts();
+    skip_next = true;
+    already_fired = false;
     enqueue_interrupts(EVENT_NONE);
     restore_interrupts_from_disabled(status);
-
 }
 
-PRIVATE static uint read_register(PIO pio, uint sm, enum pio_src_dest reg) {
+PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg) {
     uint move_isr = pio_encode_mov(pio_isr, reg);
     pio_sm_exec_wait_blocking(pio, sm, move_isr);
     uint push = pio_encode_push(false, false);

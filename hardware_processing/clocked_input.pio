@@ -32,12 +32,8 @@ usb_processing:
     jmp y-- usb_processing
     jmp x-- usb_setup
     wait 1 gpio 4
-    jmp pin reset
-
-
-reset:
-    irq wait 2
     jmp flush
+
 % c-sdk {
 
 static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uint pin, uint jmp_pin) {

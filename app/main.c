@@ -76,7 +76,6 @@ static void process_kbd_report(hid_keyboard_report_t const *report);
 PRIVATE uint8_t reverse_bits(uint8_t value);
 
 volatile bool main_check = false; // This is a signal event for the main loop. If this is false, then the main loop will not run. It is set to true when the SPI ISR triggers, and it is set to false when the event processing main function runs. This is to prevent the main loop from running when there is no event to process.
-volatile bool first_check = true; // This is a guard condition so that when the ISR triggers for the first time and this is true, the IRQ will enqueue EVENT SIZE PACKET RECIEVED and set this to false.
 volatile bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 
 /*------------- MAIN -------------*/
@@ -145,7 +144,7 @@ while (1)
                  break; }
 
           case EVENT_KEYBOARD_DETECTED: {
-                bool is_keyboard_finished = false;
+                bool is_keyboard_finished = false; // if a new char is entered, then it can only enter here if csn falls. 
                // spi_write();
                 is_keyboard_finished = keyboard_processing_main(); //keyboard_processing_main();spi_slave_setup()
                 if(!is_keyboard_finished){ //if not correct size break, else fall through to event processing
