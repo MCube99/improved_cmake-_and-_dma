@@ -103,7 +103,6 @@ int main(void) {
   dma_channel_init_once();
   pio_keyboard_setup();
   restore_interrupts_from_disabled(status);
-
   msc_app_init();
 
 
@@ -113,6 +112,8 @@ while (1)
     msc_app_task();
     led_blinking_task();
     event_type_t event;
+    bool is_keyboard_finished = false;
+
 
 ////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
 
@@ -139,21 +140,21 @@ while (1)
           case EVENT_FILE_PROCESSING: {
                  bool is_file_finished = false;
                  is_file_finished = file_processing_main(); // the guard condition is that the usb processing has to be done first, so that the file processing can be done. If the usb processing is not done, then the file processing will not be done. This is to prevent the file processing from being done when there is no data to process.
-                 if(is_file_finished){ //if not correct size break, else fall through to keyboard processing
-                   goto ALL_DONE; } //only time goto is used lmao!!
+                 if(!is_file_finished){ //if not correct size break, else fall through to keyboard processing
                  break; }
+          }
+                __attribute__((fallthrough));
 
-          case EVENT_KEYBOARD_DETECTED: {
-                bool is_keyboard_finished = false; // if a new char is entered, then it can only enter here if csn falls. 
-               // spi_write();
-                is_keyboard_finished = keyboard_processing_main(); //keyboard_processing_main();spi_slave_setup()
-                if(!is_keyboard_finished){ //if not correct size break, else fall through to event processing
-                  break; }
-                }
+   ///       case EVENT_KEYBOARD_DETECTED: {
+   ///             bool is_keyboard_finished = false; // if a new char is entered, then it can only enter here if csn falls. 
+   ///            // spi_write();
+   ///             is_keyboard_finished = keyboard_processing_main(); //keyboard_processing_main();spi_slave_setup()
+   ///             if(!is_keyboard_finished){ //if not correct size break, else fall through to event processing
+   ///               break; }
+   ///             }
 
 
           case EVENT_DONE:
-              ALL_DONE:
                 event_processing_main();
 
           default:
@@ -162,6 +163,18 @@ while (1)
 
       main_check = false; //reset to false so that the main loop will not run until the next interrupt triggers it. This is to prevent the main loop from running when there is no event to process.
 
+  }
+
+  if(keyboard_check){ // if the keyboard is being processed, then the main loop will not run until the keyboard is done processing. This is to prevent the main loop from running when there is no event to process.
+    bool is_keyboard_finished = false; // if a new char is entered, then it can only enter here if csn falls. 
+    is_keyboard_finished = keyboard_processing_main(); //keyboard_processing_main();spi_slave_setup()
+    if(is_keyboard_finished){
+      main_check = true; // set main check to true so that the main loop will run.
+      keyboard_check = false; // set keyboard check to false so that keyboard wont have to be checked since its processed
+    }else{
+      main_check = false; // set main check to false so that the main loop will not run until the next interrupt triggers it. This is to prevent the main loop from running when there is no event to process.
+      keyboard_check = true; // set keyboard check to true so that the keyboard processing will cxotinue until it escapes
+    }
   }
 
   }

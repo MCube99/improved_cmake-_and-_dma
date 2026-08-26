@@ -54,6 +54,7 @@ typedef struct {
 static pio_spi_t pio_spi;
 static pio_keyboard_t pio_keyboard;
 
+PRIVATE inline void WaitFallingEdge(uint gpio);
 
 // -----------------------------------------------------------------------------
 // GPIO ISR
@@ -61,9 +62,9 @@ static pio_keyboard_t pio_keyboard;
 static volatile bool skip_next = true; // // this is for DAC. First csn for usb side is for  DAC 
 static volatile bool already_fired = false; //
 
-PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
-    uint32_t events = gpio_get_irq_event_mask(PICO_SPI_CSN_PIN);
-    gpio_acknowledge_irq(PICO_SPI_CSN_PIN, events);
+PRIVATE void __not_in_flash_func(my_gpio_isr)(uint gpio, uint32_t events) {
+    //uint32_t events = gpio_get_irq_event_mask(PICO_SPI_CSN_PIN);
+    // gpio_acknowledge_irq(PICO_SPI_CSN_PIN, events);
     main_check = true; // set main check to true so that the main loop will run.
 
     if (events & GPIO_IRQ_EDGE_FALL) {
@@ -86,6 +87,7 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
 PUBLIC void set_gpio_pins(void) {
     // CSN pin setup
     gpio_init(PICO_SPI_CSN_PIN);
+    gpio_set_function(PICO_SPI_CSN_PIN, GPIO_FUNC_SIO);
     gpio_set_dir(PICO_SPI_CSN_PIN, GPIO_IN);
     gpio_pull_up(PICO_SPI_CSN_PIN);
 
@@ -105,18 +107,15 @@ PUBLIC void set_gpio_pins(void) {
     gpio_set_dir(PICO_SPI_SCK_PIN, 0);
     gpio_set_function(PICO_SPI_SCK_PIN, GPIO_FUNC_PIO0); 
 
+    gpio_set_irq_enabled_with_callback(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true, &my_gpio_isr);
     // Clear any pending interrupts FIRST
-    gpio_acknowledge_irq(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL);
-
-    // Set ISR
-    irq_set_exclusive_handler(IO_IRQ_BANK0, my_gpio_isr);
-
-    // Enable GPIO interrupt on CSN
-    gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true);
-
-
-    // Enable IRQ bank
-    irq_set_enabled(IO_IRQ_BANK0, true);
+//   gpio_acknowledge_irq(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL);
+//   // Set ISR
+//   irq_set_exclusive_handler(IO_IRQ_BANK0, my_gpio_isr);
+//   // Enable GPIO interrupt on CSN
+//   gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true);
+//   // Enable IRQ bank
+//   irq_set_enabled(IO_IRQ_BANK0, true);
 }
 
 // -----------------------------------------------------------------------------
@@ -129,8 +128,7 @@ PUBLIC void pio_dma_setup(void)
     uint sm;
     uint offset;
 
-    bool success =
-        pio_claim_free_sm_and_add_program_for_gpio_range(
+    bool success = pio_claim_free_sm_and_add_program_for_gpio_range(
             &clocked_input_program,
             &pio,
             &sm,
@@ -230,8 +228,9 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
     set_size(size);
 
     if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
+        pio_interrupt_clear(return_keyboard_pio(),1);
+        gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, false); // disable the interrupt so that it does not fire again until the event is processed. This is to prevent the main loop from running when there is no event to process.
         keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
-        classify_event = EVENT_KEYBOARD_DETECTED;
     }
 
     else if(size > GARY_CODE ) {
@@ -244,6 +243,8 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
         classify_event = EVENT_NONE;
         skip_next = true;
         already_fired = false; //Invalid size, so just ignore it and do nothing. This is to prevent the system from crashing due to invalid sizes.
+        pio_interrupt_clear(return_spi_pio(), 0);
+        pio_sm_exec_wait_blocking(return_spi_pio(), return_spi_sm(), pio_encode_jmp(pio_spi.offset)); // force PC back to "flush:" — full reset
     }
     uint32_t status = save_and_disable_interrupts();
     enqueue_interrupts(classify_event);
@@ -294,22 +295,22 @@ PUBLIC bool keyboard_processing_main() {
     event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
     static int gary_code_mismatch_count = 0;
 
-    if(dequeue_keyboard(&ch)){ //start transaction only when character is detected
+    if(dequeue_keyboard(&ch)){
+ //start transaction only when character is detected
             pio_interrupt_clear(return_keyboard_pio(),1);
+            WaitFallingEdge(PICO_SPI_CSN_PIN); // wait for csn to fall before starting the transaction
             pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)ch << 24);
 
             if(ch == '\r'){
             // Force the SM's PC back to the very start (irq wait 1),
             // ending the keyboard-shifting loop and re-arming the gate.
                 keyboard_check = false;
-                pio_sm_exec_wait_blocking(return_keyboard_pio(), return_keyboard_sm(),
-                pio_encode_jmp(pio_keyboard.offset)); // offset 0 = keyboard_initial_processing
-                hw_set_bits(&return_keyboard_pio()->irq, 1u << 1); // signal event_processing_main() as before
+                pio_sm_exec_wait_blocking(return_keyboard_pio(), return_keyboard_sm(), pio_encode_jmp(pio_keyboard.offset)); // offset 0 = keyboard_initial_processing
+                hw_set_bits(&(return_keyboard_pio())->irq, 1u << 1); 
                 classify_event = EVENT_DONE; // queing up the event
                 uint32_t status = save_and_disable_interrupts();
                 enqueue_interrupts(classify_event);
                 restore_interrupts_from_disabled(status);
-
                 return(true); // Simply return early
             }
     }
@@ -318,14 +319,14 @@ PUBLIC bool keyboard_processing_main() {
         uint8_t sampled_byte = sampled >> 24; // adjust shift based on your in_shift config/justification
         if (sampled_byte != GARY_CODE) {
             gary_code_mismatch_count++; // same diagnostic counter idea as before
+        }
     }
-}
-
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(classify_event);
         restore_interrupts_from_disabled(status);
         return(false);
 }
+
 PUBLIC void event_processing_main() {
 
         if(pio_interrupt_get(return_spi_pio(), 0)){
@@ -347,6 +348,15 @@ PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg) {
     uint push = pio_encode_push(false, false);
     pio_sm_exec_wait_blocking(pio, sm, push);
     return pio_sm_get(pio, sm);
+}
+
+PRIVATE inline void WaitFallingEdge(uint gpio) {
+    while (gpio_get(gpio) == 1) {
+        tight_loop_contents();
+    }
+    while (gpio_get(gpio) == 0) {
+        tight_loop_contents();
+    }
 }
 
                

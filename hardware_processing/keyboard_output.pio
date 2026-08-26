@@ -4,8 +4,7 @@
 
 keyboard_setup:
     irq wait 1
-    pull ifempty noblock // if char isnt loaded in then just put in 0xFF
-    mov x, osr
+    pull block
     out pins, 1 ; output a bit when csn is low 
 
 .wrap_target
@@ -20,7 +19,6 @@ bitloop:
 miso_output:
    push iffull noblock
    jmp keyboard_setup
-   
 
 % c-sdk {
 #include "hardware/gpio.h"    
@@ -32,12 +30,6 @@ static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, u
     sm_config_set_out_pins(&c, rx_pin+3, 1);
     sm_config_set_out_shift(&c, false, false, 8);
     pio_sm_init(pio, sm, offset, &c);
-
-    // One-time seed: X = 0x31 before enabling the SM.
-    pio_sm_put(pio, sm, (uint32_t)31 << 24);
-    pio_sm_exec_wait_blocking(pio, sm, pio_encode_pull(false, true));
-    pio_sm_exec_wait_blocking(pio, sm, pio_encode_mov(pio_x, pio_osr));
-
     pio_sm_set_enabled(pio, sm, true);
 }
 %}
