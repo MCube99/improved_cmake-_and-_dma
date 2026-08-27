@@ -223,33 +223,32 @@ PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size){
 // -----------------------------------------------------------------------------
 
 PUBLIC void __time_critical_func(classify_packet)(void) {
-
     uint32_t size;
     event_type_t classify_event = 0;
     size = pio_sm_get_blocking(return_spi_pio(), return_spi_sm());
     set_size(size);
 
-    if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
-        keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
+    uint32_t status = save_and_disable_interrupts();
+
+    if (size == GARY_CODE) {
+        keyboard_check = true;
         classify_event = EVENT_KEYBOARD_DETECTED;
     }
-
-    else if(size > GARY_CODE ) {
+    else if (size > GARY_CODE) {
         pio_interrupt_clear(return_spi_pio(),0);
         pio_sm_put(return_spi_pio(),return_spi_sm(),size);
-        dma_setup_fast(size); //pass size to dma setup so it can set up transfer size
+        dma_setup_fast(size);
         classify_event = EVENT_USB_PROCESSING;
-    } 
-    else{
+    }
+    else {
         classify_event = EVENT_NONE;
         skip_next = true;
-        already_fired = false; //Invalid size, so just ignore it and do nothing. This is to prevent the system from crashing due to invalid sizes.
+        already_fired = false;
     }
-    uint32_t status = save_and_disable_interrupts();
+
     enqueue_interrupts(classify_event);
     restore_interrupts_from_disabled(status);
 }
-
 
 // -----------------------------------------------------------------------------
 // PROCESSING FOR MAIN

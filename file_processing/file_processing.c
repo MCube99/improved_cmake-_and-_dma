@@ -85,13 +85,8 @@ FRESULT (*handle_error[])(FRESULT fr) = {
 PRIVATE void extract_date_directory(const uint8_t *in, char *dates, size_t size);
 PRIVATE char* extract_time(const char *in, char *times, size_t size );
 PRIVATE void extract_date(char *in, char *dates, size_t size);
-PRIVATE char* extract_ohm(char *in, char *ohms, size_t size);
-PRIVATE char* extract_voltage(char *in, char *voltage, size_t size);
-PRIVATE char* extract_current(char *in, char *current, size_t size);
-PRIVATE char* extract_test_time(char *in, char *test_time, size_t size);
-PRIVATE char* extract_comment(char *in, char *comment, size_t size);
 PRIVATE char* extract_state(char *in, char *state, size_t size);
-
+PRIVATE char* extract_comma_field(char *in, char *out, size_t size);
 
 PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info);
 
@@ -259,11 +254,12 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
 
 
     char *buffer = file_info.starting_pointer;
-    buffer = extract_ohm(buffer, ohms, sizeof(ohms)); //want to pass pointer and then modify pointer to pooubt ti bextl
-    buffer = extract_voltage(buffer, voltage, sizeof(voltage));
-    buffer = extract_current(buffer, current, sizeof(current));
-    buffer = extract_test_time(buffer, test_time, sizeof(test_time));
-    buffer = extract_comment(buffer, comment, sizeof(comment));
+    buffer = extract_comma_field(buffer, ohms, sizeof(ohms)); //want to pass pointer and then modify pointer to pooubt ti bextl
+    buffer = extract_comma_field(buffer, voltage, sizeof(voltage));
+    buffer = extract_comma_field(buffer, current, sizeof(current));
+    buffer = extract_comma_field(buffer, test_time, sizeof(test_time));
+    buffer = extract_comma_field(buffer, comment, sizeof(comment));
+
     buffer = extract_state(buffer, state, sizeof(state));
     
     //extract_voltage(buffer, voltage, size_t size); // this is for the next value, and so on and so fort
@@ -511,7 +507,9 @@ PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, si
    dates_directory[size-1]='\0';
 
    char *start = strchr(in,'/');  
+   if(!start) return;
    char *end = strchr(start+1,'/');
+   if(!end) return;
    char* const beginning = in; //immutable pointer to first 
    char *p = in+1;
 
@@ -527,6 +525,8 @@ PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, si
    ++p;
 
    char *end_final = strchr(end+1,',');
+   if(!end_final) return;
+
    for(; p<end_final && i<size-1; p++)
    {
         dates_directory[i++] = *p;
@@ -540,6 +540,7 @@ PRIVATE void extract_date( char *in, char *dates, size_t size) {
     memset(dates,0,size);
     dates[size-1]='\0';
     char *end = strchr(in,'/');  
+    if(!end) return;
     char *p = in+1;
 
     int i = 0;
@@ -553,6 +554,7 @@ PRIVATE void extract_date( char *in, char *dates, size_t size) {
 //    ++p;
 
    char *end_final = strchr(end+1,',');
+   if(!end_final) return;
    for(; p<end_final && i<size-1; p++)
    {
     if (*p == '/'){ // / can be mistaken for directory
@@ -566,7 +568,9 @@ PRIVATE char* extract_time(const char *in, char *time, size_t size) {
     memset(time,0,size);
     time[size-1] = '\0';
     char *start = strchr(in, ',');
+    if(!start) return;
     char *end   = strchr(start + 1, ',');
+    if(!end) return;
     char *const check = (char *)give_array_address();
     int i = 0;
     char *p = start + 1;
@@ -589,151 +593,6 @@ PRIVATE char* extract_time(const char *in, char *time, size_t size) {
 
 }
 
-PRIVATE char* extract_ohm(char *in, char *ohms, size_t size) {
-    memset(ohms, 0, size);
-
-    
-
-     char *ptr  = strchr(in , ',');
-    if (!ptr) return NULL;
-
-    
-
-    char *ptr_end = strchr(ptr + 1, ','); // 
-    if (!ptr_end) return NULL;
-
-    ptr++;   // move past comma
-
-    size_t j = 0;
-
-    while (ptr < ptr_end && j < size - 1)
-    {
-        if (!isspace((unsigned char)*ptr))
-        {
-            ohms[j++] = *ptr;
-        }
-        ptr++;
-    }
-
-    ohms[j] = '\0';
-
-    return ptr;
-}
-
-PRIVATE char* extract_voltage(char *in, char *voltage, size_t size) {
-    memset(voltage, 0, size);
-
-    char *ptr = strchr(in, ',');    //1st comma
-    if (!ptr) return NULL;
-
-
-    char *ptr_end = strchr(ptr + 1, ',');
-    if (!ptr_end) return NULL;
-
-    ptr++;   // move past comma
-
-    size_t j = 0;
-
-    while (ptr < ptr_end && j < size - 1)
-    {
-        if (!isspace((unsigned char)*ptr))
-        {
-           voltage[j++] = *ptr;
-        }
-        ptr++;
-    }
-
-    voltage[j] = '\0';
-
-    return ptr;
-
-}
-
-PRIVATE char* extract_current(char *in, char *current, size_t size) {
-    memset(current, 0, size);
-
-    char *ptr = strchr(in, ',');    //1st comma
-    if (!ptr) return NULL;
-
-    char *ptr_end = strchr(ptr + 1, ',');
-    if (!ptr_end) return NULL;
-
-     ptr++;   // move past comma
-
-    size_t j = 0;
-
-    while (ptr < ptr_end && j < size - 1)
-    {
-        if (!isspace((unsigned char)*ptr))
-        {
-           current[j++] = *ptr;
-        }
-        ptr++;
-    }
-
-    current[j] = '\0';
-
-    return ptr;
-
-}
-
-PRIVATE char* extract_test_time(char *in, char *test_time, size_t size) {
-    memset(test_time, 0, size);
-
-    char *ptr = strchr(in, ',');    //1st comma
-    if (!ptr) return NULL;
-
-
-
-    char *ptr_end = strchr(ptr + 1, ',');
-    if (!ptr_end) return NULL;
-
-     ptr++;   // move past comma
-
-    size_t j = 0;
-
-    while (ptr < ptr_end && j < size - 1)
-    {
-        if (!isspace((unsigned char)*ptr))
-        {
-           test_time[j++] = *ptr;
-        }
-        ptr++;
-    }
-
-    test_time[j] = '\0';
-
-    return ptr;
-}
-
-
-PRIVATE char* extract_comment(char *in, char *comment, size_t size) {
-    memset(comment, 0, size);
-
-    char *ptr = strchr(in, ',');    //1st comma
-    if (!ptr) return NULL;
-
-    char *ptr_end = strchr(ptr + 1, ',');
-    if (!ptr_end) return NULL;
-
-     ptr++;   // move past comma
-
-    size_t j = 0;
-
-    while (ptr < ptr_end && j < size - 1)
-    {
-        if (!isspace((unsigned char)*ptr))
-        {
-           comment[j++] = *ptr;
-        }
-        ptr++;
-    }
-
-    comment[j] = '\0';
-
-    return ptr;
-}
-
 PRIVATE char* extract_state(char *in, char *state, size_t size) {
     memset(state, 0, size);
 
@@ -747,7 +606,7 @@ PRIVATE char* extract_state(char *in, char *state, size_t size) {
 
     size_t j = 0;
 
-    while (ptr < ptr_end)
+    while (ptr < ptr_end && j < size - 1)
     {
         if (!isspace((unsigned char)*ptr))
         {
@@ -762,7 +621,28 @@ PRIVATE char* extract_state(char *in, char *state, size_t size) {
 }
 
 
+PRIVATE char* extract_comma_field(char *in, char *out, size_t size) {
+    memset(out, 0, size);
 
+    char *ptr = strchr(in, ',');
+    if (!ptr) return NULL;
+
+    char *ptr_end = strchr(ptr + 1, ',');
+    if (!ptr_end) return NULL;
+
+    ptr++;
+    size_t j = 0;
+
+    while (ptr < ptr_end && j < size - 1) {
+        if (!isspace((unsigned char)*ptr)) {
+            out[j++] = *ptr;
+        }
+        ptr++;
+    }
+
+    out[j] = '\0';
+    return ptr;
+}
 
 
 
