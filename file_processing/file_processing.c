@@ -568,9 +568,9 @@ PRIVATE char* extract_time(const char *in, char *time, size_t size) {
     memset(time,0,size);
     time[size-1] = '\0';
     char *start = strchr(in, ',');
-    if(!start) return;
+    if(!start) return NULL;
     char *end   = strchr(start + 1, ',');
-    if(!end) return;
+    if(!end) return NULL;
     char *const check = (char *)give_array_address();
     int i = 0;
     char *p = start + 1;

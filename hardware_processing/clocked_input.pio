@@ -18,8 +18,7 @@ check_chip_select:
 setting_count_for_usb:
     irq wait 0
     pull block
-    mov x, osr
-    jmp !x flush  ; only happens when in keyboard. Designed to reset it back to the top when enter is pressed. 
+    wait 1 gpio 4 ; to detect when csn falls
     wait 0 gpio 4
 
 usb_setup:

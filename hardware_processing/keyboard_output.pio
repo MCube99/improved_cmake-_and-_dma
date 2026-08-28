@@ -1,44 +1,48 @@
 .pio_version 0
-
 .program keyboard_output
+.side_set 1 opt
 
-keyboard_setup:
+keyboard_init:
     irq wait 1
-    pull ifempty noblock // if char isnt loaded in then just put in 0xFF
-    mov x, osr
-    out pins, 1 ; output a bit when csn is low 
+    set pindirs, 1
 
 .wrap_target
+keyboard_setup:
+    pull block
+    set pins, 1
+    out pins, 1
 bitloop:
-    wait 1 gpio 3; // wait for serial clock to go down to shift one bit out
-    in pins, 1   ; sample a bit from the master. FULL DUPLEX
-    wait 0 gpio 3 ; put a data out on this one
-    out pins, 1  ; //Shifting out data
-    jmp !osre miso_output ; jmp when the osre is empty/done processing
+    wait 1 gpio 3 side 0
+    in pins, 1     
+    wait 0 gpio 3 side 1
+    out pins, 1    
+    jmp !osre miso_output
 .wrap
 
 miso_output:
-   push iffull noblock
-   jmp keyboard_setup
-   
+    push block  
+    set pins, 0
+    jmp keyboard_setup
 
 % c-sdk {
 #include "hardware/gpio.h"    
-static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, uint rx_pin)
+static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, uint rx_pin, uint debug_pins)
 {
     pio_sm_config c = keyboard_output_program_get_default_config(offset);
     sm_config_set_in_pins(&c, rx_pin);
     sm_config_set_in_shift(&c, false, false, 8);
     sm_config_set_out_pins(&c, rx_pin+3, 1);
     sm_config_set_out_shift(&c, false, false, 8);
+    sm_config_set_set_pins(&c, debug_pins, 1); // tell "PIO" which pin to use for debug
+    sm_config_set_sideset_pins(&c, debug_pins+1); // can have both sideset and set in the same thing
     pio_sm_init(pio, sm, offset, &c);
+    pio_gpio_init(pio,debug_pins);
+    pio_gpio_init(pio,debug_pins+1);
 
-    // One-time seed: X = 0x31 before enabling the SM.
-    pio_sm_put(pio, sm, (uint32_t)31 << 24);
-    pio_sm_exec_wait_blocking(pio, sm, pio_encode_pull(false, true));
-    pio_sm_exec_wait_blocking(pio, sm, pio_encode_mov(pio_x, pio_osr));
+   // pio_sm_put(pio, sm, (uint32_t)0xFF << 24);
+   // pio_sm_exec_wait_blocking(pio, sm, pio_encode_pull(false, true));
+   // pio_sm_exec_wait_blocking(pio, sm, pio_encode_mov(pio_x, pio_osr));
 
     pio_sm_set_enabled(pio, sm, true);
 }
 %}
-
