@@ -33,7 +33,7 @@ static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, u
     sm_config_set_set_pins(&c, debug_pins, 1);
     sm_config_set_sideset_pins(&c, debug_pins+1);
     pio_sm_init(pio, sm, offset, &c);
-    pio_gpio_init(pio,rx_pin);
+    pio_gpio_init(pio,debug_pins);
 
 
     pio_sm_set_enabled(pio, sm, true);

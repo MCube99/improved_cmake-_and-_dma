@@ -58,6 +58,7 @@ typedef struct {
 #define PICO_SPI_TX_PIN  ((PICO_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → slave
 #define DEBUG_PROBE_PIN  7   // pick any free GPIO
 #define PICO_SPI_SIDESET_PIN 8
+#define PICO_SPI_DEBUG_PROBE_PIN 9 // this is for the main c file type code
 // -----------------------------------------------------------------------------
 // GLOBALS
 // -----------------------------------------------------------------------------
