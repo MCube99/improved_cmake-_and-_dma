@@ -1,14 +1,13 @@
 .pio_version 0
 .program keyboard_output
 .side_set 1 opt
-
 keyboard_init:
     irq wait 1
     set pindirs, 1
-
 .wrap_target
 keyboard_setup:
     pull block
+    irq wait 7
     set pins, 1
     out pins, 1
 bitloop:
@@ -18,12 +17,10 @@ bitloop:
     out pins, 1    
     jmp !osre miso_output
 .wrap
-
 miso_output:
-    push block  
+    push iffull noblock  
     set pins, 0
     jmp keyboard_setup
-
 % c-sdk {
 #include "hardware/gpio.h"    
 static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, uint rx_pin, uint debug_pins)
@@ -33,15 +30,11 @@ static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, u
     sm_config_set_in_shift(&c, false, false, 8);
     sm_config_set_out_pins(&c, rx_pin+3, 1);
     sm_config_set_out_shift(&c, false, false, 8);
-    sm_config_set_set_pins(&c, debug_pins, 1); // tell "PIO" which pin to use for debug
-    sm_config_set_sideset_pins(&c, debug_pins+1); // can have both sideset and set in the same thing
+    sm_config_set_set_pins(&c, debug_pins, 1);
+    sm_config_set_sideset_pins(&c, debug_pins+1);
     pio_sm_init(pio, sm, offset, &c);
-    pio_gpio_init(pio,debug_pins);
-    pio_gpio_init(pio,debug_pins+1);
+    pio_gpio_init(pio,rx_pin);
 
-   // pio_sm_put(pio, sm, (uint32_t)0xFF << 24);
-   // pio_sm_exec_wait_blocking(pio, sm, pio_encode_pull(false, true));
-   // pio_sm_exec_wait_blocking(pio, sm, pio_encode_mov(pio_x, pio_osr));
 
     pio_sm_set_enabled(pio, sm, true);
 }

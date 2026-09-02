@@ -8,7 +8,7 @@ add_library(hardware_processing STATIC ${hardware_processing_Sources})
 add_library(common_headers INTERFACE )
 pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/clocked_input.pio)
 pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/keyboard_output.pio)
-
+pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/spi_cs_loop.pio)
 
 target_sources(hardware_processing PUBLIC 
     FILE_SET HEADERS

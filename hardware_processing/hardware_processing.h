@@ -7,6 +7,7 @@
 PUBLIC void set_gpio_pins(void);
 PUBLIC void pio_dma_setup(void);
 PUBLIC void pio_keyboard_setup(void);
+PUBLIC void pio_csn_setup(void);
 PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size);
 
 PUBLIC void queue_init();

@@ -17,6 +17,7 @@
 #include "pico/binary_info.h"
 #include "clocked_input.pio.h"
 #include "keyboard_output.pio.h"
+#include "spi_cs_loop.pio.h"
 //#include "read_master.pio.h"
 
 // -----------------------------------------------------------------------------
@@ -41,21 +42,32 @@ typedef struct {
 } pio_keyboard_t;
 
 
+typedef struct {
+    PIO pio;
+    uint sm;
+    uint8_t ch;
+    uint8_t num;
+    uint offset;
+} pio_csn_t;
+
+
 #define PICO_START          2
 #define PICO_SPI_RX_PIN   ((PICO_START)      + 0)   // 2 
 #define PICO_SPI_SCK_PIN  ((PICO_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
 #define PICO_SPI_CSN_PIN   ((PICO_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
 #define PICO_SPI_TX_PIN  ((PICO_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → slave
 #define DEBUG_PROBE_PIN  7   // pick any free GPIO
+#define PICO_SPI_SIDESET_PIN 8
 // -----------------------------------------------------------------------------
 // GLOBALS
 // -----------------------------------------------------------------------------
 
 static pio_spi_t pio_spi;
 static pio_keyboard_t pio_keyboard;
+static pio_csn_t pio_csn;
 
 PRIVATE inline void WaitCsnToFall(uint gpio);
-
+PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg);
 // -----------------------------------------------------------------------------
 // GPIO ISR
 // -----------------------------------------------------------------------------
@@ -104,9 +116,15 @@ PUBLIC void set_gpio_pins(void) {
 
     gpio_init(PICO_SPI_SCK_PIN);
     gpio_set_dir(PICO_SPI_SCK_PIN, 0);
+
+    gpio_init(DEBUG_PROBE_PIN);
+    gpio_set_dir(DEBUG_PROBE_PIN,1);
 // once, in setup:
    /// gpio_init(DEBUG_PROBE_PIN);
    /// gpio_set_dir(DEBUG_PROBE_PIN, GPIO_FUNC_PIO0);
+   /// pio_csn.pio = pio;
+   /// pio_csn.sm = sm;
+   /// pio_csn.offset = offset;
    /// gpio_put(DEBUG_PROBE_PIN, 0);
 
     gpio_set_irq_enabled_with_callback(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true, &my_gpio_isr);
@@ -187,8 +205,37 @@ PUBLIC void pio_keyboard_setup(void)
         sm,
         offset,
         PICO_SPI_RX_PIN,
-        DEBUG_PROBE_PIN);
+        PICO_SPI_SIDESET_PIN);
 
+}
+
+PUBLIC void pio_csn_setup(void){
+	PIO pio = return_keyboard_pio();
+	uint sm;
+	uint offset;
+
+	bool success = pio_claim_free_sm_and_add_program_for_gpio_range(
+			&spi_cs_loop_program, 
+			&pio,
+			&sm,
+			&offset,
+			PICO_SPI_CSN_PIN,
+			1,
+			true);
+
+    gpio_put(DEBUG_PROBE_PIN,1);
+	hard_assert(success);
+    hard_assert(pio == return_keyboard_pio());   // fail loudly if it landed on a different PIO block
+	pio_csn.pio = pio;
+	pio_csn.sm = sm;
+	pio_csn.offset = offset;
+
+    spi_cs_loop_init(
+        pio,
+        sm,
+        offset,
+        PICO_SPI_CSN_PIN,
+        PICO_SPI_SIDESET_PIN);
 }
 
 PUBLIC void dma_channel_init_once(void){
@@ -297,9 +344,18 @@ PUBLIC bool keyboard_processing_main() {
     static int gary_code_mismatch_count = 0;
 
   //  WaitFallingEdge(PICO_SPI_CSN_PIN);
-    WaitCsnToFall(PICO_SPI_CSN_PIN);
+    //WaitCsnToFall(PICO_SPI_CSN_PIN);
     pio_interrupt_clear(return_keyboard_pio(),1);
     pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)ch << 24);
+    gpio_put(DEBUG_PROBE_PIN, 1);
+
+    
+    // --- diagnostic: confirm what X actually holds right now ---
+    uint32_t x_check = read_register(return_keyboard_pio(), return_keyboard_sm(), pio_x);
+    gpio_put(PICO_SPI_SIDESET_PIN , (x_check == ((uint32_t)0xFF << 24)) ? 1 : 0);
+    sleep_ms(500);
+    gpio_put(PICO_SPI_SIDESET_PIN , 0);
+    // -------------------------------------------------------------
 
     uint32_t status = save_and_disable_interrupts();
     if (!pio_sm_is_rx_fifo_empty(return_keyboard_pio(), return_keyboard_sm())) {
