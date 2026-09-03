@@ -4,10 +4,10 @@
 .wrap_target
 
 wait 1 pin 0
-wait 0 pin 1 
+wait 0 pin 0 
 irq clear 7
-set pins,1 [15]
-set pins, 0 [15]
+set pins,1 
+set pins, 0 
 
 .wrap 
 

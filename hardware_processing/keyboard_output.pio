@@ -7,20 +7,21 @@ keyboard_init:
 keyboard_setup:
     pull ifempty block ; blocks if empty and txfifo is empty
     irq wait 7 ; only starts at csn. This is being monitored by another sm. 
+    wait 0 pin 7 
     set pins, 1
     out pins, 1 ; ouput immediately before clock even starts so pit is available
 bitloop:
-    wait 1 gpio 3 ; waot fpr ot go high
+
+    wait 1 pin 1 ; waot fpr ot go high
     in pins, 1    ; take a bit in  
-    wait 0 gpio 3 ; wait for it to go low
+    wait 0 pin 1 ; wait for it to go low
     out pins, 1    ; push a bit out
     jmp !osre bitloop
 .wrap
 
 miso_output:
-    push iffull noblock  
     set pins, 0
-    jmp keyboard_init
+    jmp keyboard_setup
 
 % c-sdk {
 #include "hardware/gpio.h"    
