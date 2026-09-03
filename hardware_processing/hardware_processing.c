@@ -56,9 +56,9 @@ typedef struct {
 #define PICO_SPI_SCK_PIN  ((PICO_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
 #define PICO_SPI_CSN_PIN   ((PICO_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
 #define PICO_SPI_TX_PIN  ((PICO_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → slave
-#define DEBUG_PROBE_PIN  7   // pick any free GPIO
-#define PICO_SPI_SIDESET_PIN 8
-#define PICO_SPI_DEBUG_PROBE_PIN 9 // this is for the main c file type code
+#define PICO_KEYBOARD_DEBUG_PROBE_PIN  7   // pick any free GPIO. This is for the keyboard
+#define PICO_CSN_DEBUG_PROBE_PIN  8   // pick any free GPIO. This is for the csn pin
+#define PICO_CODE_DEBUG_PROBE_PIN 9 // this is for the main c file type code
 // -----------------------------------------------------------------------------
 // GLOBALS
 // -----------------------------------------------------------------------------
@@ -87,7 +87,6 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(uint gpio, uint32_t events) {
         if (skip_next) { 
             skip_next = false; // this edge presumed not-for-me (e.g. DAC), skip it
         } else {
-            gpio_put(7,1);
             enqueue_interrupts(EVENT_SIZE_PACKET_RECIEVED); // this edge is the real one
             already_fired = true; // stay silent until event_processing_main() re-arms us
         }
@@ -118,15 +117,16 @@ PUBLIC void set_gpio_pins(void) {
     gpio_init(PICO_SPI_SCK_PIN);
     gpio_set_dir(PICO_SPI_SCK_PIN, 0);
 
-    gpio_init(DEBUG_PROBE_PIN);
-    gpio_set_dir(DEBUG_PROBE_PIN,1);
+    gpio_init(PICO_CODE_DEBUG_PROBE_PIN);
+    gpio_set_dir(PICO_CODE_DEBUG_PROBE_PIN,1);
+    gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
 // once, in setup:
-   /// gpio_init(DEBUG_PROBE_PIN);
-   /// gpio_set_dir(DEBUG_PROBE_PIN, GPIO_FUNC_PIO0);
+   /// gpio_init(PICO_KEYBOARD_DEBUG_PROBE_PIN);
+   /// gpio_set_dir(PICO_KEYBOARD_DEBUG_PROBE_PIN, GPIO_FUNC_PIO0);
    /// pio_csn.pio = pio;
    /// pio_csn.sm = sm;
    /// pio_csn.offset = offset;
-   /// gpio_put(DEBUG_PROBE_PIN, 0);
+   /// gpio_put(PICO_KEYBOARD_DEBUG_PROBE_PIN, 0);
 
     gpio_set_irq_enabled_with_callback(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true, &my_gpio_isr);
     // Clear any pending interrupts FIRST
@@ -206,27 +206,17 @@ PUBLIC void pio_keyboard_setup(void)
         sm,
         offset,
         PICO_SPI_RX_PIN,
-        PICO_SPI_SIDESET_PIN);
+        PICO_KEYBOARD_DEBUG_PROBE_PIN);
 
 }
 
 PUBLIC void pio_csn_setup(void){
-	PIO pio = return_keyboard_pio();
+	PIO pio = return_keyboard_pio(); //share the same pio as keyboard
 	uint sm;
-	uint offset;
+    uint offset = pio_add_program(pio, &spi_cs_loop_program);
 
-	bool success = pio_claim_free_sm_and_add_program_for_gpio_range(
-			&spi_cs_loop_program, 
-			&pio,
-			&sm,
-			&offset,
-			PICO_SPI_CSN_PIN,
-			1,
-			true);
+    sm = pio_claim_unused_sm(pio, true);
 
-    gpio_put(DEBUG_PROBE_PIN,1);
-	hard_assert(success);
-    hard_assert(pio == return_keyboard_pio());   // fail loudly if it landed on a different PIO block
 	pio_csn.pio = pio;
 	pio_csn.sm = sm;
 	pio_csn.offset = offset;
@@ -236,7 +226,7 @@ PUBLIC void pio_csn_setup(void){
         sm,
         offset,
         PICO_SPI_CSN_PIN,
-        PICO_SPI_SIDESET_PIN);
+        PICO_CSN_DEBUG_PROBE_PIN); 
 }
 
 PUBLIC void dma_channel_init_once(void){
@@ -278,7 +268,6 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
     set_size(size);
 
     if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
-        pio_interrupt_clear(return_keyboard_pio(),1);
         gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, false); // disable the interrupt so that it does not fire again until the event is processed. This is to prevent the main loop from running when there is no event to process.
         keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
         return;
@@ -340,22 +329,18 @@ PUBLIC bool usb_processing_main(void) {
 }
 
 PUBLIC bool keyboard_processing_main() {
-    uint8_t ch = 'm';   // TEMPORARY: flood test
+    uint32_t ch = 'm';   // TEMPORARY: flood test
     event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
     static int gary_code_mismatch_count = 0;
 
   //  WaitFallingEdge(PICO_SPI_CSN_PIN);
     //WaitCsnToFall(PICO_SPI_CSN_PIN);
     pio_interrupt_clear(return_keyboard_pio(),1);
-    pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)ch << 24);
-    gpio_put(DEBUG_PROBE_PIN, 1);
+    pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (ch<<24) ); //should be shifted by 24 bits to the left since MSB
+    gpio_put(PICO_CODE_DEBUG_PROBE_PIN, 1);
 
     
-    // --- diagnostic: confirm what X actually holds right now ---
-    uint32_t x_check = read_register(return_keyboard_pio(), return_keyboard_sm(), pio_x);
-    gpio_put(PICO_SPI_SIDESET_PIN , (x_check == ((uint32_t)0xFF << 24)) ? 1 : 0);
-    sleep_ms(500);
-    gpio_put(PICO_SPI_SIDESET_PIN , 0);
+
     // -------------------------------------------------------------
 
     uint32_t status = save_and_disable_interrupts();

@@ -2,20 +2,22 @@
 .program spi_cs_loop
 
 .wrap_target
-wait 0 pin 0 
+
+wait 1 pin 0
+wait 0 pin 1 
 irq clear 7
-set pins,1
-wait 1 pin 0 
-set pins, 0
+set pins,1 [15]
+set pins, 0 [15]
+
 .wrap 
 
 % c-sdk {
-static inline void spi_cs_loop_init(PIO pio, uint sm, uint offset, uint cs_pin, uint side_pin) {
+static inline void spi_cs_loop_init(PIO pio, uint sm, uint offset, uint cs_pin, uint debug_pin) {
     pio_sm_config c = spi_cs_loop_program_get_default_config(offset);
-    pio_gpio_init(pio, side_pin);
+    pio_gpio_init(pio, debug_pin);
     sm_config_set_in_pins(&c, cs_pin);
-    sm_config_set_set_pins(&c, side_pin,1);
-    pio_sm_set_consecutive_pindirs(pio, sm, side_pin, 1, true);
+    sm_config_set_set_pins(&c, debug_pin,1);
+    pio_sm_set_consecutive_pindirs(pio, sm, debug_pin, 1, true);
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);
 }

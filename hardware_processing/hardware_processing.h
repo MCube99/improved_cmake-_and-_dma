@@ -3,7 +3,6 @@
 #include "common_header.h"
 
 
-
 PUBLIC void set_gpio_pins(void);
 PUBLIC void pio_dma_setup(void);
 PUBLIC void pio_keyboard_setup(void);

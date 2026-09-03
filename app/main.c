@@ -164,10 +164,10 @@ while (1)
 
   }
 
-  if(keyboard_check){ // if the keyboard is being processed, then the main loop will not run until the keyboard is done processing. This is to prevent the main loop from running when there is no event to process.
+  if( keyboard_check ){ // if the keyboard is being processed, then the main loop will not run until the keyboard is done processing. This is to prevent the main loop from running when there is no event to process.
     bool is_keyboard_finished = false; // if a new char is entered, then it can only enter here if csn falls. 
     is_keyboard_finished = keyboard_processing_main(); //keyboard_processing_main();spi_slave_setup()
-    if(is_keyboard_finished){
+    if( is_keyboard_finished ){
       main_check = true; // set main check to true so that the main loop will run.
       keyboard_check = false; // set keyboard check to false so that keyboard wont have to be checked since its processed
     }else{

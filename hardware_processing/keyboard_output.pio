@@ -1,41 +1,39 @@
 .pio_version 0
 .program keyboard_output
-.side_set 1 opt
 keyboard_init:
-    irq wait 1
+    irq wait 1 ;;will only be cleared everytime a character is put in
     set pindirs, 1
 .wrap_target
 keyboard_setup:
-    pull block
-    irq wait 7
+    pull ifempty block ; blocks if empty and txfifo is empty
+    irq wait 7 ; only starts at csn. This is being monitored by another sm. 
     set pins, 1
-    out pins, 1
+    out pins, 1 ; ouput immediately before clock even starts so pit is available
 bitloop:
-    wait 1 gpio 3 side 0
-    in pins, 1     
-    wait 0 gpio 3 side 1
-    out pins, 1    
-    jmp !osre miso_output
+    wait 1 gpio 3 ; waot fpr ot go high
+    in pins, 1    ; take a bit in  
+    wait 0 gpio 3 ; wait for it to go low
+    out pins, 1    ; push a bit out
+    jmp !osre bitloop
 .wrap
+
 miso_output:
     push iffull noblock  
     set pins, 0
-    jmp keyboard_setup
+    jmp keyboard_init
+
 % c-sdk {
 #include "hardware/gpio.h"    
 static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, uint rx_pin, uint debug_pins)
 {
     pio_sm_config c = keyboard_output_program_get_default_config(offset);
     sm_config_set_in_pins(&c, rx_pin);
-    sm_config_set_in_shift(&c, false, false, 8);
+    sm_config_set_in_shift(&c, false, true, 8);
     sm_config_set_out_pins(&c, rx_pin+3, 1);
-    sm_config_set_out_shift(&c, false, false, 8);
+    sm_config_set_out_shift(&c, false, false, 8); // WILL block if no data is available, and only work if there is data coming in from keyboard
     sm_config_set_set_pins(&c, debug_pins, 1);
-    sm_config_set_sideset_pins(&c, debug_pins+1);
     pio_sm_init(pio, sm, offset, &c);
     pio_gpio_init(pio,debug_pins);
-
-
     pio_sm_set_enabled(pio, sm, true);
 }
 %}
