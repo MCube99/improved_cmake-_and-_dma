@@ -6,15 +6,13 @@ keyboard_init:
 .wrap_target
 keyboard_setup:
     pull ifempty block ; blocks if empty and txfifo is empty
-    irq wait 7 ; only starts at csn. This is being monitored by another sm. 
-    wait 0 pin 7 
+    irq wait 7 ; only starts at csn and low serial clock. This is done by                ; another sm
     set pins, 1
-    out pins, 1 ; ouput immediately before clock even starts so pit is available
+    out pins, 1 ; ouput immediately before clock even starts 
 bitloop:
-
-    wait 1 pin 1 ; waot fpr ot go high
+    wait 1 pin 0 ; waot for serial clock to go high
     in pins, 1    ; take a bit in  
-    wait 0 pin 1 ; wait for it to go low
+    wait 0 pin 0 ; wait for it to go low
     out pins, 1    ; push a bit out
     jmp !osre bitloop
 .wrap
@@ -28,10 +26,10 @@ miso_output:
 static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, uint rx_pin, uint debug_pins)
 {
     pio_sm_config c = keyboard_output_program_get_default_config(offset);
-    sm_config_set_in_pins(&c, rx_pin);
+    sm_config_set_in_pins(&c, rx_pin); // this is the MOSI pin.
     sm_config_set_in_shift(&c, false, true, 8);
     sm_config_set_out_pins(&c, rx_pin+3, 1);
-    sm_config_set_out_shift(&c, false, false, 8); // WILL block if no data is available, and only work if there is data coming in from keyboard
+    sm_config_set_out_shift(&c, false, false, 8); // WILL block if no data // is available, and only work if there is data coming in from keyboard
     sm_config_set_set_pins(&c, debug_pins, 1);
     pio_sm_init(pio, sm, offset, &c);
     pio_gpio_init(pio,debug_pins);

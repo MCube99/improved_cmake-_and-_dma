@@ -212,10 +212,11 @@ PUBLIC void pio_keyboard_setup(void)
 
 PUBLIC void pio_csn_setup(void){
 	PIO pio = return_keyboard_pio(); //share the same pio as keyboard
+	hard_assert(pio_can_add_program(pio, &spi_cs_loop_program));				 //
 	uint sm;
-    uint offset = pio_add_program(pio, &spi_cs_loop_program);
+        uint offset = pio_add_program(pio, &spi_cs_loop_program);
 
-    sm = pio_claim_unused_sm(pio, true);
+        sm = pio_claim_unused_sm(pio, true);
 
 	pio_csn.pio = pio;
 	pio_csn.sm = sm;
@@ -225,7 +226,7 @@ PUBLIC void pio_csn_setup(void){
         pio,
         sm,
         offset,
-        PICO_SPI_CSN_PIN,
+        PICO_SPI_SCK_PIN,
         PICO_CSN_DEBUG_PROBE_PIN); 
 }
 
