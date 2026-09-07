@@ -7,9 +7,9 @@ keyboard_init:
 keyboard_setup:
     pull ifempty block ; blocks if empty and txfifo is empty
     irq wait 7 ; only starts at csn. This is being monitored by another sm. 
-    wait 0 pin 7 
-    set pins, 1
+    wait 0 pin 1 
     out pins, 1 ; ouput immediately before clock even starts so pit is available
+    set pins, 1
 bitloop:
 
     wait 1 pin 1 ; waot fpr ot go high
