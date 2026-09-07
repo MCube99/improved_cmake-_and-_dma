@@ -10,7 +10,6 @@ PUBLIC void pio_csn_setup(void);
 PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size);
 
 PUBLIC void queue_init();
-PUBLIC void spi_write();
 PUBLIC void dma_channel_init_once(void);
 
 PUBLIC bool usb_processing_main(void);
@@ -24,6 +23,7 @@ PUBLIC uint const return_spi_sm();
 PUBLIC uint const return_keyboard_sm(void);
 PUBLIC int const return_channel();
 PUBLIC uint32_t const return_size(void); 
-
+PUBLIC int const return_csn_sm(void);
+PUBLIC PIO const return_csn_pio(void);
 
 

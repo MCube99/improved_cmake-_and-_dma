@@ -138,19 +138,11 @@ while (1)
 
           case EVENT_FILE_PROCESSING: {
                  bool is_file_finished = false;
-                 is_file_finished = file_processing_main(); // the guard condition is that the usb processing has to be done first, so that the file processing can be done. If the usb processing is not done, then the file processing will not be done. This is to prevent the file processing from being done when there is no data to process.
+                 is_file_finished = file_processing_main(); 
                  if(!is_file_finished){ //if not correct size break, else fall through to keyboard processing
                  break; }
           }
                 __attribute__((fallthrough));
-
-   ///       case EVENT_KEYBOARD_DETECTED: {
-   ///             bool is_keyboard_finished = false; // if a new char is entered, then it can only enter here if csn falls. 
-   ///            // spi_write();
-   ///             is_keyboard_finished = keyboard_processing_main(); //keyboard_processing_main();spi_slave_setup()
-   ///             if(!is_keyboard_finished){ //if not correct size break, else fall through to event processing
-   ///               break; }
-   ///             }
 
 
           case EVENT_DONE:

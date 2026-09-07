@@ -17,7 +17,7 @@
 #include "pico/binary_info.h"
 #include "clocked_input.pio.h"
 #include "keyboard_output.pio.h"
-#include "spi_cs_loop.pio.h"
+#include "keyboard_input.pio.h"
 //#include "read_master.pio.h"
 
 // -----------------------------------------------------------------------------
@@ -59,6 +59,7 @@ typedef struct {
 #define PICO_KEYBOARD_DEBUG_PROBE_PIN  7   // pick any free GPIO. This is for the keyboard
 #define PICO_CSN_DEBUG_PROBE_PIN  8   // pick any free GPIO. This is for the csn pin
 #define PICO_CODE_DEBUG_PROBE_PIN 9 // this is for the main c file type code
+#define PICO_CODE_DEBUG_ERROR_PIN 10 // this is for the main c file type code and is for error programs. 
 // -----------------------------------------------------------------------------
 // GLOBALS
 // -----------------------------------------------------------------------------
@@ -67,7 +68,6 @@ static pio_spi_t pio_spi;
 static pio_keyboard_t pio_keyboard;
 static pio_csn_t pio_csn;
 
-PRIVATE inline void WaitCsnToFall(uint gpio);
 PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg);
 // -----------------------------------------------------------------------------
 // GPIO ISR
@@ -119,8 +119,11 @@ PUBLIC void set_gpio_pins(void) {
 
     gpio_init(PICO_CODE_DEBUG_PROBE_PIN);
     gpio_set_dir(PICO_CODE_DEBUG_PROBE_PIN,1);
-    gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
-// once, in setup:
+    gpio_put(PICO_CODE_DEBUG_PROBE_PIN,0);
+
+    gpio_init(PICO_CODE_DEBUG_ERROR_PIN );
+    gpio_set_dir(PICO_CODE_DEBUG_ERROR_PIN,1);
+    gpio_put(PICO_CODE_DEBUG_ERROR_PIN,0);// once, in setup:
    /// gpio_init(PICO_KEYBOARD_DEBUG_PROBE_PIN);
    /// gpio_set_dir(PICO_KEYBOARD_DEBUG_PROBE_PIN, GPIO_FUNC_PIO0);
    /// pio_csn.pio = pio;
@@ -177,8 +180,7 @@ PUBLIC void pio_dma_setup(void)
     );
 }
 
-PUBLIC void pio_keyboard_setup(void)
-{
+PUBLIC void pio_keyboard_setup(void){
     PIO pio;
     uint sm;
     uint offset;
@@ -205,28 +207,32 @@ PUBLIC void pio_keyboard_setup(void)
         pio,
         sm,
         offset,
-        PICO_SPI_RX_PIN,
-        PICO_KEYBOARD_DEBUG_PROBE_PIN);
+        PICO_SPI_SCK_PIN,
+        PICO_SPI_CSN_PIN,
+        PICO_KEYBOARD_DEBUG_PROBE_PIN
+    );
 
 }
 
 PUBLIC void pio_csn_setup(void){
-	PIO pio = return_keyboard_pio(); //share the same pio as keyboard
-	uint sm;
+    PIO pio = return_keyboard_pio();
+
     uint offset = pio_add_program(pio, &spi_cs_loop_program);
-
-    sm = pio_claim_unused_sm(pio, true);
-
-	pio_csn.pio = pio;
-	pio_csn.sm = sm;
-	pio_csn.offset = offset;
+    int sm = pio_claim_unused_sm(pio, false);
+    // Check instruction memory before adding the program
 
     spi_cs_loop_init(
         pio,
         sm,
         offset,
         PICO_SPI_CSN_PIN,
-        PICO_CSN_DEBUG_PROBE_PIN); 
+        PICO_SPI_RX_PIN,
+        PICO_CSN_DEBUG_PROBE_PIN
+    );
+
+    pio_csn.pio = pio;
+    pio_csn.sm = sm;
+    pio_csn.offset = offset;
 }
 
 PUBLIC void dma_channel_init_once(void){
@@ -268,7 +274,9 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
     set_size(size);
 
     if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
+        pio_interrupt_clear(return_keyboard_pio(),1);
         gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, false); // disable the interrupt so that it does not fire again until the event is processed. This is to prevent the main loop from running when there is no event to process.
+        gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
         keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
         return;
     }
@@ -332,27 +340,30 @@ PUBLIC bool keyboard_processing_main() {
     uint32_t ch = 'm';   // TEMPORARY: flood test
     event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
     static int gary_code_mismatch_count = 0;
+    uint32_t size = 0;
 
-  //  WaitFallingEdge(PICO_SPI_CSN_PIN);
-    //WaitCsnToFall(PICO_SPI_CSN_PIN);
-    pio_interrupt_clear(return_keyboard_pio(),1);
-    pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (ch<<24) ); //should be shifted by 24 bits to the left since MSB
-    gpio_put(PICO_CODE_DEBUG_PROBE_PIN, 1);
+    pio_sm_put_blocking(return_keyboard_pio(), return_keyboard_sm(), (ch<<24) ); //should be shifted by 24 bits to the left since MSB
+    size = pio_sm_get_blocking(return_csn_pio(), return_csn_sm()); // wait for the PIO to process the character
 
     
-
+    if(size == GARY_CODE){
+        gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
+        uint32_t status = save_and_disable_interrupts();
+        enqueue_interrupts(EVENT_DONE);
+        restore_interrupts_from_disabled(status);
+        return(true);
+    }
+    else if(size > GARY_CODE){
+        uint32_t status = save_and_disable_interrupts();
+        enqueue_interrupts(EVENT_NONE);
+        restore_interrupts_from_disabled(status);
+        return(false);
+    }
+    else{
+        gary_code_mismatch_count++;
+    }
     // -------------------------------------------------------------
 
-    uint32_t status = save_and_disable_interrupts();
-    if (!pio_sm_is_rx_fifo_empty(return_keyboard_pio(), return_keyboard_sm())) {
-        uint32_t sampled = pio_sm_get(return_keyboard_pio(), return_keyboard_sm());
-        uint8_t sampled_byte = sampled >> 24; // adjust shift based on your in_shift config/justification
-        if (sampled_byte != GARY_CODE) {
-            gary_code_mismatch_count++; // same diagnostic counter idea as before
-        }
-    }
-    enqueue_interrupts(classify_event);
-    restore_interrupts_from_disabled(status);
     return(false);
 }
 
@@ -400,7 +411,7 @@ PUBLIC void event_processing_main() {
             pio_interrupt_clear(return_spi_pio(), 0);
             pio_sm_exec_wait_blocking(return_spi_pio(), return_spi_sm(), pio_encode_jmp(pio_spi.offset)); // force PC back to "flush:" — full reset
     }
-
+    gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true); // disable the interrupt so that it does not fire again until the event is processed. This is to prevent the main loop from running when there is no event to process.
     uint32_t status = save_and_disable_interrupts();
     skip_next = true;
     already_fired = false;
@@ -416,11 +427,8 @@ PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg) {
     return pio_sm_get(pio, sm);
 }
 
-PRIVATE inline void WaitCsnToFall(uint gpio) {
-    while (gpio_get(gpio) != 0) {
-        tight_loop_contents();
-    }
-}
+   
+
 
                
 // -----------------------------------------------------------------------------
@@ -451,4 +459,14 @@ PUBLIC uint const return_keyboard_sm(void)
 PUBLIC int const return_channel(void)
 {
     return pio_spi.dma_chan;
+}
+
+PUBLIC int const return_csn_sm(void)
+{
+    return pio_csn.sm;
+}
+
+PUBLIC PIO const return_csn_pio(void)
+{
+    return pio_csn.pio;
 }

@@ -1,0 +1,35 @@
+.pio_version 0
+.program spi_cs_loop ;cba to change name now but this is to read data from the master to drain it out
+
+flush:
+    irq wait 7
+    mov isr, null         ; Clear ISR and input shift counter
+    jmp check_chip_select ; Poll chip select again
+    set pindirs, 1
+
+.wrap_target
+do_bit:
+    wait 0 pin 1          ; Detect rising edge and sample input data
+    set pins, 1
+    wait 1 pin 1          ; (autopush takes care of moving each complete
+    set pins, 0
+    in pins, 1            ; data byte to the FIFO)
+check_chip_select:
+    jmp pin, flush        ; Bail out if we see chip select high
+.wrap
+
+
+% c-sdk {
+static inline void spi_cs_loop_init(PIO pio, uint sm, uint offset, uint csn_pin, uint rx_pin, uint debug_csn_pins) {
+    pio_sm_config c = spi_cs_loop_program_get_default_config(offset);
+    pio_gpio_init(pio, debug_pin);
+    sm_config_set_in_pins(&c,rx_pin);
+    sm_config_set_jmp_pin(&c, csn_pin);
+    sm_config_set_set_pins(&c, debug_csn_pins,1);
+    sm_config_set_in_shift(&c,false,true, 8);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio,sm,true);
+
+}
+%}
