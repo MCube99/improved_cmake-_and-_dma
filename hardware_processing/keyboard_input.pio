@@ -4,8 +4,8 @@
 flush:
     irq wait 7
     mov isr, null         ; Clear ISR and input shift counter
-    jmp check_chip_select ; Poll chip select again
     set pindirs, 1
+    jmp check_chip_select ; Poll chip select again
 
 .wrap_target
 do_bit:

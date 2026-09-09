@@ -5,9 +5,10 @@ keyboard_init:
     set pindirs, 1
 
 keyboard_setup:
-    pull block ; blocks if empty and txfifo is empty
+    pull ifempty block ; blocks if empty and txfifo is empty
+    wait 1 gpio 4
+    wait 0 gpio 4 ; wait for falling edge
     irq clear 7 ; clear out the interrupt for the other sm
-    wait 0 pin 0
     jmp check_csn_select
 .wrap_target
 bitloop:
@@ -29,6 +30,8 @@ static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, u
     pio_sm_config c = keyboard_output_program_get_default_config(offset);
     sm_config_set_in_pins(&c, sclk_pin); // this is the MOSI pin.
     sm_config_set_out_pins(&c, sclk_pin+2, 1);
+    pio_sm_set_pins_with_mask(pio, sm, 0, (1u << sclk_pin)| (1u << ))
+
     sm_config_set_set_pins(&c, debug_keyboard,1);
     sm_config_set_out_shift(&c, false, false, 8); // WILL block if no data // is available, and only work if there is data coming in from keyboard
     sm_config_set_jmp_pin(&c,csn_pin);

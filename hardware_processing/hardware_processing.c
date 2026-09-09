@@ -338,29 +338,34 @@ PUBLIC bool usb_processing_main(void) {
 
 PUBLIC bool keyboard_processing_main() {
     uint32_t ch = 'm';   // TEMPORARY: flood test
+    pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)ch << 24);
     event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
     static int gary_code_mismatch_count = 0;
     uint32_t size = 0;
 
-    pio_sm_put_blocking(return_keyboard_pio(), return_keyboard_sm(), (ch<<24) ); //should be shifted by 24 bits to the left since MSB
-    size = pio_sm_get_blocking(return_csn_pio(), return_csn_sm()); // wait for the PIO to process the character
+    if(!pio_sm_is_rx_fifo_empty(return_keyboard_pio(), return_keyboard_sm())) {
+        ch = pio_sm_get_blocking(return_keyboard_pio(), return_keyboard_sm());}
 
+    if(!pio_sm_is_tx_fifo_empty(return_csn_pio(), return_csn_sm())) {
+        size = pio_sm_get_blocking(return_csn_pio(), return_csn_sm());
+    }
     
-    if(size == GARY_CODE){
+    if(size & 0xFF == GARY_CODE){
         gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
+        gpio_put(PICO_CODE_DEBUG_PROBE_PIN,0);
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(EVENT_DONE);
         restore_interrupts_from_disabled(status);
         return(true);
     }
-    else if(size > GARY_CODE){
+    else if(size & 0xFF != GARY_CODE){
+        gary_code_mismatch_count++;
+        gpio_put(PICO_CODE_DEBUG_PROBE_PIN,0);
+        gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(EVENT_NONE);
         restore_interrupts_from_disabled(status);
         return(false);
-    }
-    else{
-        gary_code_mismatch_count++;
     }
     // -------------------------------------------------------------
 
