@@ -22,7 +22,7 @@ check_chip_select:
 % c-sdk {
 static inline void spi_cs_loop_init(PIO pio, uint sm, uint offset, uint csn_pin, uint rx_pin, uint debug_csn_pins) {
     pio_sm_config c = spi_cs_loop_program_get_default_config(offset);
-    pio_gpio_init(pio, debug_csn_pin);
+    pio_gpio_init(pio, debug_csn_pins);
     sm_config_set_in_pins(&c,rx_pin);
     sm_config_set_jmp_pin(&c, csn_pin);
     sm_config_set_set_pins(&c, debug_csn_pins,1);

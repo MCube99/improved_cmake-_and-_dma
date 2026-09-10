@@ -75,11 +75,11 @@ static pio_spi_t pio_spi;
 // -----------------------------------------------------------------------------
 
 
-PRIVATE uint read_registcal_func(pio_spi_write8_read8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len);
-PRIVATE void __time_crier(PIO pio, uint sm, enum pio_src_dest reg);
-PRIVATE void __time_crititical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len);
-PRIVATE uint32_t ReadRxValue(PIO pio, uint sm);
-PRIVATE uint32_t ReadTxValue(PIO pio, uint sm);
+PRIVATE void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src,uint8_t *dst, size_t len);
+PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len);
+PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg);
+//PRIVATE uint32_t ReadRxValue(PIO pio, uint sm);
+//PRIVATE uint32_t ReadTxValue(PIO pio, uint sm);
 // -----------------------------------------------------------------------------
 // GPIO ISR
 // -----------------------------------------------------------------------------
@@ -448,15 +448,18 @@ PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg) {
 // FUNCTIONS TO READ AND WRITE TO PIO FIFOS
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len) {
-   size_t tx_remain = len, rx_remain=len;
-    io_rw_8 *tx_fifo = (io_rw_8 *)&pio_collection.pio_txf.pio->txf[pio_collection.pio.txf.sm]; //this is for the tx pio which is what the keyboard does
-    io_rw_8 *rx_fifo = (io_rw_8 *)&pio_collection.pio_rxf.pio->rxf[pio_collection.pio.rxf.sm]; //this is for the rx pio which is what the keyboard does
+    
+    size_t tx_remain = len;
+    size_t rx_remain = len;
+
+    io_rw_8 *tx_fifo = (io_rw_8 *)&pio_collection->pio_txf.pio->txf[ pio_collection->pio_txf.sm ];
+    io_ro_8 *rx_fifo = (io_ro_8 *)&pio_collection->pio_rxf.pio->rxf[ pio_collection->pio_rxf.sm ];
    while (tx_remain || rx_remain) {
-       if (tx_remain && !pio_sm_is_tx_fifo_full(pio_collection.pio_txf.pio, pio_collection.pio.txf.sm)) {
+       if (tx_remain && !pio_sm_is_tx_fifo_full(pio_collection->pio_txf.pio, pio_collection->pio_txf.sm)) {
            *tx_fifo = *src++;
            --tx_remain;
         }
-        if (rx_remain && !pio_sm_is_rx_fifo_empty(pio_collection.pio_rxf.pio, pio_collection.pio.rxf.sm)) {
+        if (rx_remain && !pio_sm_is_rx_fifo_empty(pio_collection->pio_rxf.pio, pio_collection->pio_rxf.sm)) {
               (void)*rx_fifo; // discard the received byte
               --rx_remain;
          }
@@ -464,7 +467,7 @@ PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_
 }
 
 
-PRIVATE void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len) {
+PRIVATE void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, uint8_t *dst, size_t len) 
 {
     size_t tx_remain = len;
     size_t rx_remain = len;

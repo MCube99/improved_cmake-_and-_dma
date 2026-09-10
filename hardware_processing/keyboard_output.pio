@@ -30,7 +30,7 @@ static inline void keyboard_output_program_init(PIO pio, uint sm, uint offset, u
     pio_sm_config c = keyboard_output_program_get_default_config(offset);
     sm_config_set_in_pins(&c, sclk_pin); // this is the MOSI pin.
     sm_config_set_out_pins(&c, sclk_pin+2, 1);
-    sm_config_set_set_pins(&c, debug_pin, 1);
+    sm_config_set_set_pins(&c, debug_keyboard, 1);
     sm_config_set_set_pins(&c, debug_keyboard,1);
     sm_config_set_out_shift(&c, false, false, 8); // WILL block if no data // is available, and only work if there is data coming in from keyboard
     sm_config_set_jmp_pin(&c,csn_pin);
