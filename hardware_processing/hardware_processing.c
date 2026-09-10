@@ -10,6 +10,7 @@
 #include "hardware/dma.h"
 #include "hardware/sync.h"
 #include "hardware/structs/iobank0.h"
+#include "hardware/structs/pio.h"
 #include "hardware_processing.h"
 #include "hardware/spi.h"
 #include "queue.h"
@@ -31,7 +32,8 @@ typedef struct {
     int dma_chan;
     dma_channel_config dma_cfg;
     uint offset;
-} pio_spi_t;
+} pio_spi_t; // this is for the usb
+
 
 typedef struct {
     PIO pio;
@@ -48,8 +50,16 @@ typedef struct {
     uint8_t ch;
     uint8_t num;
     uint offset;
-} pio_csn_t;
+} pio_recieve_t; // this is for the rxf from the master
 
+
+typedef struct { // acts as an accumulation point for PIOf for easy managment
+    pio_keyboard_t pio_txf; // called this since this is for transmit via spi
+    pio_recieve_t pio_rxf;      // called this since this is for recieve via spi
+} pio_collection_t;
+
+static pio_collection_t pio_collection;
+static pio_spi_t pio_spi;
 
 #define PICO_START          2
 #define PICO_SPI_RX_PIN   ((PICO_START)      + 0)   // 2 
@@ -64,11 +74,12 @@ typedef struct {
 // GLOBALS
 // -----------------------------------------------------------------------------
 
-static pio_spi_t pio_spi;
-static pio_keyboard_t pio_keyboard;
-static pio_csn_t pio_csn;
 
-PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg);
+PRIVATE uint read_registcal_func(pio_spi_write8_read8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len);
+PRIVATE void __time_crier(PIO pio, uint sm, enum pio_src_dest reg);
+PRIVATE void __time_crititical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len);
+PRIVATE uint32_t ReadRxValue(PIO pio, uint sm);
+PRIVATE uint32_t ReadTxValue(PIO pio, uint sm);
 // -----------------------------------------------------------------------------
 // GPIO ISR
 // -----------------------------------------------------------------------------
@@ -88,7 +99,7 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(uint gpio, uint32_t events) {
             skip_next = false; // this edge presumed not-for-me (e.g. DAC), skip it
         } else {
             enqueue_interrupts(EVENT_SIZE_PACKET_RECIEVED); // this edge is the real one
-            already_fired = true; // stay silent until event_processing_main() re-arms us
+            already_fired = true; // stay silent until event_processing_main() re-arms us. For USB, this should be the second fire which happens
         }
     }
 }
@@ -110,7 +121,6 @@ PUBLIC void set_gpio_pins(void) {
     gpio_set_dir(PICO_SPI_TX_PIN, 1);
     gpio_set_function(PICO_SPI_TX_PIN, GPIO_FUNC_PIO0); //set it as output
     
-
     gpio_init(PICO_SPI_RX_PIN);
     gpio_set_dir(PICO_SPI_RX_PIN, 0); // sets them as input
 
@@ -197,9 +207,9 @@ PUBLIC void pio_keyboard_setup(void){
 
     hard_assert(success);
 
-    pio_keyboard.pio = pio;
-    pio_keyboard.sm = sm;
-    pio_keyboard.offset = offset;
+    pio_collection.pio_txf.pio = pio;
+    pio_collection.pio_txf.sm = sm;
+    pio_collection.pio_txf.offset = offset;
 
     pio_sm_clear_fifos(pio, sm);
 
@@ -230,9 +240,9 @@ PUBLIC void pio_csn_setup(void){
         PICO_CSN_DEBUG_PROBE_PIN
     );
 
-    pio_csn.pio = pio;
-    pio_csn.sm = sm;
-    pio_csn.offset = offset;
+    pio_collection.pio_rxf.pio = pio;
+    pio_collection.pio_rxf.sm = sm;
+    pio_collection.pio_rxf.offset = offset;
 }
 
 PUBLIC void dma_channel_init_once(void){
@@ -262,6 +272,7 @@ PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size){
     );
     
 }
+
 
 // -----------------------------------------------------------------------------
 // PROCESSING PLACE
@@ -338,7 +349,8 @@ PUBLIC bool usb_processing_main(void) {
 
 PUBLIC bool keyboard_processing_main() {
     uint32_t ch = 'm';   // TEMPORARY: flood test
-    pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)ch << 24);
+    pio_spi_write8_blocking(&pio_collection, (const uint8_t *)&ch, 1);
+   // pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)ch << 24);
     event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
     static int gary_code_mismatch_count = 0;
     uint32_t size = 0;
@@ -432,6 +444,87 @@ PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg) {
     return pio_sm_get(pio, sm);
 }
 
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+// FUNCTIONS TO READ AND WRITE TO PIO FIFOS
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len) {
+   size_t tx_remain = len, rx_remain=len;
+    io_rw_8 *tx_fifo = (io_rw_8 *)&pio_collection.pio_txf.pio->txf[pio_collection.pio.txf.sm]; //this is for the tx pio which is what the keyboard does
+    io_rw_8 *rx_fifo = (io_rw_8 *)&pio_collection.pio_rxf.pio->rxf[pio_collection.pio.rxf.sm]; //this is for the rx pio which is what the keyboard does
+   while (tx_remain || rx_remain) {
+       if (tx_remain && !pio_sm_is_tx_fifo_full(pio_collection.pio_txf.pio, pio_collection.pio.txf.sm)) {
+           *tx_fifo = *src++;
+           --tx_remain;
+        }
+        if (rx_remain && !pio_sm_is_rx_fifo_empty(pio_collection.pio_rxf.pio, pio_collection.pio.rxf.sm)) {
+              (void)*rx_fifo; // discard the received byte
+              --rx_remain;
+         }
+    }
+}
+
+
+PRIVATE void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len) {
+{
+    size_t tx_remain = len;
+    size_t rx_remain = len;
+
+    io_rw_8 *tx_fifo = (io_rw_8 *)&pio_collection->pio_txf.pio->txf[ pio_collection->pio_txf.sm ];
+    io_ro_8 *rx_fifo = (io_ro_8 *)&pio_collection->pio_rxf.pio->rxf[ pio_collection->pio_rxf.sm ];
+
+    while (tx_remain || rx_remain) {
+
+        if (tx_remain && !pio_sm_is_tx_fifo_full( pio_collection->pio_txf.pio, pio_collection->pio_txf.sm))
+        {
+            *tx_fifo = *src++;
+            --tx_remain;
+        }
+
+        if (rx_remain && !pio_sm_is_rx_fifo_empty(pio_collection->pio_rxf.pio, pio_collection->pio_rxf.sm))
+        {
+            *dst++ = *rx_fifo;
+            --rx_remain;
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+// CODE TO DEBUG PIO FROM WHAT I CAN GATHER 
+// ----------------------------------------------------------------------------
+
+///PRIVATE uint32_t ReadRxValue(PIO pio, uint sm) {
+///    uint32_t rx_value;
+///    if(sm == 0){
+///        rx_value = pio->rxf[0];
+///    } else if(sm == 1){
+///        rx_value = pio->rxf[1];
+///    } else if(sm == 2){
+///        rx_value = pio->rxf[2];
+///    } else if(sm == 3){
+///        rx_value = pio->rxf[3];
+///    }
+///    return rx_value;
+///}
+///
+///PRIVATE uint32_t ReadTxValue(PIO pio, uint sm) {
+///    uint32_t tx_value;
+///    if(sm == 0){
+///        tx_value = pio->txf[0];
+///    } else if(sm == 1){
+///        tx_value = pio->txf[1];
+///    } else if(sm == 2){
+///        tx_value = pio->txf[2];
+///    } else if(sm == 3){
+///        tx_value = pio->txf[3];
+///    }
+///    return tx_value;
+///}
+///}
+
+
+// -----------------------------------------------------------------------------
+
+// Probably dont need this function, but just in case.
    
 
 
@@ -452,12 +545,12 @@ PUBLIC uint const return_spi_sm(void)
 
 PUBLIC PIO const return_keyboard_pio(void)
 {
-    return pio_keyboard.pio;
+    return pio_collection.pio_txf.pio;
 }
 
 PUBLIC uint const return_keyboard_sm(void)
 {
-    return pio_keyboard.sm;
+    return pio_collection.pio_txf.sm;
 }
 
 
@@ -468,10 +561,10 @@ PUBLIC int const return_channel(void)
 
 PUBLIC int const return_csn_sm(void)
 {
-    return pio_csn.sm;
+    return pio_collection.pio_rxf.sm;
 }
 
 PUBLIC PIO const return_csn_pio(void)
 {
-    return pio_csn.pio;
+    return pio_collection.pio_rxf.pio;
 }
