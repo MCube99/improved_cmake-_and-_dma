@@ -1,10 +1,10 @@
 .pio_version 0
 .program spi_cs_loop ;cba to change name now but this is to read data from the master to drain it out
-
-flush:
-    irq wait 7
+setup:
     mov isr, null         ; Clear ISR and input shift counter
     set pindirs, 1
+flush:
+    irq wait 7
     jmp check_chip_select ; Poll chip select again
 
 .wrap_target

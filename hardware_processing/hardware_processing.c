@@ -74,9 +74,8 @@ static pio_spi_t pio_spi;
 // GLOBALS
 // -----------------------------------------------------------------------------
 
-
 PRIVATE void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src,uint8_t *dst, size_t len);
-PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len);
+PRIVATE void __time_critical_func(pio_spi_write8_blocking)( const pio_collection_t *pio_collection, const uint8_t *src, uint8_t *dest, size_t len);
 PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg);
 //PRIVATE uint32_t ReadRxValue(PIO pio, uint sm);
 //PRIVATE uint32_t ReadTxValue(PIO pio, uint sm);
@@ -348,29 +347,23 @@ PUBLIC bool usb_processing_main(void) {
 }
 
 PUBLIC bool keyboard_processing_main() {
-    uint32_t ch = 'm';   // TEMPORARY: flood test
-    pio_spi_write8_blocking(&pio_collection, (const uint8_t *)&ch, 1);
+    uint8_t ch = 'm';   // TEMPORARY: flood test
+    uint8_t size;
+    pio_spi_write8_blocking(&pio_collection, &ch,&size, 1);
    // pio_sm_put(return_keyboard_pio(), return_keyboard_sm(), (uint32_t)ch << 24);
     event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
     static int gary_code_mismatch_count = 0;
     uint32_t size = 0;
 
-    if(!pio_sm_is_rx_fifo_empty(return_keyboard_pio(), return_keyboard_sm())) {
-        ch = pio_sm_get_blocking(return_keyboard_pio(), return_keyboard_sm());}
-
-    if(!pio_sm_is_tx_fifo_empty(return_csn_pio(), return_csn_sm())) {
-        size = pio_sm_get_blocking(return_csn_pio(), return_csn_sm());
-    }
     
-    if(size & 0xFF == GARY_CODE){
-        gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
+    if(size == GARY_CODE){
         gpio_put(PICO_CODE_DEBUG_PROBE_PIN,0);
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(EVENT_DONE);
         restore_interrupts_from_disabled(status);
         return(true);
     }
-    else if(size & 0xFF != GARY_CODE){
+    else if((size & 0xFF) != GARY_CODE){
         gary_code_mismatch_count++;
         gpio_put(PICO_CODE_DEBUG_PROBE_PIN,0);
         gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
@@ -447,22 +440,25 @@ PRIVATE uint read_register(PIO pio, uint sm, enum pio_src_dest reg) {
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 // FUNCTIONS TO READ AND WRITE TO PIO FIFOS
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection,const uint8_t *src, size_t len) {
-    
+PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection, const uint8_t *src, uint8_t *dest, size_t len)
+{
     size_t tx_remain = len;
     size_t rx_remain = len;
+    size_t rx_i = 0;
 
-    io_rw_8 *tx_fifo = (io_rw_8 *)&pio_collection->pio_txf.pio->txf[ pio_collection->pio_txf.sm ];
-    io_ro_8 *rx_fifo = (io_ro_8 *)&pio_collection->pio_rxf.pio->rxf[ pio_collection->pio_rxf.sm ];
-   while (tx_remain || rx_remain) {
-       if (tx_remain && !pio_sm_is_tx_fifo_full(pio_collection->pio_txf.pio, pio_collection->pio_txf.sm)) {
-           *tx_fifo = *src++;
-           --tx_remain;
+    io_rw_8 *tx_fifo = (io_rw_8 *)&pio_collection->pio_txf.pio->txf[pio_collection->pio_txf.sm];
+    io_ro_8 *rx_fifo = (io_ro_8 *)&pio_collection->pio_rxf.pio->rxf[pio_collection->pio_rxf.sm];
+
+    while (tx_remain || rx_remain) {
+        if (tx_remain && !pio_sm_is_tx_fifo_full(pio_collection->pio_txf.pio, pio_collection->pio_txf.sm)) {
+            *tx_fifo = *src++;
+            --tx_remain;
         }
         if (rx_remain && !pio_sm_is_rx_fifo_empty(pio_collection->pio_rxf.pio, pio_collection->pio_rxf.sm)) {
-              (void)*rx_fifo; // discard the received byte
-              --rx_remain;
-         }
+            dest[rx_i] = *rx_fifo;
+            rx_i++;
+            --rx_remain;
+        }
     }
 }
 

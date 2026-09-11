@@ -10,6 +10,7 @@ keyboard_setup:
     wait 0 gpio 4 ; wait for falling edge
     irq clear 7 ; clear out the interrupt for the other sm
     jmp check_csn_select
+    
 .wrap_target
 bitloop:
     out pins, 1 ; ouput immediately before clock even starts 
