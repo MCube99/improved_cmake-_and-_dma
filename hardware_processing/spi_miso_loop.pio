@@ -1,0 +1,47 @@
+.pio_version 0
+.program spi_miso_loop
+
+.side_set 1
+keyboard_init:
+    irq wait 1 side 0 ;will only be cleared everytime a character is put in
+    set pindirs, 1 side 0
+
+keyboard_setup:
+    pull ifempty block side 0; blocks if empty and txfifo is empty
+    wait 1 gpio 4 side 0
+    wait 0 gpio 4 side 0; wait for falling edge
+    irq clear 7 side 0; clear out the interrupt for the other sm
+    jmp check_csn_select side 0
+    
+.wrap_target
+bitloop:
+    wait 0 pin 0 side 0; wait for the sclk to go low
+    out pins, 1 side 1 ; ouput immediately before clock even starts 
+    wait 1 pin 0 side 0; wait for serial clock to go high
+check_csn_select:
+    jmp pin, keyboard_setup side 0
+.wrap
+
+
+% c-sdk {
+#include "hardware/gpio.h"    
+static inline void spi_miso_loop_program_init(PIO pio, uint sm, uint offset, uint sclk_pin, uint csn_pin, uint debug_miso, uint tx_pin)
+{
+    pio_sm_config c = miso_loop_program_get_default_config(offset);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+    sm_config_set_in_pins(&c, sclk_pin); // this is the MOSI pin.
+    sm_config_set_out_pins(&c, sclk_pin+2, 1);
+    sm_config_set_set_pins(&c, debug_miso,1);
+    sm_config_set_sideset_pins(&c,sclk_pin + 4 );
+
+    sm_config_set_out_shift(&c, true, false, 8); // WILL block if no data // is available, and only work if there is data coming in from keyboard
+    sm_config_set_jmp_pin(&c,csn_pin);
+
+    pio_sm_set_pins_with_mask(pio, sm, 0, (1u << tx_pin)|(1u << debug_miso));
+    pio_sm_set_pindirs_with_mask(pio, sm, (1u << tx_pin)|(1u << debug_miso), (1u << tx_pin)|(1u << debug_miso));
+    pio_gpio_init(pio, tx_pin);
+    pio_gpio_init(pio, debug_miso);
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}

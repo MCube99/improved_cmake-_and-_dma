@@ -17,7 +17,7 @@ PUBLIC bool dequeue_interrupts(event_type_t *event);
 PUBLIC bool dequeue_keyboard(uint8_t *letter);
 PUBLIC uint8_t* const give_array_address(void);
 PUBLIC uint8_t* const give_array_address_for_file_writing(void);
+PUBLIC uint32_t const return_size(void);
 PUBLIC void set_size(uint32_t size); 
-PUBLIC uint32_t return_size(void);
 PUBLIC int get_buffer_size(void);
 //PUBLIC* RingBuf return_interrupt_queue();

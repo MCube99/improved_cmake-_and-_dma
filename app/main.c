@@ -102,7 +102,8 @@ int main(void) {
   pio_dma_setup();
   dma_channel_init_once();
   pio_keyboard_setup();
-  pio_csn_setup();
+  pio_miso_setup();
+  pio_mosi_setup();
   restore_interrupts_from_disabled(status);
   msc_app_init();
 

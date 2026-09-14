@@ -18,12 +18,11 @@ PUBLIC void event_processing_main();
 PUBLIC void __time_critical_func(classify_packet)(void);
 
 PUBLIC PIO const return_spi_pio();
-PUBLIC PIO const return_keyboard_pio(void);
 PUBLIC uint const return_spi_sm();
-PUBLIC uint const return_keyboard_sm(void);
+PUBLIC PIO const return_keyboard_miso_pio(void);
+PUBLIC uint const return_keyboard_miso_sm(void);
 PUBLIC int const return_channel();
-PUBLIC uint32_t const return_size(void); 
-PUBLIC int const return_csn_sm(void);
-PUBLIC PIO const return_csn_pio(void);
+PUBLIC int const return_keyboard_mosi_sm(void);
+PUBLIC PIO const return_keyboard_mosi_pio(void);
 
 
