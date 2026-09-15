@@ -2,6 +2,7 @@
 .program spi_mosi_loop ;cba to change name now but this is to read data from the master to drain it out
 setup:
     mov isr, null         ; Clear ISR and input shift counter
+    mov osr, null
 flush:
     irq wait 7
     jmp check_chip_select ; Poll chip select again
@@ -12,7 +13,7 @@ do_bit:
     wait 1 pin 1          ; (autopush takes care of moving each complete
     in pins, 1            ; data byte to the FIFO)
 check_chip_select:
-    jmp pin, flush        ; Bail out if we see chip select high
+    jmp pin, setup        ; Bail out if we see chip select high
 .wrap
 
 
@@ -23,7 +24,6 @@ static inline void spi_mosi_loop_init(PIO pio, uint sm, uint offset, uint csn_pi
     sm_config_set_jmp_pin(&c, csn_pin);
     sm_config_set_in_shift(&c,false,true, 8);
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
-    hw_set_bits(&pio->input_sync_bypass, 1u<<rx_pin); // MOSI gets in immediately
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio,sm,true);
 }

@@ -347,17 +347,18 @@ PUBLIC bool keyboard_processing_main() {
     uint8_t ch = 'm';   // TEMPORARY: flood test
     uint32_t size = 0; 
     static uint8_t result = 0;
-    result = pio_spi_write8_blocking(&pio_collection, ch<<24,&size, 1);
+    result = pio_spi_write8_blocking(&pio_collection, ((uint)ch<<24),&size, 1);
   //  pio_sm_exec_wait_blocking(return_keyboard_miso_pio(),return_keyboard_miso_sm(),pio_encode_pull(false, true));
   //  pio_sm_exec_wait_blocking(return_keyboard_miso_pio(),return_keyboard_miso_sm(),pio_encode_mov(pio_x, pio_osr));
     static int gary_code_mismatch_count = 0;
-
+    if(result == ch){
+        gpio_put(PICO_CODE_DEBUG_PROBE_PIN,0);
+    }
     if(size == GARY_CODE){
         event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(classify_event);
         restore_interrupts_from_disabled(status);
-        gpio_put(PICO_CODE_DEBUG_PROBE_PIN,0);
         return(true);
     }
     else if(size != GARY_CODE){
@@ -423,25 +424,27 @@ PUBLIC void event_processing_main() {
 }
 
 PRIVATE uint read_register(const pio_collection_t *pio_collection, const enum pio_src_dest reg) { // for debugging purposes.
-    uint move_isr = pio_encode_mov(pio_isr, reg);
-    pio_sm_exec_wait_blocking(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm, move_isr);
-    uint push = pio_encode_push(false, false);
-    pio_sm_exec_wait_blocking(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm, push);
+    if(pio_interrupt_get(pio_collection->pio_miso.pio, 2)){
+        uint move_isr = pio_encode_mov(pio_isr, reg);
+        pio_sm_exec_wait_blocking(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm, move_isr);
+        uint push = pio_encode_push(false, false);
+        pio_sm_exec_wait_blocking(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm, push);
+        pio_interrupt_clear(pio_collection->pio_miso.pio, 2);
+    }
     return pio_sm_get(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm);
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 // FUNCTIONS TO READ AND WRITE TO PIO FIFOS
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-PRIVATE uint8_t __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection, const uint8_t src, uint32_t *dest, size_t len)
-{
+PRIVATE uint8_t __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection, const uint8_t src, uint32_t *dest, size_t len) {
     uint32_t debug = 0;
   //  size_t tx_remain = len;
   //  pio_sm_put(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm, (uint32_t)src<< 24); // make sure the data is MSB first
 
       if (!pio_sm_is_tx_fifo_full(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm)) {
           pio_sm_put(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm, (uint32_t)src<<24); // make sure the data is MSB first
-          debug = read_register(pio_collection, pio_x);
+          debug = read_register(pio_collection, pio_osr); // read the OSR to see if the data is in the FIFO
 
       }
         if (!pio_sm_is_rx_fifo_empty(pio_collection->pio_mosi.pio, pio_collection->pio_mosi.sm)) {

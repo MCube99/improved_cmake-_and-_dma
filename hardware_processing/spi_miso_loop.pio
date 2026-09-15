@@ -7,9 +7,7 @@ keyboard_init:
 public keyboard_miso_entry:
 keyboard_setup:
     pull block  ; blocks if empty and txfifo is empty
-    mov x, osr
-    wait 1 gpio 4
-    wait 0 gpio 4
+    irq wait 2
     irq clear 7  
     jmp check_csn_select
     
