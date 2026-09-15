@@ -19,7 +19,6 @@ check_chip_select:
 % c-sdk {
 static inline void spi_mosi_loop_init(PIO pio, uint sm, uint offset, uint csn_pin, uint rx_pin) {
     pio_sm_config c = spi_mosi_loop_program_get_default_config(offset);
-    pio_gpio_init(pio, debug_csn_pins);
     sm_config_set_in_pins(&c,rx_pin);
     sm_config_set_jmp_pin(&c, csn_pin);
     sm_config_set_in_shift(&c,false,true, 8);
@@ -27,6 +26,5 @@ static inline void spi_mosi_loop_init(PIO pio, uint sm, uint offset, uint csn_pi
     hw_set_bits(&pio->input_sync_bypass, 1u<<rx_pin); // MOSI gets in immediately
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio,sm,true);
-
 }
 %}
