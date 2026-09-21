@@ -26,10 +26,10 @@ check_chip_select:
 
 % c-sdk {
 #include "hardware/gpio.h"    
-static inline void spi_miso_program_init(PIO pio, uint sm, uint offset, uint csn_pin, uint tx_pin)
+static inline void spi_miso_program_init(PIO pio, uint sm, uint offset, uint sclk_uint csn_pin, uint tx_pin)
 {
    pio_sm_config c = spi_miso_program_get_default_config(offset);
-    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+    sm_config_set_in_pins(&c, sclk_pin );
     sm_config_set_out_pins(&c, tx_pin , 1);
     sm_config_set_out_shift(&c, false, false,8); // MSB first
     sm_config_set_jmp_pin(&c,csn_pin);

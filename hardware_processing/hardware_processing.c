@@ -177,7 +177,7 @@ PUBLIC void pio_dma_setup(void)
             &sm,
             &offset,
             PICO_SPI_RX_PIN,
-            1,
+            PICO_SPI_TX_PIN - PICO_SPI_RX_PIN ,
             true
         );
 
@@ -209,8 +209,8 @@ PUBLIC void pio_miso_setup(void){
             &pio,
             &sm,
             &offset,
-            PICO_SPI_TX_PIN,
-            1,
+            PICO_SPI_SCK_PIN,
+            (PICO_SPI_TX_PIN - PICO_SPI_SCK_PIN)+1,
             true
         );
 
@@ -226,6 +226,7 @@ PUBLIC void pio_miso_setup(void){
         pio,
         sm,
         offset,
+        PICO_SPI_SCK_PIN,
         PICO_SPI_CSN_PIN,
         PICO_SPI_TX_PIN);
 }
