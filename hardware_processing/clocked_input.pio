@@ -4,7 +4,6 @@
 flush:
     mov isr, null         ; Clear ISR and input shift counter
     mov osr, null
-    wait 0 gpio 4
 
 .wrap_target
 do_bit:
@@ -30,8 +29,7 @@ usb_processing:
     in pins, 1             ; Shifts bit count bits from source into the INPUT SHIFT REGISTER 
     jmp y-- usb_processing
     jmp x-- usb_setup
-    wait 1 gpio 4
-    jmp flush
+    jmp pin flush
 
 % c-sdk {
 
@@ -44,7 +42,5 @@ static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uin
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio,sm,true);
 }
-///To do. Try and implement some irq stuff in the background so that it can communicate with the main c code and I can 
-/// debug from there.
 
 %}

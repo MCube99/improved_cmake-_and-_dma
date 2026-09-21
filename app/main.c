@@ -79,6 +79,7 @@ volatile bool main_check = false; // This is a signal event for the main loop. I
 volatile bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 
 /*------------- MAIN -------------*/
+
 int main(void) {
 
   bool is_file_finished = false;
@@ -102,6 +103,7 @@ int main(void) {
   pio_dma_setup();
   dma_channel_init_once();
   pio_miso_setup();
+  spi_csn_setup();
   pio_mosi_setup();
   restore_interrupts_from_disabled(status);
   msc_app_init();

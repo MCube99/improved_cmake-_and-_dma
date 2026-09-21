@@ -1,19 +1,17 @@
 .pio_version 0
 .program spi_mosi_loop ;cba to change name now but this is to read data from the master to drain it out
-setup:
-    mov isr, null         ; Clear ISR and input shift counter
-    mov osr, null
 flush:
-    irq wait 7
-    jmp check_chip_select ; Poll chip select again
+    mov isr, null         ; Clear ISR and input shift counter
+    jmp check_chip_select
 
 .wrap_target
 do_bit:
     wait 0 pin 1          ; Detect rising edge and sample input data
     wait 1 pin 1          ; (autopush takes care of moving each complete
     in pins, 1            ; data byte to the FIFO)
+
 check_chip_select:
-    jmp pin, flush        ; Bail out if we see chip select high
+    jmp pin, flush       ; Stuck here until it goes low(CSN)
 .wrap
 
 
