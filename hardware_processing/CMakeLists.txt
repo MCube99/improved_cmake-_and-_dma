@@ -7,8 +7,6 @@ set(common_processing_Headers   ${CMAKE_CURRENT_SOURCE_DIR}/common_header.h)
 add_library(hardware_processing STATIC ${hardware_processing_Sources})
 add_library(common_headers INTERFACE )
 pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/clocked_input.pio)
-pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/spi_csn_detector.pio)
-pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/spi_mosi.pio)
 pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/spi_miso.pio)
 
 target_sources(hardware_processing PUBLIC 

@@ -3,33 +3,16 @@
 
 flush:
     mov isr, null         ; Clear ISR and input shift counter
-    mov osr, null
+    out null, 32
 
 .wrap_target
 do_bit:
-    wait 0 pin 1          
+    wait 0 pin 1          ; will literally be the first serial clock to come in. Don't need csn check here
     wait 1 pin 1         ; wait for the first edge to sample data 
     in pins, 1            ; samples it in via autofull
 check_chip_select:        
-    jmp pin setting_count_for_usb ; even  if in the main code it 
+    jmp pin flush       ; will go back to flush if pic is still high
 .wrap
-
-setting_count_for_usb:
-    irq wait 0
-    pull block
-    wait 1 gpio 4 ; to detect when csn falls
-    wait 0 gpio 4
-
-usb_setup:
-    set y, 7
-
-usb_processing:
-    wait 0 pin 1           ; a do while loop of sorts, it keeps 
-    wait 1 pin 1
-    in pins, 1             ; Shifts bit count bits from source into the INPUT SHIFT REGISTER 
-    jmp y-- usb_processing
-    jmp x-- usb_setup
-    jmp pin flush
 
 % c-sdk {
 

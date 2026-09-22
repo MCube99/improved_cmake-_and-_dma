@@ -17,9 +17,7 @@
 
 #include "pico/binary_info.h"
 #include "clocked_input.pio.h"
-#include "spi_mosi.pio.h"
 #include "spi_miso.pio.h"
-#include "spi_csn_detector.pio.h"
 
 // -----------------------------------------------------------------------------
 // STRUCTURES
@@ -29,10 +27,10 @@ typedef struct {
     PIO pio;
     uint sm;
     //uint PIO_IRQc
-    int dma_chan;
+    int channel;
     dma_channel_config dma_cfg;
     uint offset;
-} pio_spi_t; // this is for the usb
+} spi_mosi_t; // this is for the usb
 
 
 typedef struct {
@@ -42,29 +40,13 @@ typedef struct {
     uint offset;
 } spi_miso_t; // this for the keyboard
 
-typedef struct {
-    PIO pio;
-    uint sm;
-    uint8_t num;
-    uint offset;
-} spi_csn_t; // this for the keyboard
-
-typedef struct {
-    PIO pio;
-    uint sm;
-    uint8_t num;
-    uint offset;
-} spi_mosi_t; //  this is to keep track of csn 
-
 
 typedef struct { // acts as an accumulation point for PIOf for easy managment
-    spi_miso_t pio_miso; // called this since this is for transmit via spi
-    spi_mosi_t pio_mosi; // called this since this is for receive via spi
+    spi_miso_t spi_miso; // called this since this is for transmit via spi
+    spi_mosi_t spi_mosi; // this is for the usb
 } pio_collection_t;
 
 static pio_collection_t pio_collection;
-static pio_spi_t pio_spi;
-static spi_csn_t pio_csn;
 
 #define PICO_START          2
 #define PICO_SPI_RX_PIN   ((PICO_START)      + 0)   // 2 
@@ -79,17 +61,14 @@ static spi_csn_t pio_csn;
 // GLOBALS
 // -----------------------------------------------------------------------------
 
-PRIVATE uint32_t __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection, const uint32_t src);
+PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection, const uint8_t *src, size_t len);
 PRIVATE uint32_t read_register(const pio_collection_t *pio_collection, const enum pio_src_dest reg);
-PRIVATE PIO return_spi_pio(void);
-PRIVATE uint return_spi_sm(void);
+PRIVATE PIO return_spi_mosi_pio(void);
+PRIVATE uint return_spi_mosi_sm(void);
 PRIVATE PIO return_spi_miso_pio(void);
 PRIVATE uint return_spi_miso_sm(void);
-PRIVATE int return_spi_mosi_sm(void);
-PRIVATE PIO return_spi_mosi_pio(void);
-PRIVATE int return_channel(void);
-PRIVATE PIO return_spi_csn_pio(void);
-PRIVATE int return_spi_csn_sm(void);
+PRIVATE uint return_dma_channel(void);
+PRIVATE uint8_t reverse_bits(uint8_t value);
 //PRIVATE uint32_t ReadRxValue(PIO pio, uint sm);
 //PRIVATE uint32_t ReadTxValue(PIO pio, uint sm);
 // -----------------------------------------------------------------------------
@@ -162,10 +141,10 @@ PUBLIC void set_gpio_pins(void) {
 }
 
 // -----------------------------------------------------------------------------
-// PIO + DMA SETUP
+// PIO SETUP
 // -----------------------------------------------------------------------------
 
-PUBLIC void pio_dma_setup(void)
+PUBLIC void pio_mosi_setup(void)
 {
     PIO pio;
     uint sm;
@@ -184,9 +163,9 @@ PUBLIC void pio_dma_setup(void)
     hard_assert(success);
 
     // Store the resources selected by the SDK
-    pio_spi.pio = pio;
-    pio_spi.sm = sm;
-    pio_spi.offset = offset;
+    pio_collection.spi_mosi.pio = pio;
+    pio_collection.spi_mosi.sm = sm;
+    pio_collection.spi_mosi.offset = offset;
 
     pio_sm_clear_fifos(pio, sm);
 
@@ -216,9 +195,9 @@ PUBLIC void pio_miso_setup(void){
 
     hard_assert(success);
 
-    pio_collection.pio_miso.pio = pio;
-    pio_collection.pio_miso.sm = sm;
-    pio_collection.pio_miso.offset = offset;
+    pio_collection.spi_miso.pio = pio;
+    pio_collection.spi_miso.sm = sm;
+    pio_collection.spi_miso.offset = offset;
 
     pio_sm_clear_fifos(pio, sm);
 
@@ -226,51 +205,25 @@ PUBLIC void pio_miso_setup(void){
         pio,
         sm,
         offset,
-        PICO_SPI_SCK_PIN,
         PICO_SPI_CSN_PIN,
         PICO_SPI_TX_PIN);
 }
 
-PUBLIC void spi_csn_setup(void){
-    PIO pio = return_spi_miso_pio();
-    uint offset = pio_add_program(pio, &spi_csn_detector_program);
-    int sm = pio_claim_unused_sm(pio, false);
-
-    pio_csn.pio = pio;
-    pio_csn.sm = sm;
-    pio_csn.offset = offset;
-}
-
-PUBLIC void pio_mosi_setup(void){
-    PIO pio = return_spi_miso_pio();
-    uint offset = pio_add_program(pio, &spi_mosi_loop_program);
-    int sm = pio_claim_unused_sm(pio, false);
-    // Check instruction memory before adding the program
-
-    spi_mosi_loop_init(
-        pio,
-        sm,
-        offset,
-        PICO_SPI_CSN_PIN,
-        PICO_SPI_RX_PIN);
-
-    pio_collection.pio_mosi.pio = pio;
-    pio_collection.pio_mosi.sm = sm;
-}
-
     
-
+// -----------------------------------------------------------------------------
+//  DMA SETUP
+// -----------------------------------------------------------------------------
 PUBLIC void dma_channel_init_once(void){
-    pio_spi.dma_chan = dma_claim_unused_channel(true);
-    pio_spi.dma_cfg = dma_channel_get_default_config(pio_spi.dma_chan);
-    channel_config_set_transfer_data_size( &pio_spi.dma_cfg, DMA_SIZE_8);
-    channel_config_set_read_increment( &pio_spi.dma_cfg, false);
-    channel_config_set_write_increment( &pio_spi.dma_cfg, true);
+    pio_collection.spi_mosi.channel = dma_claim_unused_channel(true);
+    pio_collection.spi_mosi.dma_cfg = dma_channel_get_default_config(pio_collection.spi_mosi.channel);
+    channel_config_set_transfer_data_size( &pio_collection.spi_mosi.dma_cfg, DMA_SIZE_8);
+    channel_config_set_read_increment( &pio_collection.spi_mosi.dma_cfg, false);
+    channel_config_set_write_increment( &pio_collection.spi_mosi.dma_cfg, true);
     channel_config_set_dreq(
-        &pio_spi.dma_cfg,
+        &pio_collection.spi_mosi.dma_cfg,
         pio_get_dreq( // get data request
-            pio_spi.pio,
-            pio_spi.sm,
+            pio_collection.spi_mosi.pio,
+            pio_collection.spi_mosi.sm,
             false
         )
     );
@@ -278,10 +231,10 @@ PUBLIC void dma_channel_init_once(void){
 
 PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size){
     dma_channel_configure(
-        pio_spi.dma_chan,
-        &pio_spi.dma_cfg,
+        pio_collection.spi_mosi.channel,
+        &pio_collection.spi_mosi.dma_cfg,
         give_array_address(), // buffer to write to 
-        &pio_spi.pio->rxf[pio_spi.sm],
+        &pio_collection.spi_mosi.pio->rxf[pio_collection.spi_mosi.sm],
         dma_encode_transfer_count(size), // get this every time when classify packet is run.
         false
     );
@@ -296,19 +249,16 @@ PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size){
 PUBLIC void __time_critical_func(classify_packet)(void) {
     uint32_t size;
     event_type_t classify_event = 0;
-    size = pio_sm_get_blocking(return_spi_pio(), return_spi_sm()); // get size byte
+    size = pio_sm_get_blocking(return_spi_mosi_pio(), return_spi_mosi_sm()); // get size byte
     set_size(size);
 
     if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
-        pio_interrupt_clear(return_spi_miso_pio(),1);
         gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, false); // disable the interrupt so that it does not fire again until the event is processed. This is to prevent the main loop from running when there is no event to process.
-        gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
+        //gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
         keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
         return;
     }
     else if (size > GARY_CODE) {
-        pio_interrupt_clear(return_spi_pio(),0);
-        pio_sm_put(return_spi_pio(),return_spi_sm(),size);
         dma_setup_fast(size);
         classify_event = EVENT_USB_PROCESSING;
     }
@@ -316,8 +266,6 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
         classify_event = EVENT_NONE;
         skip_next = true;
         already_fired = false; //Invalid size, so just ignore it and do nothing. This is to prevent the system from crashing due to invalid sizes.
-        pio_interrupt_clear(return_spi_pio(), 0);
-        pio_sm_exec_wait_blocking(return_spi_pio(), return_spi_sm(), pio_encode_jmp(pio_spi.offset)); // force PC back to "flush:" — full reset
     }
    uint32_t status = save_and_disable_interrupts();
     enqueue_interrupts(classify_event);
@@ -332,16 +280,16 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
 // 3) EVENT PROCESSING IS WHEN ITS ALL DONE REALLY
 // -----------------------------------------------------------------------------
 PUBLIC bool usb_processing_main(void) {
-    dma_start_channel_mask(1u << return_channel()); // start the DMA transfer
-    dma_channel_wait_for_finish_blocking(return_channel()); // Wait for the DMA transfer to complete
+    dma_start_channel_mask(1u << return_dma_channel()); // start the DMA transfer
+    dma_channel_wait_for_finish_blocking(return_dma_channel()); // Wait for the DMA transfer to complete
 
         // 1. Pause the DMA channel
-    hw_clear_bits(&dma_hw->ch[return_channel()].ctrl_trig, DMA_CH0_CTRL_TRIG_EN_BITS);
+    hw_clear_bits(&dma_hw->ch[return_dma_channel()].ctrl_trig, DMA_CH0_CTRL_TRIG_EN_BITS);
 
         // 2. Now that the DMA channel is paused, we can safely read the write address
 
     uintptr_t base = (uintptr_t)give_array_address();
-    uintptr_t write = dma_hw->ch[return_channel()].write_addr;
+    uintptr_t write = dma_hw->ch[return_dma_channel()].write_addr;
     uint32_t difference = write - base;
 
     if(difference ==  return_size())
@@ -349,7 +297,7 @@ PUBLIC bool usb_processing_main(void) {
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(EVENT_FILE_PROCESSING);
         restore_interrupts_from_disabled(status);
-        dma_channel_cleanup(return_channel());
+        dma_channel_cleanup(return_dma_channel());
         return(true);
     }
     else
@@ -357,163 +305,124 @@ PUBLIC bool usb_processing_main(void) {
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(EVENT_NONE);
         restore_interrupts_from_disabled(status);
-        dma_channel_cleanup(return_channel());
+        dma_channel_cleanup(return_dma_channel());
         return(false);
     }
 }
 
-PUBLIC bool keyboard_processing_main() {
-    uint32_t letter = 0;
-    uint32_t size = 0; 
-    uint8_t ch = 'm';   // TEMPORARY: flood test
-    letter = ((uint32_t)ch) << 24; //just to make sure it is at the MSB 
-    static uint32_t result = 0;
-    static uint32_t read = 0;
-    result = pio_spi_write8_blocking(&pio_collection, letter);
-    read = read_register(&pio_collection,pio_x); // this is to read the x register to see if the data is in the FIFO
-    static int gary_code_mismatch_count = 0;
+//PUBLIC bool keyboard_processing_main() {
+//    //uint32_t letter = 0;
+//    uint32_t size = 0; 
+//    uint8_t ch = 'm';   // TEMPORARY: flood test
+//   // letter = ch << 24; //just to make sure it is at the MSB 
+//    static uint32_t result = 0;
+//    static uint32_t read = 0;
+//    pio_spi_write8_blocking(&pio_collection, &ch, 1);
+//}
 
-    if(result == GARY_CODE){
-        event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
+PUBLIC bool keyboard_processing_main() {
+    uint8_t ch = 0;
+    event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
+
+    if(dequeue_keyboard(&ch)){
+ //start transaction only when character is detected
+            pio_spi_write8_blocking(&pio_collection, &ch, 1);
+            if(ch == '\r'){
+            // Force the SM's PC back to the very start (irq wait 1),
+            // ending the keyboard-shifting loop and re-arming the gate.
+                keyboard_check = false;
+                classify_event = EVENT_DONE; // queing up the event
+                uint32_t status = save_and_disable_interrupts();
+                enqueue_interrupts(classify_event);
+                restore_interrupts_from_disabled(status);
+                return(true); // Simply return early
+            }
+    }
         uint32_t status = save_and_disable_interrupts();
         enqueue_interrupts(classify_event);
         restore_interrupts_from_disabled(status);
-        return(true);
-    }
-    else{
-        gary_code_mismatch_count++;
-        pio_sm_exec_wait_blocking(return_spi_miso_pio(), return_spi_miso_sm(), pio_encode_jmp(pio_collection.pio_miso.offset + spi_miso_offset_keyboard_miso_entry)); // force PC back to keyboard_setup 
-        uint32_t status = save_and_disable_interrupts();
-        enqueue_interrupts(EVENT_NONE);
-        restore_interrupts_from_disabled(status);
         return(false);
-    }
-
 }
-    
+
 PUBLIC void event_processing_main() {
-    if(pio_interrupt_get(return_spi_pio(), 0)){
-        pio_interrupt_clear(return_spi_pio(), 0);
-        pio_sm_exec_wait_blocking(return_spi_pio(), return_spi_sm(), pio_encode_jmp(pio_spi.offset)); // force PC back to "flush:" — full reset
-    }
     gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true); // disable the interrupt so that it does not fire again until the event is processed. This is to prevent the main loop from running when there is no event to process.
     uint32_t status = save_and_disable_interrupts();
     skip_next = true;
-    
     enqueue_interrupts(EVENT_NONE);
     restore_interrupts_from_disabled(status);
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 
-PRIVATE uint32_t __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection, const uint32_t src) {
-    (void)src; // suppress unused variable warning
-        pio_sm_put_blocking(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm,  0x6D000000); // make sure the data is MSB first
-        uint32_t read = pio_sm_get_blocking(pio_collection->pio_mosi.pio, pio_collection->pio_mosi.sm); // read the data from the RX FIFO to clear /  debug = read_register(pio_collection, pio_osr); // read the OSR to see if the data is in the FIFO
-        return(read); // read the data from the RX FIFO to clear /  debug = read_register(pio_collection, pio_osr); // read the OSR to see if the data is in the FIFO
+PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection, const uint8_t *src, size_t len) {
+    size_t tx_remain = len;
+    size_t rx_remain = len;
+
+    io_rw_8 *tx_fifo = (io_rw_8 *)&pio_collection->spi_miso.pio->txf[pio_collection->spi_miso.sm];
+    io_rw_8 *rx_fifo = (io_rw_8 *)&pio_collection->spi_mosi.pio->rxf[pio_collection->spi_mosi.sm];
+
+    while(tx_remain || rx_remain) {
+        if(tx_remain && !pio_sm_is_tx_fifo_full(pio_collection->spi_miso.pio, pio_collection->spi_miso.sm)) {
+            *tx_fifo = *src++;
+            --tx_remain;
+        }
+
+        if(rx_remain && !pio_sm_is_rx_fifo_empty(pio_collection->spi_mosi.pio, pio_collection->spi_mosi.sm)) {
+            (void)*rx_fifo; // discard the received data
+            --rx_remain;
+        }
+    }
+
+
 }
 
 PRIVATE uint32_t read_register(const pio_collection_t *pio_collection, const enum pio_src_dest reg) { // for debugging purposes.
     uint move_isr = pio_encode_mov(pio_isr, reg);
-    pio_sm_exec_wait_blocking(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm, move_isr);
+    pio_sm_exec_wait_blocking(pio_collection->spi_miso.pio, pio_collection->spi_miso.sm, move_isr);
     uint push = pio_encode_push(false, false);
-    pio_sm_exec_wait_blocking(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm, push);
-    return(pio_sm_get(pio_collection->pio_miso.pio, pio_collection->pio_miso.sm));
+    pio_sm_exec_wait_blocking(pio_collection->spi_miso.pio, pio_collection->spi_miso.sm, push);
+    return(pio_sm_get(pio_collection->spi_miso.pio, pio_collection->spi_miso.sm));
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------
+  PRIVATE uint8_t reverse_bits(uint8_t value) {
 
+    uint8_t result = 0;
 
-///PUBLIC bool keyboard_processing_main() {
-///    uint8_t ch = 0;
-///    event_type_t classify_event = EVENT_KEYBOARD_DETECTED;
-///    static int gary_code_mismatch_count = 0;
-///
-///    if(dequeue_keyboard(&ch)){
-/// //start transaction only when character is detected
-///            pio_interrupt_clear(return_spi_pio(),1);
-///            WaitFallingEdge(PICO_SPI_CSN_PIN); // wait for csn to fall before starting the transaction
-///            pio_sm_put(return_spi_pio(), return_spi_sm(), (uint32_t)ch << 24);
-///
-///            if(ch == '\r'){
-///            // Force the SM's PC back to the very start (irq wait 1),
-///            // ending the keyboard-shifting loop and re-arming the gate.
-///                gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true);
-///                keyboard_check = false;
-///                pio_sm_exec_wait_blocking(return_spi_pio(), return_spi_sm(), pio_encode_jmp(spi_miso.offset)); // offset 0 = keyboard_initial_processing
-///                hw_set_bits(&(return_spi_pio())->irq, 1u << 1); 
-///                classify_event = EVENT_DONE; // queing up the event
-///                uint32_t status = save_and_disable_interrupts();
-///                enqueue_interrupts(classify_event);
-///                restore_interrupts_from_disabled(status);
-///                return(true); // Simply return early
-///            }
-///    }
-///    if (!pio_sm_is_rx_fifo_empty(return_spi_pio(), return_spi_sm())) {
-///        uint32_t sampled = pio_sm_get(return_spi_pio(), return_spi_sm());
-///        uint8_t sampled_byte = sampled >> 24; // adjust shift based on your in_shift config/justification
-///        if (sampled_byte != GARY_CODE) {
-///            gary_code_mismatch_count++; // same diagnostic counter idea as before
-///        }
-///    }
-///        uint32_t status = save_and_disable_interrupts();
-///        enqueue_interrupts(classify_event);
-///        restore_interrupts_from_disabled(status);
-///        return(false);
-///}
-///
-// -----------------------------------------------------------------------------
+      for (int i = 0; i < 8; i++) {
+          result <<= 1;
+          result |= (value & 1);
+          value >>= 1;
+      }
+      return result;
+  }
+    
 
-
-
-               
 // -----------------------------------------------------------------------------
 // ACCESSORS
 // -----------------------------------------------------------------------------
 
-PRIVATE PIO return_spi_pio(void)
-{
-    return pio_spi.pio;
-}
 
-PRIVATE uint return_spi_sm(void)
+PRIVATE uint return_dma_channel(void)
 {
-    return pio_spi.sm;
-}
-
-PRIVATE int return_channel(void)
-{
-    return pio_spi.dma_chan;
+    return pio_collection.spi_mosi.channel;
 }
 
 PRIVATE PIO return_spi_miso_pio(void)
 {
-    return pio_collection.pio_miso.pio;
+    return pio_collection.spi_miso.pio;
 }
 
 PRIVATE uint return_spi_miso_sm(void)
 {
-    return pio_collection.pio_miso.sm;
+    return pio_collection.spi_miso.sm;
 }
 
-PRIVATE int return_spi_mosi_sm(void)
+PRIVATE uint return_spi_mosi_sm(void)
 {
-    return pio_collection.pio_mosi.sm;
+    return pio_collection.spi_mosi.sm;
 }
 
 PRIVATE PIO return_spi_mosi_pio(void)
 {
-    return pio_collection.pio_mosi.pio;
+    return pio_collection.spi_mosi.pio;
 }
-
-PRIVATE PIO return_spi_csn_pio(void)
-{
-    return pio_csn.pio;
-}
-
-PRIVATE int return_spi_csn_sm(void)
-{
-    return pio_csn.sm;
-}
-
-

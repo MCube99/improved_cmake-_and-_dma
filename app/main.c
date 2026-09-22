@@ -71,10 +71,7 @@
 //--------------------------------------------------------------------+
 void led_blinking_task(void);
 static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was uint8_t originally
-
 static void process_kbd_report(hid_keyboard_report_t const *report);
-PRIVATE uint8_t reverse_bits(uint8_t value);
-
 volatile bool main_check = false; // This is a signal event for the main loop. If this is false, then the main loop will not run. It is set to true when the SPI ISR triggers, and it is set to false when the event processing main function runs. This is to prevent the main loop from running when there is no event to process.
 volatile bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 
@@ -99,12 +96,12 @@ int main(void) {
   queue_init();
 
   uint32_t status = save_and_disable_interrupts();
+
   set_gpio_pins();
-  pio_dma_setup();
-  dma_channel_init_once();
   pio_miso_setup();
-  spi_csn_setup();
   pio_mosi_setup();
+  dma_channel_init_once();
+
   restore_interrupts_from_disabled(status);
   msc_app_init();
 
@@ -118,9 +115,8 @@ while (1)
 
 ////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
 
-  while ((main_check && dequeue_interrupts(&event))) // the main check acts as an signal event wheras the dequeueing interupt acts as a guard condition. It has to be true for the state machine to process. 
+  while ((main_check && dequeue_interrupts(&event))) // this is mainly used for usb and processing events. The main loop will not run until the interrupt triggers it.
     {
-
       switch(event)
       {
           case EVENT_SIZE_PACKET_RECIEVED: {
@@ -128,14 +124,14 @@ while (1)
               classify_packet(); // This cannot be interrupted as critical
               restore_interrupts_from_disabled(status_packet);
               break;
-      }
+          }
 
           case EVENT_USB_PROCESSING: {
                 bool is_usb_finished = false;
                 is_usb_finished = usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
                 if(!is_usb_finished){ //if not correct size break, else fall through to file processing
                   break; }
-                }
+          }
                 __attribute__((fallthrough));
 
           case EVENT_FILE_PROCESSING: {
@@ -311,15 +307,4 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
 
   
 
-  PRIVATE uint8_t reverse_bits(uint8_t value) {
-
-    uint8_t result = 0;
-
-      for (int i = 0; i < 8; i++) {
-          result <<= 1;
-          result |= (value & 1);
-          value >>= 1;
-      }
-      return result;
-  }
     
