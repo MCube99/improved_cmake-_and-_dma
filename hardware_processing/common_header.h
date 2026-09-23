@@ -17,7 +17,8 @@ typedef uint32_t DWORD;
 #define GARY_CODE                             31                                                 
 
 extern volatile bool main_check;
-extern volatile bool keyboard_check;
+extern bool keyboard_check;
+extern volatile bool usb_check;
 
 typedef enum
 {

@@ -14,6 +14,7 @@ check_chip_select:
     jmp pin flush       ; will go back to flush if pic is still high
 .wrap
 
+
 % c-sdk {
 
 static inline void clocked_input_program_init(PIO pio, uint sm, uint offset, uint pin, uint jmp_pin) {

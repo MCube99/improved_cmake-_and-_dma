@@ -73,13 +73,12 @@ void led_blinking_task(void);
 static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was uint8_t originally
 static void process_kbd_report(hid_keyboard_report_t const *report);
 volatile bool main_check = false; // This is a signal event for the main loop. If this is false, then the main loop will not run. It is set to true when the SPI ISR triggers, and it is set to false when the event processing main function runs. This is to prevent the main loop from running when there is no event to process.
-volatile bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
-
+volatile bool usb_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
+bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 /*------------- MAIN -------------*/
 
 int main(void) {
 
-  bool is_file_finished = false;
   stdio_init_all();   // USB CDC (hardware USB → PC)
   timer_hw->dbgpause = 0;
   board_init();
@@ -142,7 +141,7 @@ while (1)
           }
                 __attribute__((fallthrough));
 
-
+          keyboard_done:
           case EVENT_DONE:
                 event_processing_main();
 
@@ -154,12 +153,11 @@ while (1)
 
   }
 
-  if( keyboard_check ){ // if the keyboard is being processed, then the main loop will not run until the keyboard is done processing. This is to prevent the main loop from running when there is no event to process.
-    bool is_keyboard_finished = false; // if a new char is entered, then it can only enter here if csn falls. 
-    is_keyboard_finished = keyboard_processing_main(); //keyboard_processing_main();spi_slave_setup()
+  if( keyboard_check ){ // ignores main switch case for speed 
+    bool is_keyboard_finished = false; 
+    is_keyboard_finished = keyboard_processing_main(); 
     if( is_keyboard_finished ){
-      main_check = true; // set main check to true so that the main loop will run.
-      keyboard_check = false; // set keyboard check to false so that keyboard wont have to be checked since its processed
+      goto keyboard_done;
     }else{
       main_check = false; // set main check to false so that the main loop will not run until the next interrupt triggers it. This is to prevent the main loop from running when there is no event to process.
       keyboard_check = true; // set keyboard check to true so that the keyboard processing will cxotinue until it escapes
