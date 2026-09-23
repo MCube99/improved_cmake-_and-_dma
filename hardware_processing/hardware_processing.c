@@ -13,9 +13,6 @@
 #include "hardware/structs/iobank0.h"
 #include "hardware/structs/pio.h"
 #include "hardware_processing.h"
-#include "hardware/spi.h"
-
-#include "pico/binary_info.h"
 #include "clocked_input.pio.h"
 #include "spi_miso.pio.h"
 
@@ -72,8 +69,6 @@ PRIVATE uint return_dma_channel(void);
 // -----------------------------------------------------------------------------
 
 PRIVATE void __not_in_flash_func(my_gpio_isr)(uint gpio, uint32_t events) {
-    //uint32_t events = gpio_get_irq_event_mask(PICO_spi_mosi_PIN);
-    // gpio_acknowledge_irq(PICO_spi_mosi_PIN, events);
     main_check = true; // set main check to true so that the main loop will run.
     if (events & GPIO_IRQ_EDGE_FALL) {
         if (usb_check ) {
@@ -274,7 +269,6 @@ PUBLIC bool usb_processing_main(void) {
 
 PUBLIC bool keyboard_processing_main() {
     uint8_t ch = 0;
-
     if(dequeue_keyboard(&ch)){
  //start transaction only when character is detected
             pio_spi_write8_blocking(&pio_collection, &ch, 1);
@@ -293,9 +287,6 @@ PUBLIC void event_processing_main() {
         gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL,true); 
         keyboard_check = false; // reset the keyboard check so that the next time it can be processed again.
     }
-    uint32_t status = save_and_disable_interrupts();
-    enqueue_interrupts(EVENT_NONE);
-    restore_interrupts_from_disabled(status);
     main_check = false; // reset the main check so that the next time it can be processed again.
 }
 
