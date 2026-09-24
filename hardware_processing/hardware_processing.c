@@ -68,7 +68,9 @@ PRIVATE uint return_dma_channel(void);
 // GPIO ISR
 // -----------------------------------------------------------------------------
 
-PRIVATE void __not_in_flash_func(my_gpio_isr)(uint gpio, uint32_t events) {
+PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
+    uint32_t events = gpio_get_irq_event_mask(PICO_SPI_CSN_PIN);
+    gpio_acknowledge_irq(PICO_SPI_CSN_PIN,events);
     main_check = true; // set main check to true so that the main loop will run.
     if (events & GPIO_IRQ_EDGE_FALL) {
         if (usb_check ) {
@@ -97,7 +99,11 @@ PUBLIC void set_gpio_pins(void) {
 
     gpio_init(PICO_SPI_SCK_PIN);
     gpio_set_dir(PICO_SPI_SCK_PIN, 0);
-    gpio_set_irq_enabled_with_callback(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true, &my_gpio_isr);
+   // Direct, exclusive IRQ registration — no generic dispatch/callback overhead,
+    // correct for time-critical CSN edge detection.
+    irq_set_exclusive_handler(IO_IRQ_BANK0, my_gpio_isr);
+    irq_set_enabled(IO_IRQ_BANK0, true);
+    gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true);
 }
 // -----------------------------------------------------------------------------
 // PIO SETUP

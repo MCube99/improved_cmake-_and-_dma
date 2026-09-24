@@ -25,7 +25,7 @@ typedef struct
 {
     char dates[15];
     char times[15];
-    char times_header[15];
+    char times_header[15 + 4];
     char date_directory[15];
     char *starting_pointer;
 
@@ -83,13 +83,11 @@ FRESULT (*handle_error[])(FRESULT fr) = {
 
 
 PRIVATE void extract_date_directory(const uint8_t *in, char *dates, size_t size);
-PRIVATE char* extract_time(const char *in, char *times, size_t size );
-PRIVATE void extract_date(char *in, char *dates, size_t size);
+PRIVATE char* extract_time(const uint8_t *in, char *times, size_t size );
+PRIVATE void extract_date(const uint8_t *in, char *dates, size_t size);
 PRIVATE char* extract_state(char *in, char *state, size_t size);
 PRIVATE char* extract_comma_field(char *in, char *out, size_t size);
-
-PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info);
-
+PRIVATE bool check_if_folder_exists_in_date_directory(const File_Info *file_info);
 // PRIVATE FRESULT read_root_directories();
  
 // the function below exists to work on the results and errors
@@ -109,12 +107,16 @@ PUBLIC bool file_processing_main( ) { //called file_processing_main because this
 
     extract_date_directory(buffer, file_info.date_directory,sizeof(file_info.dates));   // dates used as folder/directory name
     extract_date(buffer, file_info.dates,sizeof(file_info.dates)); // extract time file name
-    file_info.starting_pointer = extract_time(buffer, file_info.times,sizeof(file_info.times)); // extract the time part
-    strcpy(file_info.times_header, file_info.times); //turn it into the time.csv and remove it from the time proper
-    strcat(file_info.times_header,".csv");
+    file_info.starting_pointer = extract_time(buffer, file_info.times,sizeof(file_info.times)); // extract the time par
+												//
+	if (file_info.starting_pointer == NULL) {
+		// malformed input — nothing to parse further, bail out safely
+		event_type_t current_event = EVENT_NONE;
+		enqueue_interrupts(current_event);
+		return(false);
+	    }
+    snprintf(file_info.times_header, sizeof(file_info.times_header), "%s.csv", file_info.times);
 
-    //strcat(file_info.date_directory,file_info.dates);
-  //  snprintf(file_info.date_directory, sizeof(file_info.date_directory), "/%s", file_info.dates); //formats it so that 
   
      // Check for hardware/system errors
     fr = start();
@@ -141,20 +143,19 @@ PUBLIC bool file_processing_main( ) { //called file_processing_main because this
 }
 
 ///////////FRESULT functions/////////////////////////
-
 PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done. 
     if(!exists_check.path_exists)
     {
          fr = FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS;
          return(fr);
     }
-    if(!exists_check.file_exists)
+    else if(!exists_check.file_exists)
     {
          fr = FR_CHECK_IF_TIME_FILE_ALREADY_EXISTS;
          return(fr);
     }
 
-    if(exists_check.file_exists && exists_check.path_exists)
+    else
     {
         fr = FR_ALL_DONE;
         return(fr);
@@ -178,7 +179,7 @@ PRIVATE FRESULT no_path(FRESULT fr) {
 
 PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr) {
     DIR dir;
-    FILINFO fno;
+    FILINFO fno = {0};
 
     exists_check.path_exists = false;
 
@@ -255,12 +256,18 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
 
     char *buffer = file_info.starting_pointer;
     buffer = extract_comma_field(buffer, ohms, sizeof(ohms)); //want to pass pointer and then modify pointer to pooubt ti bextl
+	if (!buffer) return FR_INVALID_NAME;
     buffer = extract_comma_field(buffer, voltage, sizeof(voltage));
+	if (!buffer) return FR_INVALID_NAME;
     buffer = extract_comma_field(buffer, current, sizeof(current));
+	if (!buffer) return FR_INVALID_NAME;
     buffer = extract_comma_field(buffer, test_time, sizeof(test_time));
+	if (!buffer) return FR_INVALID_NAME;
     buffer = extract_comma_field(buffer, comment, sizeof(comment));
+	if (!buffer) return FR_INVALID_NAME;
 
     buffer = extract_state(buffer, state, sizeof(state));
+	if (!buffer) return FR_INVALID_NAME;
     
     //extract_voltage(buffer, voltage, size_t size); // this is for the next value, and so on and so fort
 
@@ -272,15 +279,15 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
 
     // Implement a function here to check for files in the directory and se
 
-    if (check_if_folder_exists_in_date_directory(file_info)) { //this is for if the folder just created exists
+    if (check_if_folder_exists_in_date_directory(&file_info)) { //this is for if the folder just created exists
         fr = f_getcwd(fullpath, sizeof(fullpath));
 
         if (fr != FR_OK) {
             return fr;
         }
 
-        sprintf(temp, "%s/%s", fullpath, file_info.times_header);
-        strcpy(fullpath, temp);
+	snprintf(temp, sizeof(temp), "%s/%s", fullpath, file_info.times_header);
+	snprintf(fullpath, sizeof(fullpath), "%s", temp);
 
         fr = f_open(&fp, fullpath, FA_WRITE | FA_OPEN_APPEND);
 
@@ -325,26 +332,17 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
 PRIVATE FRESULT no_file(FRESULT fr) {
     FIL fp;
 
-    TCHAR temp[64];
     TCHAR fullpath[64];
-
     memset(fullpath, 0, sizeof(fullpath));
-    memset(temp, 0, sizeof(temp));
 
     fr = f_chdir(file_info.date_directory);
     if (fr != FR_OK) {
         return fr; // can't open directory
     }
-    fr = f_getcwd(fullpath, sizeof(fullpath));
 
-     if (fr != FR_OK) {
-          return fr;
-         }
+	snprintf(fullpath, sizeof(fullpath), "%s", file_info.times_header);
 
-        sprintf(temp, "%s", file_info.times_header);
-        strcpy(fullpath, temp);
-
-        fr = f_open(&fp,temp, FA_WRITE | FA_CREATE_ALWAYS);
+        fr = f_open(&fp,fullpath, FA_WRITE | FA_CREATE_ALWAYS);
         if (fr == FR_OK) {
             f_puts("Date,\tTime,\tOhms(ohm)),\tVoltage(V),\tCurrent(A),\tTestTime,\tComment,\tState\n", &fp); //adds a tab in the middle
             f_close(&fp);
@@ -354,7 +352,7 @@ PRIVATE FRESULT no_file(FRESULT fr) {
 
 }
 
-PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info) {
+PRIVATE bool check_if_folder_exists_in_date_directory(const File_Info *file_info) {
     DIR dir;
     FILINFO fno;
     FRESULT fr;
@@ -372,7 +370,7 @@ PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info) {
             break;   // error or end of directory
         }
 
-        if (strcmp(fno.fname, file_info.times_header) == 0) {
+        if (strcmp(fno.fname, file_info->times_header) == 0) {
             f_closedir(&dir);
             return true;
         }
@@ -385,10 +383,12 @@ PRIVATE bool check_if_folder_exists_in_date_directory(File_Info file_info) {
 
 PRIVATE FRESULT invalid_name(FRESULT fr) {
     (void)fr;
+    return(fr);
 }
 
 PRIVATE FRESULT denied( FRESULT fr) {
     (void)fr;
+    return(fr);
 }
 
 PRIVATE FRESULT exist(FRESULT fr) {
@@ -398,10 +398,12 @@ PRIVATE FRESULT exist(FRESULT fr) {
 
 PRIVATE FRESULT invalid_object(FRESULT fr) {
     (void)fr;
+    return(fr);
 }
 
 PRIVATE FRESULT not_enabled(FRESULT fr) {
     (void)fr;
+    return(fr);
 }
 
 PRIVATE FRESULT no_filesystem(FRESULT fr) {
@@ -412,22 +414,27 @@ PRIVATE FRESULT no_filesystem(FRESULT fr) {
 
 PRIVATE FRESULT mkfs_aborted(FRESULT fr) {
     (void)fr;
+    return(fr);
 }
 
 PRIVATE FRESULT timeout(FRESULT fr) {
     (void)fr;
+    return(fr);
 }
 
 PRIVATE FRESULT locked(FRESULT fr) {
     (void)fr;
+    return(fr);
 }
 
 PRIVATE FRESULT too_many_open_files(FRESULT fr) {
     (void)fr;
+    return(fr);
 }
 
 PRIVATE FRESULT start_error(FRESULT fr) {
     (void)fr;
+    return(fr);
 }
 
 ///////////Helper functions/////////////////////////
@@ -470,55 +477,26 @@ static void get_file_info() {
     }   
 }
 
-
-
-
- /// Helper function /////
-
-
-
-// PRIVATE void extract_date_directory(const char *in_buf, char *out)
-// {
-
-    
-//     unsigned d, m, y;
-//     int n = 0;
-
-//     while (*in_buf) {
-//     if (sscanf(out, "%2u/%2u/%2u%n", &d, &m, &y, &n) == 3 &&
-//         n == 8 &&
-//         d <= 31 &&
-//         m <= 12)
-//     {
-//         break;
-//     }
-//     in_buf++;
-// }
-
-//     sscanf(in_buf, "%8s", info);
-
-// }
-
-//// Extraction Function /////////////
+/////////////////////////////////////////////// Extraction Function ////////////////////////////////////////////////////// /
 
 PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, size_t size) {
    memset(dates_directory,0,size);
    dates_directory[0] = '/';
    dates_directory[size-1]='\0';
 
-   char *start = strchr(in,'/');  
+   char *start = strchr((const char *)in,'/');  
    if(!start) return;
    char *end = strchr(start+1,'/');
    if(!end) return;
-   char* const beginning = in; //immutable pointer to first 
-   char *p = in+1;
+   const char *p =(const char*) in;
 
    int i = 1;
    for(; p<end && i<size-1;p++){
-        if (*p == '/'){
-            *p = '-';
+    char c = *p;
+        if (c == '/'){
+            c = '-';
         }
-        dates_directory[i++] = *p;
+        dates_directory[i++] = c;
 
    }
    dates_directory[i++] = '-';
@@ -529,68 +507,59 @@ PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, si
 
    for(; p<end_final && i<size-1; p++)
    {
-        dates_directory[i++] = *p;
+        char c = *p;
+        dates_directory[i++] = c;
    }
-
-   p = beginning;
-
 }
 
-PRIVATE void extract_date( char *in, char *dates, size_t size) {
+PRIVATE void extract_date(const uint8_t *in, char *dates, size_t size) {
     memset(dates,0,size);
     dates[size-1]='\0';
-    char *end = strchr(in,'/');  
+    const char *end = strchr((const char *)in,'/');
     if(!end) return;
-    char *p = in+1;
+    const char *p = (const char *)in;
 
     int i = 0;
-     for(; p<end && i<size-1;p++){
-        if (*p == '/'){ // / can be mistaken for directory
-            *p = '-';
-        }
-        dates[i++] = *p;
+    for(; p<end && i<size-1;p++){
+        char c = *p;
+        if (c == '/') { c = '-'; }
+        dates[i++] = c;
     }
-//    dates[i++] = '-';
-//    ++p;
 
-   char *end_final = strchr(end+1,',');
-   if(!end_final) return;
-   for(; p<end_final && i<size-1; p++)
-   {
-    if (*p == '/'){ // / can be mistaken for directory
-            *p = '-';
-        }
-        dates[i++] = *p;
-   }
+    const char *end_final = strchr(end+1,',');
+    if(!end_final) return;
+    for(; p<end_final && i<size-1; p++)
+    {
+        char c = *p;
+        if (c == '/') { c = '-'; }
+        dates[i++] = c;
+    }
 }
 
-PRIVATE char* extract_time(const char *in, char *time, size_t size) {
+PRIVATE char* extract_time(const uint8_t *in, char *time, size_t size) {
     memset(time,0,size);
     time[size-1] = '\0';
-    char *start = strchr(in, ',');
+    char *start = strchr((const char*)in, ',');
     if(!start) return NULL;
-    char *end   = strchr(start + 1, ',');
+    char *end   = strchr((const char*)start + 1, ',');
     if(!end) return NULL;
-    char *const check = (char *)give_array_address();
     int i = 0;
-    char *p = start + 1;
+    const char *p = start + 1;
 
     for(; p < end && i < size-1; p++)
     {
-        if(isspace(*p))
+        char c = *p;
+        if(isspace((unsigned char)c))
             continue;
 
-         if(*p == ':'){
-            *p = '-';
+         if(c== ':'){
+            c = '-';
         } 
 
-        time[i++] = *p;
+        time[i++] = c;
     }
 
     return(p);
-
-
-
 }
 
 PRIVATE char* extract_state(char *in, char *state, size_t size) {
@@ -644,219 +613,3 @@ PRIVATE char* extract_comma_field(char *in, char *out, size_t size) {
     return ptr;
 }
 
-
-
-
-/* memset(dates,0,size);
- 
-    *(dates + size - 1) = '\0'; // ensure null termination
-    char *date_ptr = strchr(in,'/');
-
-    if(date_ptr == NULL)
-    {
-        return;
-    }
-    
-    int ptr_diff = date_ptr - in; //get difference from startin point to where the '/' is
-
-    if(ptr_diff < 0)
-    {
-        return;
-    }
-    int i = 0;
-    int j = 0;
-    int k = 0;
-
-    for(; i < ptr_diff; )
-    {
-        if(ptr_diff >= 2)
-        {
-            dates[i++] = *( date_ptr - 2 );  //1st digit to 0
-            dates[i++] = *(date_ptr - 1);    //2nd digit to 1
-            dates[i++] = '-'; //actual / to 2nd
-
-        }
-        else if(ptr_diff == 1)
-        {
-            dates[i++] = *(date_ptr - 1); //only one digit needed
-            dates[i++] = '-';     // for the actual /.
-        }
-        else
-        {
-            return; //should never be 3
-        }
-    }
- 
-   char *date_ptr2 = strchr(date_ptr + 1, '/'); // look for the second '/' starting from the character after the first '/'
-
-    if(date_ptr2 == NULL)
-    {
-        return;
-    }
-
-    int ptr_diff2 = date_ptr2 - date_ptr;
-    --ptr_diff2; //get difference from 1st / to the second /, minus 1 to not include the first /
-
-    for(; j < ptr_diff2; )
-    {
-        if(ptr_diff2 >= 2)
-        {
-            dates[(j++)+i] = *( date_ptr - 2 ); 
-            dates[(j++)+i] = *(date_ptr2 - 1);
-            dates[(j++)+i] = '-';
-        }
-        else if(ptr_diff2 == 1)
-        {
-            dates[(j++)+i] = *(date_ptr2 - 1);
-            dates[(j++)+i] = '-';
-        }
-
-        else
-        {
-            return;
-        }
-    }
-
-    char *date_ptr3 = strchr(date_ptr2+1, ',');
-
-    int ptr_diff3 = date_ptr3 - date_ptr2; //get difference from 2nd / to the end of the string
-    --ptr_diff3;
-    for(; k < ptr_diff3; )
-    {
-        if(ptr_diff3 == 2)
-        {
-            dates[(k++)+i+j] = *(date_ptr2 + 1);
-            dates[(k++)+i+j] = *(date_ptr2 + 2);
-
-        }
-        else if(ptr_diff3 == 1)
-        {
-            dates[(k++)+i+j] = *(date_ptr2 + 1);
-            dates[(k++)+i+j] = *(date_ptr2 + 2);
-        }
-    }*/
-
-
-
-/* PRIVATE FRESULT read_root_directory() //should work in any directory
-{
-    DIR dir;                // directory object (not a pointer)
-    FILINFO filinfo;        // file information structure
-    char *filename;
-    FRESULT fr;
-
-    // open current directory
-    fr = f_opendir(&dir, "/");
-
-    if (fr != FR_OK)
-    {
-        return FR_NO_PATH;
-    }
-
-    // read directory entries one by one
-    while (1)
-    {
-        fr = f_readdir(&dir, &filinfo);
-
-        // stop if error or end of directory
-        if (fr != FR_OK || filinfo.fname[0] == 0)
-        {
-            break;
-        }
-
-        filename = filinfo.fname;
-
-        // get file metadata
-        fr = f_stat(filename, &filinfo);
-
-        switch (fr)
-        {
-            case FR_NO_FILE:
-            case FR_NO_PATH:
-                fr = FR_NO_PATH;
-                break;
-
-            case FR_OK:
-
-                // check if entry is a directory
-                if (filinfo.fattrib & AM_DIR)
-                {
-                     if(strncmp(file_info.fname, file_info.dates,10) == 0) // Check if the directory name matches the date.  Since that will be the one files will be based on
-                {
-                    if(f_stat(file_info.times, &fno) == FR_OK) //  Checks if time exists in the file
-                    {
-                        fr = f_open(&fil, file_info.times, FA_OPEN_APPEND | FA_OPEN_EXISTING); // Open the directory for writing
-                        f_puts(give_array_address(), &fil);
-                        exists_check.file_exists = true; // Set flag to indicate that the path now exists
-                    }
-                    else
-                    {
-                         fr = f_open(&fil, file_info.times, FA_WRITE | FA_CREATE_ALWAYS);
-                         f_puts(give_array_address(), &fil);
-                         exists_check.file_exists = true; // Set flag to indicate that the path now exists
-                    }
-
-                }
-                }
-
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    // close directory when finished
-    f_closedir(&dir);
-
-    return fr;
-} */
-
-
-// void dir(const char *dirname)
-// {
-//     FRESULT fr;
-// 	DIR *dp;
-// 	FILINFO file_info;
-// 	struct stat fs;
-// 	char *filename;
-// 	char directory[BUFSIZ];
-//     fr = f_chdir(dirname)
-// 	if( fr != FR_OK )
-// 	{
-// 		fprintf(stderr,"Unable to change to %s\n",dirname);
-// 		exit(1);
-// 	}
-
-// 	fr = f_getcwd(directory, BUFSIZE); 
-
-
-// 	dp = opendir(directory);
-// 	if( dp==NULL )
-// 	{
-// 		fprintf(stderr,"Unable to read directory '%s'\n",
-// 				directory
-// 			   );
-// 		exit(1);
-// 	}
-
-// 	printf("%s\n",directory);
-// 	while( (entry=readdir(dp)) != NULL )
-// 	{
-// 		filename = entry->d_name;
-// 		if( strncmp( filename,".",1)==0 )
-// 			continue;
-
-// 		stat(filename,&fs);
-// 		if( S_ISDIR(fs.st_mode) )
-// 			dir(filename);
-// 	}
-
-// 	closedir(dp);
-// }
-
-// PRIVATE void getcwd(char *buff, uint len)
-// {
-
-//     fr = f_getcwd(cwd, BUFSIZE); 
-// }
