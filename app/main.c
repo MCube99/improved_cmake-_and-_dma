@@ -41,7 +41,6 @@ void led_blinking_task(void);
 static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was uint8_t originally
 static void process_kbd_report(hid_keyboard_report_t const *report);
 volatile bool main_check = false; // This is a signal event for the main loop. If this is false, then the main loop will not run. It is set to true when the SPI ISR triggers, and it is set to false when the event processing main function runs. This is to prevent the main loop from running when there is no event to process.
-volatile bool usb_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 /*------------- MAIN -------------*/
 
@@ -116,9 +115,6 @@ while (1)
           default:
               break;
       }
-
-      main_check = false; //reset to false so that the main loop will not run until the next interrupt triggers it. This is to prevent the main loop from running when there is no event to process.
-
   }
 
   if( keyboard_check ){ // ignores main switch case for speed 

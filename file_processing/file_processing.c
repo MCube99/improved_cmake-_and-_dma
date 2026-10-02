@@ -25,8 +25,8 @@ typedef struct
 {
     char dates[15];
     char times[15];
-    char times_header[15 + 4];
-    char date_directory[15];
+    char times_header[15 + 4]; // times + 4
+    char date_directory[20];
     char *starting_pointer;
 
 }File_Info;
@@ -56,6 +56,7 @@ PRIVATE FRESULT timeout(FRESULT fr);
 PRIVATE FRESULT locked(FRESULT fr);
 PRIVATE FRESULT too_many_open_files(FRESULT fr);
 PRIVATE FRESULT start_error(FRESULT fr);
+PRIVATE bool check_if_trtest_directory_exists(void);
 PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr);
 PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr);
 
@@ -105,7 +106,7 @@ PUBLIC bool file_processing_main( ) { //called file_processing_main because this
     uint8_t *buffer = give_array_address(); //give_array_address();
     // int n = sizeof(file_info.dates)/sizeof(file_info.dates[0]);
 
-    extract_date_directory(buffer, file_info.date_directory,sizeof(file_info.dates));   // dates used as folder/directory name
+    extract_date_directory(buffer, file_info.date_directory,sizeof(file_info.dates_directory));   // dates used as folder/directory name
     extract_date(buffer, file_info.dates,sizeof(file_info.dates)); // extract time file name
     file_info.starting_pointer = extract_time(buffer, file_info.times,sizeof(file_info.times)); // extract the time par
 												//
@@ -166,7 +167,17 @@ PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to b
 PRIVATE FRESULT start() { //This is the kick off function where the pico tries to mount onto the USB stick.
 
     FRESULT fr;
-    fr = f_mount(fs, "0:", 0);
+    fr = f_mount(fs, "0:", 0)
+    if (fr != FR_OK) {
+        return fr;
+    }
+
+    if (!check_if_trtest_directory_exists()) {
+        fr = f_mkdir("/TRTEST");
+        if (fr != FR_OK) {
+            return fr;
+        }
+    }
     return(fr); //sets off whole reaction
 }
 
@@ -177,13 +188,51 @@ PRIVATE FRESULT no_path(FRESULT fr) {
     return fr;
 }
 
+PRIVATE bool check_if_trtest_directory_exists(void) {
+    DIR dir;
+    FILINFO fno;
+    FRESULT fr;
+
+    fr = f_opendir(&dir, "/");
+    if (fr != FR_OK) {
+        return false;
+    }
+
+    while (1)
+    {
+        fr = f_readdir(&dir, &fno);
+
+        if (fr != FR_OK || fno.fname[0] == 0) {
+            break;
+        }
+
+        if (strcmp(fno.fname, ".") == 0 || strcmp(fno.fname, "..") == 0)
+            continue;
+
+        if (fno.fattrib & (AM_HID | AM_SYS))
+            continue;
+
+        if (fno.fattrib & AM_DIR)
+        {
+            if (strcmp(fno.fname, "TRTEST") == 0)
+            {
+                f_closedir(&dir);
+                return true;
+            }
+        }
+    }
+
+    f_closedir(&dir);
+    return false;
+}
+
 PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr) {
     DIR dir;
     FILINFO fno = {0};
 
     exists_check.path_exists = false;
 
-    fr = f_opendir(&dir, "/");
+    fr = f_opendir(&dir, "/TRTEST/");
     if (fr != FR_OK)
         return fr;
 
@@ -325,9 +374,6 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
 
     return FR_NO_PATH;
 }
- 
-
-
 
 PRIVATE FRESULT no_file(FRESULT fr) {
     FIL fp;
@@ -437,60 +483,25 @@ PRIVATE FRESULT start_error(FRESULT fr) {
     return(fr);
 }
 
-///////////Helper functions/////////////////////////
 
 
-static void get_file_info() {
-    FRESULT fr;
-    FILINFO fno;
-    const char *fname = "TRTEST";
-
-
-    printf("Test for \"%s\"...\n", fname);
-
-    fr = f_stat(fname, &fno);
-    switch (fr) {
-
-    case FR_OK:
-        printf("Size: %lu\n", fno.fsize);
-        printf("Timestamp: %u-%02u-%02u, %02u:%02u\n",
-               (fno.fdate >> 9) + 1980, fno.fdate >> 5 & 15, fno.fdate & 31,
-               fno.ftime >> 11, fno.ftime >> 5 & 63);
-        printf("Attributes: %c%c%c%c%c\n",
-               (fno.fattrib & AM_DIR) ? 'D' : '-',
-               (fno.fattrib & AM_RDO) ? 'R' : '-',
-               (fno.fattrib & AM_HID) ? 'H' : '-',
-               (fno.fattrib & AM_SYS) ? 'S' : '-',
-               (fno.fattrib & AM_ARC) ? 'A' : '-');
-        break;
-
-    case FR_NO_FILE:
-    case FR_NO_PATH:
-        printf("\"%s\" is not exist.\n", fname);
-        break;
-
-    default:
-        printf("An error occured. (%d)\n", fr);
-
-
-    // Need to get file name from keyboard or soemthing
-    }   
-}
 
 /////////////////////////////////////////////// Extraction Function ////////////////////////////////////////////////////// /
 
 PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, size_t size) {
    memset(dates_directory,0,size);
-   dates_directory[0] = '/';
-   dates_directory[size-1]='\0';
+   const char *prefix = "/TRTEST/";
+   size_t prefix_len = strlen(prefix);
+   strncpy(dates_directory, prefix, size - 1);
+   dates_directory(size-1)='\0';
 
-   char *start = strchr((const char *)in,'/');  
+   const char *start = strchr((const char *)in,'/');  
    if(!start) return;
    char *end = strchr(start+1,'/');
    if(!end) return;
    const char *p =(const char*) in;
 
-   int i = 1;
+   int i = (int)prefix_len;
    for(; p<end && i<size-1;p++){
     char c = *p;
         if (c == '/'){

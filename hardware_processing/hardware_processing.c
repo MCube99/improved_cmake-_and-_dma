@@ -73,10 +73,7 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
     gpio_acknowledge_irq(PICO_SPI_CSN_PIN,events);
     main_check = true; // set main check to true so that the main loop will run.
     if (events & GPIO_IRQ_EDGE_FALL) {
-        if (usb_check ) {
-            return; // if usb is being processed, no need to go hree then 
-        }
-            enqueue_interrupts(EVENT_SIZE_PACKET_RECIEVED); // this edge is the real one
+	    enqueue_interrupts(EVENT_SIZE_PACKET_RECIEVED); // only one job, then it gets reenabled only at the end. 
     }
 }
 // -----------------------------------------------------------------------------
@@ -214,15 +211,14 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
     event_type_t classify_event = 0;
     size = pio_sm_get_blocking(return_spi_mosi_pio(), return_spi_mosi_sm()); // get size byte
     set_size(size);
-
+   gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, false); // disable the interrupt so that it does not fire again until the event is processed.
     if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
-        gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, false); // disable the interrupt so that it does not fire again until the event is processed.
         //gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
+	main_check = false;
         keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
         return;
     }
     else if (size > GARY_CODE) {
-        usb_check = true; // need to save and disable interrupts so that the write i not interrupted.
         dma_setup_fast(size);
         classify_event = EVENT_USB_PROCESSING;
     }
@@ -244,13 +240,6 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
 PUBLIC bool usb_processing_main(void) {
     dma_start_channel_mask(1u << return_dma_channel()); // start the DMA transfer
     dma_channel_wait_for_finish_blocking(return_dma_channel()); // Wait for the DMA transfer to complete
-
-
-        // 1. Pause the DMA channel
-    hw_clear_bits(&dma_hw->ch[return_dma_channel()].ctrl_trig, DMA_CH0_CTRL_TRIG_EN_BITS);
-
-        // 2. Now that the DMA channel is paused, we can safely read the write address
-
     uintptr_t base = (uintptr_t)give_array_address();
     uintptr_t write = dma_hw->ch[return_dma_channel()].write_addr;
     uint32_t difference = write - base;
@@ -278,7 +267,7 @@ PUBLIC bool keyboard_processing_main() {
     if(dequeue_keyboard(&ch)){
  //start transaction only when character is detected
             pio_spi_write8_blocking(&pio_collection, &ch, 1);
-            if(ch == '\r'){
+            if(ch == '\r' || ch == '\n'){
                 return(true); // Simply return early
             }
     }
@@ -286,14 +275,10 @@ PUBLIC bool keyboard_processing_main() {
 }
 
 PUBLIC void event_processing_main() {
-    if(usb_check){
-        usb_check = false; // reset the usb check so that the next time it can be processed again.
-    }
-    if(keyboard_check){
-        gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL,true); 
-        keyboard_check = false; // reset the keyboard check so that the next time it can be processed again.
-    }
+    gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL,true); 
+	keyboard_check = false; // reset the keyboard check so that the next time it can be processed again.
     main_check = false; // reset the main check so that the next time it can be processed again.
+    // the enqueing will be done with ghpio irq
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
