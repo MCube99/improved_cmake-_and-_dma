@@ -82,19 +82,23 @@ FRESULT (*handle_error[])(FRESULT fr) = {
     check_if_time_folder_already_exists
 };
 
-
+// Create folder and date directory
 PRIVATE void extract_date_directory(const uint8_t *in, char *dates, size_t size);
-PRIVATE char* extract_time(const uint8_t *in, char *times, size_t size );
 PRIVATE void extract_date(const uint8_t *in, char *dates, size_t size);
+
+// To fill our csv form
+PRIVATE char* extract_time(const uint8_t *in, char *times, size_t size );
 PRIVATE char* extract_state(char *in, char *state, size_t size);
 PRIVATE char* extract_comma_field(char *in, char *out, size_t size);
+
 PRIVATE bool check_if_folder_exists_in_date_directory(const File_Info *file_info);
 // PRIVATE FRESULT read_root_directories();
  
 // the function below exists to work on the results and errors
 
-PUBLIC bool file_processing_main( ) { //called file_processing_main because this function goes in the main.c file
+PUBLIC void file_processing_main( ) { //called file_processing_main because this function goes in the main.c file
     FRESULT fr;
+    exists_check = (Exists_check){0};   // reset both flags on every call
    // Initialise all date and time stuff early 
    // fr = f_getcwd(file_info.date_directory, strlen(file_info.date_directory)); //gets current directory and drive 
     // this is drive 0 and root directory
@@ -102,11 +106,10 @@ PUBLIC bool file_processing_main( ) { //called file_processing_main because this
     memset(file_info.times, 0, sizeof(file_info.times));
     memset(file_info.date_directory, 0, sizeof(file_info.date_directory));
 
-
     uint8_t *buffer = give_array_address(); //give_array_address();
     // int n = sizeof(file_info.dates)/sizeof(file_info.dates[0]);
 
-    extract_date_directory(buffer, file_info.date_directory,sizeof(file_info.dates_directory));   // dates used as folder/directory name
+    extract_date_directory(buffer, file_info.date_directory,sizeof(file_info.date_directory));   // dates used as folder/directory name
     extract_date(buffer, file_info.dates,sizeof(file_info.dates)); // extract time file name
     file_info.starting_pointer = extract_time(buffer, file_info.times,sizeof(file_info.times)); // extract the time par
 												//
@@ -114,7 +117,6 @@ PUBLIC bool file_processing_main( ) { //called file_processing_main because this
 		// malformed input — nothing to parse further, bail out safely
 		event_type_t current_event = EVENT_NONE;
 		enqueue_interrupts(current_event);
-		return(false);
 	    }
     snprintf(file_info.times_header, sizeof(file_info.times_header), "%s.csv", file_info.times);
 
@@ -123,27 +125,25 @@ PUBLIC bool file_processing_main( ) { //called file_processing_main because this
     fr = start();
 // This state machine is mainly for error handling. The ones in the if statement (apart from FR_ALL_DONE) are all hardware errors, so if any of those happen, then the system will break out of the loop and not continue and I have no clue what to do + dont get paid enough to care
     while(1){
-        if( fr == FR_DISK_ERR || fr == FR_NOT_READY ||fr == FR_WRITE_PROTECTED || fr == FR_INT_ERR || fr == FR_ALL_DONE ) {
+        if( fr == FR_ALL_DONE || fr == FR_DISK_ERR || fr == FR_NOT_READY ||fr == FR_WRITE_PROTECTED || fr == FR_INT_ERR) {
              break; //idk what to do if there is an hardware issue
         }
-         fr = handle_error[fr](fr);
+         fr = handle_error[fr](fr); // kick start it off.
     }
 
     if(fr == FR_ALL_DONE){
         event_type_t current_event = EVENT_DONE;
         enqueue_interrupts(current_event);
-        return(true);
     }
     else{
         event_type_t current_event = EVENT_NONE;
         enqueue_interrupts(current_event);
-        return(false);
     }
     
     
 }
 
-///////////FRESULT functions/////////////////////////
+/////////////////////////////////////////FRESULT functions/////////////////////////////////////////
 PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done. 
     if(!exists_check.path_exists)
     {
@@ -155,7 +155,6 @@ PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to b
          fr = FR_CHECK_IF_TIME_FILE_ALREADY_EXISTS;
          return(fr);
     }
-
     else
     {
         fr = FR_ALL_DONE;
@@ -167,7 +166,7 @@ PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to b
 PRIVATE FRESULT start() { //This is the kick off function where the pico tries to mount onto the USB stick.
 
     FRESULT fr;
-    fr = f_mount(fs, "0:", 0)
+    fr = f_mount(fs, "0:", 0);
     if (fr != FR_OK) {
         return fr;
     }
@@ -183,7 +182,7 @@ PRIVATE FRESULT start() { //This is the kick off function where the pico tries t
 
 PRIVATE FRESULT no_path(FRESULT fr) {
 
-    const char *fname = file_info.dates;
+    const char *fname = file_info.date_directory;
     fr = f_mkdir(fname);
     return fr;
 }
@@ -403,7 +402,7 @@ PRIVATE bool check_if_folder_exists_in_date_directory(const File_Info *file_info
     FILINFO fno;
     FRESULT fr;
 
-    fr = f_opendir(&dir, file_info.date_directory);
+    fr = f_opendir(&dir, file_info->date_directory);
     if (fr != FR_OK) {
         return false;
     }
@@ -487,21 +486,29 @@ PRIVATE FRESULT start_error(FRESULT fr) {
 
 
 /////////////////////////////////////////////// Extraction Function ////////////////////////////////////////////////////// /
-
+// Builds the absolute path of the date folder, e.g. "/TRTEST/20-7-25",
+// from the start of the incoming data (e.g. "20/7/25,12:30:45,...").
+// Folder names can't contain '/', so the slashes in the date become '-'.
 PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, size_t size) {
-   memset(dates_directory,0,size);
+   memset(dates_directory,0,size);// start with an empty, zeroed buffer
+
+   // Fixed parent folder. Starting with '/' makes the whole path absolute,
+   // so f_mkdir/f_chdir behave the same wherever the working directory is.
    const char *prefix = "/TRTEST/";
    size_t prefix_len = strlen(prefix);
-   strncpy(dates_directory, prefix, size - 1);
-   dates_directory(size-1)='\0';
-
-   const char *start = strchr((const char *)in,'/');  
+   strncpy(dates_directory, prefix, size - 1);// bounded copy, can't overflow
+   dates_directory[size-1]='\0';// make sure it's always terminated
+    // Find the two '/' separators in the date (day/month/year).
+   const char *start = strchr((const char *)in,'/');   // first '/'
    if(!start) return;
    char *end = strchr(start+1,'/');
    if(!end) return;
    const char *p =(const char*) in;
 
-   int i = (int)prefix_len;
+   int i = (int)prefix_len; // write after "/TRTEST/", not over it
+
+   // Part 1: copy "day/month" (everything up to the second '/'),
+   // turning '/' into '-'. Stops early if the output buffer is nearly full
    for(; p<end && i<size-1;p++){
     char c = *p;
         if (c == '/'){
@@ -510,7 +517,10 @@ PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, si
         dates_directory[i++] = c;
 
    }
-   dates_directory[i++] = '-';
+// Part 2: copy the year (everything up to the first ',').
+   if(i< size - 1){
+    dates_directory[i++] = '-';
+   }
    ++p;
 
    char *end_final = strchr(end+1,',');
@@ -521,6 +531,7 @@ PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, si
         char c = *p;
         dates_directory[i++] = c;
    }
+// Result, e.g. "/TRTEST/20-7-25", always null-terminated thanks to the memset.
 }
 
 PRIVATE void extract_date(const uint8_t *in, char *dates, size_t size) {

@@ -93,22 +93,15 @@ while (1)
           }
 
           case EVENT_USB_PROCESSING: {
-                bool is_usb_finished = false;
-                is_usb_finished = usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
-                if(!is_usb_finished){ //if not correct size break, else fall through to file processing
-                  break; }
+                usb_processing_main(); // this only enquees data depending on result
+                break;
           }
-                __attribute__((fallthrough));
 
           case EVENT_FILE_PROCESSING: {
-                 bool is_file_finished = false;
-                 is_file_finished = file_processing_main(); 
-                 if(!is_file_finished){ //if not correct size break, else fall through to keyboard processing
-                 break; }
+                 file_processing_main(); 
+                 break; 
           }
-                __attribute__((fallthrough));
 
-          keyboard_done:
           case EVENT_DONE:
                 event_processing_main();
 
@@ -120,9 +113,7 @@ while (1)
   if( keyboard_check ){ // ignores main switch case for speed 
     bool is_keyboard_finished = false; 
     is_keyboard_finished = keyboard_processing_main(); 
-    if( is_keyboard_finished ){
-      goto keyboard_done;
-    }else{
+    if( !is_keyboard_finished ){
       main_check = false; // set main check to false so that the main loop will not run until the next interrupt triggers it. This is to prevent the main loop from running when there is no event to process.
       keyboard_check = true; // set keyboard check to true so that the keyboard processing will cxotinue until it escapes
     }

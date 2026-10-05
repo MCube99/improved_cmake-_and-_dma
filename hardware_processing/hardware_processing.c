@@ -224,6 +224,7 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
     }
     else {
         classify_event = EVENT_NONE;
+    gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true); // disable the interrupt so that it does not fire again until the event is processed.
     }
    uint32_t status = save_and_disable_interrupts();
     enqueue_interrupts(classify_event);
@@ -237,7 +238,7 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
 // 2) KEYBOARD PROCESSING IS REALLY JUST SPI MASTER SLAVE FULL DUPLEX COMMUNICATION
 // 3) EVENT PROCESSING IS WHEN ITS ALL DONE REALLY
 // -----------------------------------------------------------------------------
-PUBLIC bool usb_processing_main(void) {
+PUBLIC void usb_processing_main(void) {
     dma_start_channel_mask(1u << return_dma_channel()); // start the DMA transfer
     dma_channel_wait_for_finish_blocking(return_dma_channel()); // Wait for the DMA transfer to complete
     uintptr_t base = (uintptr_t)give_array_address();
@@ -250,7 +251,6 @@ PUBLIC bool usb_processing_main(void) {
         enqueue_interrupts(EVENT_FILE_PROCESSING);
         restore_interrupts_from_disabled(status);
         dma_channel_cleanup(return_dma_channel());
-        return(true);
     }
     else
     {
@@ -258,7 +258,6 @@ PUBLIC bool usb_processing_main(void) {
         enqueue_interrupts(EVENT_NONE);
         restore_interrupts_from_disabled(status);
         dma_channel_cleanup(return_dma_channel());
-        return(false);
     }
 }
 
@@ -268,6 +267,7 @@ PUBLIC bool keyboard_processing_main() {
  //start transaction only when character is detected
             pio_spi_write8_blocking(&pio_collection, &ch, 1);
             if(ch == '\r' || ch == '\n'){
+                enqueue_interrupts(EVENT_DONE);
                 return(true); // Simply return early
             }
     }
