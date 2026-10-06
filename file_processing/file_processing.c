@@ -357,7 +357,7 @@ PRIVATE bool check_if_folder_exists_in_date_directory(const File_Info *file_info
     FILINFO fno;
     FRESULT fr;
 
-    fr = f_opendir(&dir, file_info.date_directory);
+    fr = f_opendir(&dir, file_info->date_directory);
     if (fr != FR_OK) {
         return false;
     }

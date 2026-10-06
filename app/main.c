@@ -45,7 +45,7 @@ volatile bool usb_check = false; // This is guard condiiton for the kryboard. If
 bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 /*------------- MAIN -------------*/
 
-int main(void) {
+`2int main(void) {
 
   stdio_init_all();   // USB CDC (hardware USB → PC)
   timer_hw->dbgpause = 0;
