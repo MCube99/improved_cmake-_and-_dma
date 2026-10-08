@@ -32,8 +32,8 @@
 #include "hardware_processing.h"
 #include "queue.h"
 #include "pico/stdlib.h"
-#include "hid.h"
 #include "hardware/watchdog.h"
+#include "hid.h"
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
@@ -41,14 +41,14 @@
 void led_blinking_task(void);
 static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was uint8_t originally
 static void process_kbd_report(hid_keyboard_report_t const *report);
-volatile bool packet_recieved = false; // This is for when a size packet is recieved and is used to return early from an ISR
-bool not_space_check = false; // This is a guard condition for the keyboard. If the keyboard is being processed, then this will be set to true, and it will be set to false when the keyboard processing is done. This is to prevent the keyboard from being processed when the SPI is being processed.
+volatile bool packet_recieved = false; // This is a signal event for the main loop. If this is false, then the main loop will not run. It is set to true when the SPI ISR triggers, and it is set to false when the event processing main function runs. This is to prevent the main loop from running when there is no event to process.
+volatile bool not_space_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 /*------------- MAIN -------------*/
 
 int main(void) {
 
   stdio_init_all();   // USB CDC (hardware USB → PC)
- //timer_hw->dbgpause = 0;
+  timer_hw->dbgpause = 0;
   board_init();
   
    // init host stack on configured roothub port
@@ -63,82 +63,69 @@ int main(void) {
   queue_init();
 
   uint32_t status = save_and_disable_interrupts();
+
   set_gpio_pins();
   pio_miso_setup();
   pio_mosi_setup();
   dma_channel_init_once();
+
   restore_interrupts_from_disabled(status);
-  int counter = 0;
-  msc_app_init();    // Check whether the previous boot was caused by watchdog
-  bool watchdog_reboot = watchdog_enable_caused_reboot();
+  msc_app_init();
+    bool watchdog_reboot = watchdog_enable_caused_reboot();
+
     if (watchdog_reboot) {
-      ++counter;
+        // The Pico rebooted because the watchdog expired.
+        // Handle/log this if needed.
     }
-
-    // Enable watchdog once
-    watchdog_enable(600, false); // 600ms timeout, no pause on sleep
-
-
+    watchdog_enable(600, true);
 while (1)
 {
     tuh_task();
-    //msc_app_task();
+    msc_app_init();
     led_blinking_task();
+    event_type_t event;
+    bool keyboard_mode = false;
     watchdog_update();
-    event_type_t event;  
-    bool isitkeyboard = false;
 
 ////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
 
   while ((dequeue_events(&event))) // this is mainly used for usb and processing events. The main loop will not run until the interrupt triggers it.
-    {
+  {
       switch(event)
       {
-          case EVENT_SIZE_PACKET_RECIEVED:{ 
+          case EVENT_SIZE_PACKET_RECIEVED: {
               uint32_t status_packet = save_and_disable_interrupts();
-              isitkeyboard = classify_packet(); // enque for keyboard. TD tomorrow!!
+              keyboard_mode = classify_packet(); // This cannot be interrupted as critical
               restore_interrupts_from_disabled(status_packet);
-              if(isitkeyboard){
-                goto keyboard_processing;
+              if(keyboard_mode){
+                  goto keyboard_mode; // go instantly to keyboard processing since on timing 
               }
               break;
           }
 
-          case EVENT_USB_PROCESSING:{ 
-                usb_processing_main(); // 
-                break;
-          }
-                
-          case EVENT_FILE_PARSING: 
-                file_parsing(); // 
-                break;
-          
+          case EVENT_USB_PROCESSING: 
+                 usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
+                  break; 
 
-          case EVENT_FILE_PROCESSING: 
-                 file_processing_main(); 
-                 break;   
-          
-          keyboard_processing:
-          case EVENT_KEYBOARD_PROCESSING: 
-                keyboard_processing_main();
-                break;
-          
+          case EVENT_FILE_PROCESSING:
+                file_processing_main(); 
+                 break; 
+
+          keyboard_mode: // goto is a hackey way, can do an if flag but this is neater.
+                keyboard_processing_main(); 
+                break; 
 
           case EVENT_DONE:
                 event_processing_main();
-                break;
-
-          case EVENT_NONE:
-                event_processing_main();
-                __attribute__((fallthrough));
 
           default:
               break;
       }
-      watchdog_update();
-      break; // need to hit tuh_task() as much as possible, so break out of the while loop to do that.
+      watchdog_update(); // update the watchdog timer to prevent it from expiring
+
+     break; // break out of the while loop since the event has been processed and the main loop can run again.
   }
-  }
+}
 }
 
 
@@ -264,9 +251,10 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
             continue; //filter out key releases and held keys, only process new key presses
 
         bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
-          if(not_space_check){
-            uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
-            enqueue_keyboard(ch);
+
+        if(not_space_check){ // guard condition. Volatile because this is asynchronous
+          uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
+          enqueue_keyboard(ch);
         }
     }
 
@@ -275,3 +263,7 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
       prev_report = *report;
   }
 
+
+  
+
+    
