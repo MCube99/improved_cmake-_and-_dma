@@ -4,9 +4,9 @@
 public keyboard_miso_entry:
 
 .wrap_target
-wait_csn:
+wait_csn_setup:
     pull block
-    wait 1 gpio 4 ; waits for a clean spi transaction
+    wait 1 gpio 4 
     wait 0 gpio 4
     
 bitloop:

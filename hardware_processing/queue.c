@@ -8,8 +8,8 @@
 // -----------------------------------------------------------------------------
 // QUEUE STORAGE
 // -----------------------------------------------------------------------------
-#define KEYBOARD_BUFFER_SIZE 32
-#define STATE_AND_QUEUE_SIZE 10
+#define KEYBOARD_BUFFER_SIZE 8
+#define STATE_AND_QUEUE_SIZE 8
 
 struct usb_payload {
     uint32_t size;
@@ -20,19 +20,19 @@ struct usb_payload {
 static struct usb_payload usbPayload;
 
 RingBufElement queue_buffer[STATE_AND_QUEUE_SIZE];
-RingBuf interrupt_queue;
+RingBuf event_queue;
 
 RingBufElement keyboard_buffer[KEYBOARD_BUFFER_SIZE];
 RingBuf keyboard_queue;
 
 
 PUBLIC void queue_init(void){
-    RingBuf_ctor(&interrupt_queue, queue_buffer, STATE_AND_QUEUE_SIZE);
+    RingBuf_ctor(&event_queue, queue_buffer, STATE_AND_QUEUE_SIZE);
     RingBuf_ctor(&keyboard_queue, keyboard_buffer, KEYBOARD_BUFFER_SIZE);
 }
 
-PUBLIC bool enqueue_interrupts(event_type_t event) {
-    return(RingBuf_put(&interrupt_queue,(RingBufElement) event));
+PUBLIC bool enqueue_events(event_type_t event) {
+    return(RingBuf_put(&event_queue,(RingBufElement) event));
 }
 
 
@@ -42,9 +42,9 @@ PUBLIC bool enqueue_keyboard(uint8_t letter) {
 }
 
 
-PUBLIC bool dequeue_interrupts(event_type_t *event) {
+PUBLIC bool dequeue_events(event_type_t *event) {
     RingBufElement raw;
-    bool check = RingBuf_get(&interrupt_queue, &raw);
+    bool check = RingBuf_get(&event_queue, &raw);
     if(check){
         *event = (event_type_t)raw;
     }

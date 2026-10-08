@@ -51,7 +51,7 @@
 // */ 
 
 
-#define CFG_TUSB_DEBUG  2
+#define CFG_TUSB_DEBUG  0
 
 // defined by compiler flags for flexibility
 #ifndef CFG_TUSB_MCU

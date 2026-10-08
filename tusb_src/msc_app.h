@@ -28,8 +28,7 @@
 
 #include <stdbool.h>
 
-bool msc_app_init(void);
-void msc_app_task(void);
+void msc_app_init(void);
 
 
 #endif

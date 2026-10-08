@@ -11,9 +11,9 @@
 
 PUBLIC void queue_init(void);
 //PUBLIC bool is_queue_empty(void); 
-PUBLIC bool enqueue_interrupts(event_type_t event);
+PUBLIC bool enqueue_events(event_type_t event);
 PUBLIC bool enqueue_keyboard(uint8_t letter);
-PUBLIC bool dequeue_interrupts(event_type_t *event);
+PUBLIC bool dequeue_events(event_type_t *event);
 PUBLIC bool dequeue_keyboard(uint8_t *letter);
 PUBLIC uint8_t* const give_array_address(void);
 PUBLIC uint8_t* const give_array_address_for_file_writing(void);

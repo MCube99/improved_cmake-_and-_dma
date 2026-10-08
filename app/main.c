@@ -33,6 +33,7 @@
 #include "queue.h"
 #include "pico/stdlib.h"
 #include "hid.h"
+#include "hardware/watchdog.h"
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
@@ -40,15 +41,14 @@
 void led_blinking_task(void);
 static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was uint8_t originally
 static void process_kbd_report(hid_keyboard_report_t const *report);
-volatile bool main_check = false; // This is a signal event for the main loop. If this is false, then the main loop will not run. It is set to true when the SPI ISR triggers, and it is set to false when the event processing main function runs. This is to prevent the main loop from running when there is no event to process.
-volatile bool usb_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
-bool keyboard_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
+volatile bool packet_recieved = false; // This is for when a size packet is recieved and is used to return early from an ISR
+bool not_space_check = false; // This is a guard condition for the keyboard. If the keyboard is being processed, then this will be set to true, and it will be set to false when the keyboard processing is done. This is to prevent the keyboard from being processed when the SPI is being processed.
 /*------------- MAIN -------------*/
 
-`2int main(void) {
+int main(void) {
 
   stdio_init_all();   // USB CDC (hardware USB → PC)
-  timer_hw->dbgpause = 0;
+ //timer_hw->dbgpause = 0;
   board_init();
   
    // init host stack on configured roothub port
@@ -63,75 +63,81 @@ bool keyboard_check = false; // This is guard condiiton for the kryboard. If the
   queue_init();
 
   uint32_t status = save_and_disable_interrupts();
-
   set_gpio_pins();
   pio_miso_setup();
   pio_mosi_setup();
   dma_channel_init_once();
-
   restore_interrupts_from_disabled(status);
-  msc_app_init();
+  int counter = 0;
+  msc_app_init();    // Check whether the previous boot was caused by watchdog
+  bool watchdog_reboot = watchdog_enable_caused_reboot();
+    if (watchdog_reboot) {
+      ++counter;
+    }
+
+    // Enable watchdog once
+    watchdog_enable(600, false); // 600ms timeout, no pause on sleep
 
 
 while (1)
 {
     tuh_task();
-    msc_app_task();
+    //msc_app_task();
     led_blinking_task();
-    event_type_t event;
+    watchdog_update();
+    event_type_t event;  
+    bool isitkeyboard = false;
 
 ////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
 
-  while ((main_check && dequeue_interrupts(&event))) // this is mainly used for usb and processing events. The main loop will not run until the interrupt triggers it.
+  while ((dequeue_events(&event))) // this is mainly used for usb and processing events. The main loop will not run until the interrupt triggers it.
     {
       switch(event)
       {
-          case EVENT_SIZE_PACKET_RECIEVED: {
+          case EVENT_SIZE_PACKET_RECIEVED:{ 
               uint32_t status_packet = save_and_disable_interrupts();
-              classify_packet(); // This cannot be interrupted as critical
+              isitkeyboard = classify_packet(); // enque for keyboard. TD tomorrow!!
               restore_interrupts_from_disabled(status_packet);
+              if(isitkeyboard){
+                goto keyboard_processing;
+              }
               break;
           }
 
-          case EVENT_USB_PROCESSING: {
-                bool is_usb_finished = false;
-                is_usb_finished = usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
-                if(!is_usb_finished){ //if not correct size break, else fall through to file processing
-                  break; }
+          case EVENT_USB_PROCESSING:{ 
+                usb_processing_main(); // 
+                break;
           }
-                __attribute__((fallthrough));
+                
+          case EVENT_FILE_PARSING: 
+                file_parsing(); // 
+                break;
+          
 
-          case EVENT_FILE_PROCESSING: {
-                 bool is_file_finished = false;
-                 is_file_finished = file_processing_main(); 
-                 if(!is_file_finished){ //if not correct size break, else fall through to keyboard processing
-                 break; }
-          }
-                __attribute__((fallthrough));
+          case EVENT_FILE_PROCESSING: 
+                 file_processing_main(); 
+                 break;   
+          
+          keyboard_processing:
+          case EVENT_KEYBOARD_PROCESSING: 
+                keyboard_processing_main();
+                break;
+          
 
-          keyboard_done:
           case EVENT_DONE:
                 event_processing_main();
+                break;
+
+          case EVENT_NONE:
+                event_processing_main();
+                __attribute__((fallthrough));
 
           default:
               break;
       }
-
-      main_check = false; //reset to false so that the main loop will not run until the next interrupt triggers it. This is to prevent the main loop from running when there is no event to process.
-
+      watchdog_update();
+      break; // need to hit tuh_task() as much as possible, so break out of the while loop to do that.
   }
-
-  if( keyboard_check ){ // ignores main switch case for speed 
-    bool is_keyboard_finished = false; 
-    is_keyboard_finished = keyboard_processing_main(); 
-    if( is_keyboard_finished ){
-      goto keyboard_done;
-    }else{
-      main_check = false; // set main check to false so that the main loop will not run until the next interrupt triggers it. This is to prevent the main loop from running when there is no event to process.
-      keyboard_check = true; // set keyboard check to true so that the keyboard processing will cxotinue until it escapes
-    }
-  }
-
   }
 }
 
@@ -258,10 +264,9 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
             continue; //filter out key releases and held keys, only process new key presses
 
         bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
-
-        if(keyboard_check){ // guard condition
-          uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
-          enqueue_keyboard(ch);
+          if(not_space_check){
+            uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
+            enqueue_keyboard(ch);
         }
     }
 
@@ -270,7 +275,3 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
       prev_report = *report;
   }
 
-
-  
-
-    

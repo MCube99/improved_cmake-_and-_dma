@@ -16,9 +16,6 @@ typedef uint32_t DWORD;
 #define NUMBER_OF_BYTES                       BUF_LEN 
 #define GARY_CODE                             31                                                 
 
-extern volatile bool main_check;
-extern bool keyboard_check;
-extern volatile bool usb_check;
 
 typedef enum
 {
@@ -26,6 +23,7 @@ typedef enum
     EVENT_SIZE_PACKET_RECIEVED,
     EVENT_USB_PROCESSING,
     EVENT_FILE_PROCESSING,
-    EVENT_KEYBOARD_DETECTED,
+    EVENT_FILE_PARSING,
+    EVENT_KEYBOARD_PROCESSING,
     EVENT_DONE
 } event_type_t;

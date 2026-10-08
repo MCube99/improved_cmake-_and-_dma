@@ -64,6 +64,8 @@ PRIVATE uint return_spi_mosi_sm(void);
 PRIVATE PIO return_spi_miso_pio(void);
 PRIVATE uint return_spi_miso_sm(void);
 PRIVATE uint return_dma_channel(void);
+
+bool usb_check = false; // this is for the usb processing. It will be set to true when the usb is being processed and will be set to false when its done. This is to prevent the keyboard from being processed when the USB is being processed.
 // -----------------------------------------------------------------------------
 // GPIO ISR
 // -----------------------------------------------------------------------------
@@ -71,12 +73,11 @@ PRIVATE uint return_dma_channel(void);
 PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
     uint32_t events = gpio_get_irq_event_mask(PICO_SPI_CSN_PIN);
     gpio_acknowledge_irq(PICO_SPI_CSN_PIN,events);
-    main_check = true; // set main check to true so that the main loop will run.
     if (events & GPIO_IRQ_EDGE_FALL) {
-        if (usb_check ) {
-            return; // if usb is being processed, no need to go hree then 
+        if(packet_recieved){
+            return; // if the keyboard is being processed, then dont enqueue the event since it will be processed in the main loop.
         }
-            enqueue_interrupts(EVENT_SIZE_PACKET_RECIEVED); // this edge is the real one
+	    enqueue_events(EVENT_SIZE_PACKET_RECIEVED); // only one job, then it gets reenabled only at the end. 
     }
 }
 // -----------------------------------------------------------------------------
@@ -209,20 +210,22 @@ PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size){
 // PROCESSING PLACE
 // -----------------------------------------------------------------------------
 
-PUBLIC void __time_critical_func(classify_packet)(void) {
+PUBLIC bool __time_critical_func(classify_packet)(void) {
     uint32_t size;
     event_type_t classify_event = 0;
     size = pio_sm_get_blocking(return_spi_mosi_pio(), return_spi_mosi_sm()); // get size byte
     set_size(size);
-
     if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
-        gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, false); // disable the interrupt so that it does not fire again until the event is processed.
-        //gpio_put(PICO_CODE_DEBUG_PROBE_PIN,1);
-        keyboard_check = true; // need to save and disable interrupts so that the write i not interrupted.
-        return;
+//        classify_event = EVENT_KEYBOARD_PROCESSING; // this is for the keyboard processing. It will be processed in the main loop.
+//
+//        uint32_t status = save_and_disable_interrupts();
+//        enqueue_events(classify_event);
+//        restore_interrupts_from_disabled(status);
+//
+        not_space_check = true;
+        return(true); // return early since the keyboard is being processed and the next event will be enqueued in the main loop.
     }
     else if (size > GARY_CODE) {
-        usb_check = true; // need to save and disable interrupts so that the write i not interrupted.
         dma_setup_fast(size);
         classify_event = EVENT_USB_PROCESSING;
     }
@@ -230,8 +233,9 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
         classify_event = EVENT_NONE;
     }
    uint32_t status = save_and_disable_interrupts();
-    enqueue_interrupts(classify_event);
+    enqueue_events(classify_event);
     restore_interrupts_from_disabled(status);
+    return(false); // return false since the keyboard is not being processed and the next event will be enqueued in the main loop.
 }
 
 // -----------------------------------------------------------------------------
@@ -241,16 +245,9 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
 // 2) KEYBOARD PROCESSING IS REALLY JUST SPI MASTER SLAVE FULL DUPLEX COMMUNICATION
 // 3) EVENT PROCESSING IS WHEN ITS ALL DONE REALLY
 // -----------------------------------------------------------------------------
-PUBLIC bool usb_processing_main(void) {
+PUBLIC void usb_processing_main(void) {
     dma_start_channel_mask(1u << return_dma_channel()); // start the DMA transfer
     dma_channel_wait_for_finish_blocking(return_dma_channel()); // Wait for the DMA transfer to complete
-
-
-        // 1. Pause the DMA channel
-    hw_clear_bits(&dma_hw->ch[return_dma_channel()].ctrl_trig, DMA_CH0_CTRL_TRIG_EN_BITS);
-
-        // 2. Now that the DMA channel is paused, we can safely read the write address
-
     uintptr_t base = (uintptr_t)give_array_address();
     uintptr_t write = dma_hw->ch[return_dma_channel()].write_addr;
     uint32_t difference = write - base;
@@ -258,46 +255,39 @@ PUBLIC bool usb_processing_main(void) {
     if(difference ==  return_size())
     {
         uint32_t status = save_and_disable_interrupts();
-        enqueue_interrupts(EVENT_FILE_PROCESSING);
+        enqueue_events(EVENT_FILE_PARSING); // enqueue the next event to be processed   
         restore_interrupts_from_disabled(status);
         dma_channel_cleanup(return_dma_channel());
-        return(true);
     }
     else
     {
         uint32_t status = save_and_disable_interrupts();
-        enqueue_interrupts(EVENT_NONE);
+        enqueue_events(EVENT_NONE);
         restore_interrupts_from_disabled(status);
         dma_channel_cleanup(return_dma_channel());
-        return(false);
     }
 }
 
-PUBLIC bool keyboard_processing_main() {
+PUBLIC void keyboard_processing_main() {
     uint8_t ch = 0;
     if(dequeue_keyboard(&ch)){
  //start transaction only when character is detected
-            pio_spi_write8_blocking(&pio_collection, &ch, 1);
-            if(ch == '\r'){
-                return(true); // Simply return early
+            pio_spi_write8_blocking(&pio_collection, &ch, 1); 
+            if(ch == '\r' || ch == '\n'){
+                not_space_check = false; // reset the not space check so that the next character can be processed.
             }
     }
-        return(false);
+
+    uint32_t status = save_and_disable_interrupts();
+    enqueue_events(EVENT_DONE); // enqueue the next character to be processed    
+    restore_interrupts_from_disabled(status);
 }
 
 PUBLIC void event_processing_main() {
-    if(usb_check){
-        usb_check = false; // reset the usb check so that the next time it can be processed again.
+    packet_recieved = false; // reset the packet recieved flag so that the next packet can be processed.
     }
-    if(keyboard_check){
-        gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL,true); 
-        keyboard_check = false; // reset the keyboard check so that the next time it can be processed again.
-    }
-    main_check = false; // reset the main check so that the next time it can be processed again.
-}
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-
 PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection, const uint8_t *src, size_t len) {
     size_t tx_remain = len;
     size_t rx_remain = len;
@@ -316,10 +306,7 @@ PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_
             --rx_remain;
         }
     }
-
-
 }
-
 // -----------------------------------------------------------------------------
 // ACCESSORS
 // -----------------------------------------------------------------------------
