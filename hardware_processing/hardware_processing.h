@@ -4,6 +4,7 @@
 
 
 PUBLIC void set_gpio_pins(void);
+PUBLIC void led_blinking_task(void);
 PUBLIC void pio_miso_setup(void);
 PUBLIC void pio_mosi_setup(void);
 PUBLIC void dma_channel_init_once(void);
@@ -12,6 +13,7 @@ PUBLIC bool __time_critical_func(classify_packet)(void);
 PUBLIC void usb_processing_main(void);
 PUBLIC void keyboard_processing_main();
 PUBLIC void event_processing_main();
+PUBLIC void dma_timeout_check(void)
 
 extern volatile bool packet_recieved;
 extern bool not_space_check;

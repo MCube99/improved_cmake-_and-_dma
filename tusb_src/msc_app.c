@@ -27,6 +27,7 @@
 #include "tusb.h"
 #include "ff.h"
 #include "diskio.h"
+#include "common_header.h"
 
 //------------- Elm Chan FatFS -------------//
 static CFG_TUH_MEM_SECTION FATFS fatfs[CFG_TUH_DEVICE_MAX]; // for simplicity only support 1 LUN per device
@@ -79,7 +80,33 @@ void msc_app_init(void) {
     _disk_busy[i] = false;
   }
 }
+static bool inquiry_complete_cb(uint8_t dev_addr, const tuh_msc_complete_data_t *cb_data) {
+  const msc_cbw_t *cbw = cb_data->cbw;
+  const msc_csw_t *csw = cb_data->csw;
 
+  if (csw->status != 0) {
+    return false;
+  }
+
+
+  // For simplicity: we only mount 1 LUN per device
+  const uint8_t drive_num     = dev_addr - 1;
+  char          drive_path[3] = "0:";
+  drive_path[0] += drive_num;
+
+ if (f_mount(&fatfs[drive_num], drive_path, 1) != FR_OK) {
+    return true;                      // mount failed, msc_ready stays false
+  }
+
+  f_chdrive(drive_path);              // make this drive the default for paths like "/TRTEST"
+  f_chdir("/");
+
+  msc_dev   = dev_addr;
+  msc_ready = true;                   // only now is the stick usable
+  return true;
+
+
+}
 
 void tuh_msc_mount_cb(uint8_t dev_addr) {
   printf("A MassStorage device is mounted\r\n");

@@ -11,8 +11,11 @@ pico_generate_pio_header(hardware_processing ${CMAKE_CURRENT_LIST_DIR}/spi_miso.
 
 target_sources(hardware_processing PUBLIC 
     FILE_SET HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-    FILES ${hardware_processing_Headers} )
+    BASE_DIRS 
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${PICO_TINYUSB_PATH}/hw/bsp
+    FILES ${hardware_processing_Headers} 
+      ${PICO_TINYUSB_PATH}/hw/bsp/board_api.h)
 
 target_sources(common_headers PUBLIC
     FILE_SET HEADERS

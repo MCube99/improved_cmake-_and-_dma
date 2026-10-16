@@ -15,15 +15,16 @@ typedef uint32_t DWORD;
 #define BUF_LEN                               256
 #define NUMBER_OF_BYTES                       BUF_LEN 
 #define GARY_CODE                             31                                                 
-
-
 typedef enum
 {
     EVENT_NONE=0,
     EVENT_SIZE_PACKET_RECIEVED,
-    EVENT_USB_PROCESSING,
     EVENT_FILE_PROCESSING,
     EVENT_FILE_PARSING,
     EVENT_KEYBOARD_PROCESSING,
     EVENT_DONE
 } event_type_t;
+
+
+extern volatile bool msc_ready; // from msc_app
+extern volatile uint8_t device_address;
