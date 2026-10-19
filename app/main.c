@@ -38,8 +38,6 @@
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
 //--------------------------------------------------------------------+
-volatile bool packet_recieved = false; // This is a signal event for the main loop. If this is false, then the main loop will not run. It is set to true when the SPI ISR triggers, and it is set to false when the event processing main function runs. This is to prevent the main loop from running when there is no event to process.
-volatile bool not_space_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 /*------------- MAIN -------------*/
 
 int main(void) {
@@ -82,7 +80,6 @@ while (1)
     msc_app_init();
     led_blinking_task();
     event_type_t event;
-    bool keyboard_mode = false;
     watchdog_update();
 
 ////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
@@ -93,21 +90,14 @@ while (1)
       {
           case EVENT_SIZE_PACKET_RECIEVED: {
               uint32_t status_packet = save_and_disable_interrupts();
-              keyboard_mode = classify_packet(); // This cannot be interrupted as critical
+               classify_packet(); // This cannot be interrupted as critical
               restore_interrupts_from_disabled(status_packet);
-              if(keyboard_mode){
-                  goto keyboard_mode; // go instantly to keyboard processing since on timing 
-              }
               break;
           }
 
           case EVENT_FILE_PROCESSING:
                 file_processing_main(); 
                  break; 
-
-          keyboard_mode: // goto is a hackey way, can do an if flag but this is neater.
-                keyboard_processing_main(); 
-                break; 
 
           case EVENT_DONE:
                 event_processing_main();

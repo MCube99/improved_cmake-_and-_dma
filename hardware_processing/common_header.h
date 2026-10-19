@@ -1,9 +1,6 @@
 #pragma once
 // This is for common use which don' really belong in any other module/header file since its so generic
-
 #include <stdbool.h>
-#include <stdint.h>
-#include "pico/stdlib.h"
 
 #define PRIVATE static
 #define PUBLIC  extern  
@@ -28,3 +25,5 @@ typedef enum
 
 extern volatile bool msc_ready; // from msc_app
 extern volatile uint8_t device_address;
+extern volatile bool not_space_check;
+extern volatile bool packet_recieved;

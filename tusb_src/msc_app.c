@@ -31,6 +31,9 @@
 
 //------------- Elm Chan FatFS -------------//
 static CFG_TUH_MEM_SECTION FATFS fatfs[CFG_TUH_DEVICE_MAX]; // for simplicity only support 1 LUN per device
+volatile bool msc_ready = false;
+volatile uint8_t device_address;
+
 static volatile bool              _disk_busy[CFG_TUH_DEVICE_MAX];
 
 static CFG_TUH_MEM_SECTION FIL     file1, file2;
@@ -51,35 +54,7 @@ CFG_TUH_MEM_SECTION static struct {
 //--------------------------------------------------------------------+
 static scsi_inquiry_resp_t inquiry_resp;
 
-static bool inquiry_complete_cb(uint8_t dev_addr, tuh_msc_complete_data_t const * cb_data) {
-  msc_cbw_t const* cbw = cb_data->cbw;
-  msc_csw_t const* csw = cb_data->csw;
 
-  if (csw->status != 0) {
-    printf("Inquiry failed\r\n");
-    return false;
-  }
-
-  // Print out Vendor ID, Product ID and Rev
-  printf("%.8s %.16s %.4s\r\n", inquiry_resp.vendor_id, inquiry_resp.product_id, inquiry_resp.product_rev);
-
-  // Get capacity of device
-  uint32_t const block_count = tuh_msc_get_block_count(dev_addr, cbw->lun);
-  uint32_t const block_size = tuh_msc_get_block_size(dev_addr, cbw->lun);
-
-  printf("Disk Size: %" PRIu32 " %" PRIu32 "-byte blocks: %" PRIu32 " MB\r\n",
-    block_count, block_size, block_count / ((1024 * 1024) / block_size));
-
-  return true;
-}
-
-//------------- IMPLEMENTATION -------------//
-
-void msc_app_init(void) {
-  for (size_t i = 0; i < CFG_TUH_DEVICE_MAX; i++) {
-    _disk_busy[i] = false;
-  }
-}
 static bool inquiry_complete_cb(uint8_t dev_addr, const tuh_msc_complete_data_t *cb_data) {
   const msc_cbw_t *cbw = cb_data->cbw;
   const msc_csw_t *csw = cb_data->csw;
@@ -101,11 +76,18 @@ static bool inquiry_complete_cb(uint8_t dev_addr, const tuh_msc_complete_data_t 
   f_chdrive(drive_path);              // make this drive the default for paths like "/TRTEST"
   f_chdir("/");
 
-  msc_dev   = dev_addr;
+  device_address   = dev_addr;
   msc_ready = true;                   // only now is the stick usable
   return true;
 
+}
 
+//------------- IMPLEMENTATION -------------//
+
+void msc_app_init(void) {
+  for (size_t i = 0; i < CFG_TUH_DEVICE_MAX; i++) {
+    _disk_busy[i] = false;
+  }
 }
 
 void tuh_msc_mount_cb(uint8_t dev_addr) {

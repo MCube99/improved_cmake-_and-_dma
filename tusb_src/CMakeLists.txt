@@ -21,17 +21,16 @@ target_sources(host_storage
     PUBLIC
     FILE_SET HEADERS
     BASE_DIRS
-       ${PARENT_DIR}/fatfs
        ${CMAKE_CURRENT_SOURCE_DIR}
+      ##  ${PICO_TINYUSB_PATH}/hw/bsp
+      ## ${PARENT_DIR}/hardware_processing
     FILES
         ${SRC_HEADERS} ##should include all the hid.h stuff in there
-        ${PARENT_DIR}/fatfs/ff.h
-        ${PARENT_DIR}/fatfs/diskio.h
+     ##   ${PICO_TINYUSB_PATH}/hw/bsp/board_api.h
+       ## ${PARENT_DIR}/hardware_processing/queue.h
         )
        
 
 target_link_libraries(host_storage
-    PUBLIC
-        file_processing
-        PRIVATE tinyusb_host tinyusb_board 
+        PRIVATE tinyusb_host tinyusb_board hardware_processing fatfs_lib 
 )

@@ -33,8 +33,6 @@ typedef struct
 
 static File_Info file_info;
 Exists_check exists_check = {0};
-msc_ready = false;
-device_address = false;
 
 static FATFS fatfs;
 FATFS *fs = &fatfs;
@@ -123,7 +121,7 @@ PUBLIC void file_parsing() {
 PUBLIC void file_processing_main( ) { //called file_processing_main because this function goes in the main.c file
 if(!msc_ready){
    enqueue_events(EVENT_NONE);
-   return(true);
+   return;
 }
     FRESULT fr;
 

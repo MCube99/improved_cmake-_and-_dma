@@ -17,7 +17,7 @@ target_sources(hardware_processing PUBLIC
     FILES ${hardware_processing_Headers} 
       ${PICO_TINYUSB_PATH}/hw/bsp/board_api.h)
 
-target_sources(common_headers PUBLIC
+target_sources(common_headers INTERFACE
     FILE_SET HEADERS
     BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
     FILES ${common_processing_Headers}   
@@ -26,7 +26,7 @@ target_sources(common_headers PUBLIC
 target_link_libraries(common_headers INTERFACE pico_stdlib)
 
 target_link_libraries(hardware_processing
-    PRIVATE hardware_sync hardware_irq hardware_gpio hardware_dma fatfs_lib hardware_spi
-    PUBLIC common_headers hardware_pio)
+    PRIVATE hardware_sync hardware_irq hardware_gpio hardware_dma fatfs_lib hardware_spi hardware_pio
+    PUBLIC common_headers )
 
     

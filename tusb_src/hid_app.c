@@ -1,8 +1,11 @@
 #include "tusb.h"
 #include "board_api.h"
+#include "queue.h"
+
 
 static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was uint8_t originally
 static void process_kbd_report(hid_keyboard_report_t const *report);
+volatile bool not_space_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 //--------------------------------------------------------------------+
 // TinyUSB Callbacks
 //--------------------------------------------------------------------+

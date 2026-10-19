@@ -7,6 +7,7 @@
 
 #include "queue.h"
 #include "hardware/gpio.h"
+#include "hardware/pio.h"
 #include "hardware/irq.h"
 #include "hardware/dma.h"
 #include "hardware/sync.h"
@@ -55,6 +56,7 @@ static pio_collection_t pio_collection;
 #define PICO_MISO_DEBUG_PROBE_PIN  8   // pick any free GPIO. This is for the pio output
 #define PICO_CODE_DEBUG_PROBE_PIN 9 // this is for the main c file type code
 #define PICO_CODE_DEBUG_ERROR_PIN 10 // this is for the main c file type code and is for error programs. 
+#define DMA_TIMEOUT_US  30000u
 // -----------------------------------------------------------------------------
 // GLOBALS
 // -----------------------------------------------------------------------------
@@ -67,6 +69,8 @@ PRIVATE uint return_spi_miso_sm(void);
 PRIVATE uint return_dma_channel(void);
 PUBLIC void dma_arm(void);
 static volatile bool dma_armed = false;
+volatile bool packet_recieved = false;
+static uint32_t dma_armed_at;
 // -----------------------------------------------------------------------------
 // GPIO & DMA ISR
 // -----------------------------------------------------------------------------
@@ -276,7 +280,7 @@ PUBLIC void dma_arm(void) {
 // PROCESSING PLACE
 // -----------------------------------------------------------------------------
 
-PUBLIC bool __time_critical_func(classify_packet)(void) {
+PUBLIC void __time_critical_func(classify_packet)(void) {
     uint32_t size;
     event_type_t classify_event = 0;
     size = pio_sm_get_blocking(return_spi_mosi_pio(), return_spi_mosi_sm()); // get size byte
@@ -285,19 +289,17 @@ PUBLIC bool __time_critical_func(classify_packet)(void) {
 
     if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
         not_space_check = true;
-        return(true); 
+        keyboard_processing_main(); // call function from here
     }
     else if (size > GARY_CODE) {
         dma_setup_fast(size);
-	dma_arm();
-	return(false);
+        dma_arm();
     }
     else {
         classify_event = EVENT_NONE;
-	uint32_t status = save_and_disable_interrupts();
-	enqueue_events(classify_event);
-	restore_interrupts_from_disabled(status);
-	return(false);
+        uint32_t status = save_and_disable_interrupts();
+        enqueue_events(classify_event);
+        restore_interrupts_from_disabled(status);
     }
 }
 

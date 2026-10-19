@@ -4,7 +4,6 @@ set(FATFS_LIB_SOURCES
  	${CMAKE_CURRENT_SOURCE_DIR}/ff.c 
  	${CMAKE_CURRENT_SOURCE_DIR}/ffsystem.c 
     ${CMAKE_CURRENT_SOURCE_DIR}/ffunicode.c
-    ${PARENT_DIR}/tusb_src/msc_app.c
     )
 
 set(FATFS_LIB_HEADERS_FILES
@@ -25,4 +24,4 @@ target_sources(fatfs_lib
        ${FATFS_LIB_HEADERS_FILES}
         )
 
-target_link_libraries(fatfs_lib PUBLIC tinyusb_host tinyusb_board pico_stdlib)
+target_link_libraries(fatfs_lib PUBLIC tinyusb_host tinyusb_board pico_stdlib PRIVATE common_headers)
