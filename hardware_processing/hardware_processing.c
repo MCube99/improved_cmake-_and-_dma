@@ -65,7 +65,6 @@ PRIVATE PIO return_spi_miso_pio(void);
 PRIVATE uint return_spi_miso_sm(void);
 PRIVATE uint return_dma_channel(void);
 
-bool usb_check = false; // this is for the usb processing. It will be set to true when the usb is being processed and will be set to false when its done. This is to prevent the keyboard from being processed when the USB is being processed.
 // -----------------------------------------------------------------------------
 // GPIO ISR
 // -----------------------------------------------------------------------------
@@ -216,12 +215,6 @@ PUBLIC bool __time_critical_func(classify_packet)(void) {
     size = pio_sm_get_blocking(return_spi_mosi_pio(), return_spi_mosi_sm()); // get size byte
     set_size(size);
     if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
-//        classify_event = EVENT_KEYBOARD_PROCESSING; // this is for the keyboard processing. It will be processed in the main loop.
-//
-//        uint32_t status = save_and_disable_interrupts();
-//        enqueue_events(classify_event);
-//        restore_interrupts_from_disabled(status);
-//
         not_space_check = true;
         return(true); // return early since the keyboard is being processed and the next event will be enqueued in the main loop.
     }
@@ -283,7 +276,7 @@ PUBLIC void keyboard_processing_main() {
     restore_interrupts_from_disabled(status);
 }
 
-PUBLIC void event_processing_main() {
+PUBLIC void event_processing_main() { // will add more functionality to this later, but for now it just resets the packet recieved flag so that the next packet can be processed.
     packet_recieved = false; // reset the packet recieved flag so that the next packet can be processed.
     }
 

@@ -48,7 +48,7 @@ volatile bool not_space_check = false; // This is guard condiiton for the kryboa
 int main(void) {
 
   stdio_init_all();   // USB CDC (hardware USB → PC)
-  timer_hw->dbgpause = 0;
+  //timer_hw->dbgpause = 0;
   board_init();
   
    // init host stack on configured roothub port
@@ -77,9 +77,8 @@ int main(void) {
         // The Pico rebooted because the watchdog expired.
         // Handle/log this if needed.
     }
-    watchdog_enable(600, true);
-while (1)
-{
+    watchdog_enable(600, false);
+while (1) {
     tuh_task();
     msc_app_init();
     led_blinking_task();
@@ -122,10 +121,10 @@ while (1)
               break;
       }
       watchdog_update(); // update the watchdog timer to prevent it from expiring
-
      break; // break out of the while loop since the event has been processed and the main loop can run again.
   }
-}
+  
+  }
 }
 
 

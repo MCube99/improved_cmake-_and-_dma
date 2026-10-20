@@ -14,6 +14,6 @@ PUBLIC void keyboard_processing_main();
 PUBLIC void event_processing_main();
 
 extern volatile bool packet_recieved;
-extern bool not_space_check;
+extern volatile bool not_space_check;
 
 
