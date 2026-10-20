@@ -120,7 +120,8 @@ PUBLIC void file_parsing() {
 
 PUBLIC void file_processing_main( ) { //called file_processing_main because this function goes in the main.c file
 if(!msc_ready){
-   enqueue_events(EVENT_NONE);
+    throw(DIAG_USB_NOT_READY); // this is for the case where the USB is not ready, so that the system can wait until it is ready.
+   //enqueue_events(EVENT_NONE);
    return;
 }
     FRESULT fr;

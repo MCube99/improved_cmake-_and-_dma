@@ -98,7 +98,7 @@ PRIVATE void dma_handler(void) {
             enqueue_events(EVENT_FILE_PARSING);
         } else {
             uint32_t status = save_and_disable_interrupts();
-            throw(DIAG_DMA_SHORT); // this is for the case where the size is less than 31, which is an error.
+            enqueue_events(EVENT_NONE);
             restore_interrupts_from_disabled(status);
         }
     }
@@ -331,6 +331,21 @@ PUBLIC void event_processing_main() { // will add more functionality to this lat
     pio_sm_clear_fifos(return_spi_miso_pio(), return_spi_miso_sm()); // clear the fifos so that the next packet can be processed.
     pio_sm_encode_jmp(return_spi_mosi_pio(), return_spi_mosi_sm(), pio_collection.spi_mosi.offset); // reset the state machine so that the next packet can be processed.
     pio_sm_encode_jmp(return_spi_miso_pio(), return_spi_miso_sm(), pio_collection.spi_miso.offset); // reset the state machine so that the next packet can be processed.
+}
+
+PUBLIC void error_processing_main(CEXCEPTION_T e) {
+    // Handle the exception, e.g., log it, reset the system, etc.
+    // For this example, we'll just print the error code and halt.
+    CEEXCEPTION_T error_code = e;
+    if(error_code == DIAG_DMA_TIMEOUT) {
+        // Handle DMA timeout error
+    } else if(error_code == DIAG_DMA_SHORT) {
+        // Handle DMA short error
+    } else if(error_code == DIAG_USB_NOT_READY) {
+        // Handle USB not ready error
+    } else {
+        // Handle other errors
+    }
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------

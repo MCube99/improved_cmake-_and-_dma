@@ -15,7 +15,7 @@ typedef uint32_t DWORD;
 #define GARY_CODE                             31                                                 
 typedef enum
 {
-    EVENT_NONE=0,
+    EVENT_DMA_ERROR = 0,
     EVENT_SIZE_PACKET_RECIEVED,
     EVENT_FILE_PROCESSING,
     EVENT_FILE_PARSING,

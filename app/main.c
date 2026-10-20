@@ -78,11 +78,15 @@ int main(void) {
 
 while (1) {
     tuh_task();
-    dma_timeout_check();
+    Try{
+        dma_timeout_check();
+    }
+    Catch(e){
+        error_processing_main(e); // Handle the exception, e.g., log it, reset the system, etc.
+    }
     msc_app_init();
     led_blinking_task();
     event_type_t event;
-    CEXCEPTION_T e;
     watchdog_update();
 
 ////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
@@ -93,21 +97,38 @@ while (1) {
       {
           case EVENT_SIZE_PACKET_RECIEVED: {
               uint32_t status_packet = save_and_disable_interrupts();
-               classify_packet(); // This cannot be interrupted as critical
+              classify_packet(); // This cannot be interrupted as critical
               restore_interrupts_from_disabled(status_packet);
               break;
           }
 
-          case EVENT_FILE_PARSING:
-                file_parsing(); 
+          case EVENT_FILE_PARSING: {
+                Try{
+                    file_parsing(); 
+                }
+                Catch(e){
+                    error_processing_main(e);
+                }
                  break;
-
-          case EVENT_FILE_PROCESSING:
-                file_processing_main(); 
-                 break; 
-
+          }
+          case EVENT_FILE_PROCESSING: {
+                Try{
+                    file_processing_main(); 
+                }
+                Catch(e){
+                    error_processing_main(e);
+                }
+                 break;
+            }
           case EVENT_DONE:
                 event_processing_main();
+                break;
+            
+          case EVENT_DMA_ERROR: {
+              // Handle DMA error
+              error_processing_main(DIAG_DMA_TIMEOUT); // or appropriate error code
+              break;
+          }
 
           default:
               break;
