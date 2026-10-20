@@ -72,7 +72,6 @@ typedef struct {
     RingBufCtr end;      //!< index of the end of the ring buffer
     //! atomic index to where next element will be inserted
     _Atomic(RingBufCtr) head;
-
     //! atomic index to where next element will be removed
     _Atomic(RingBufCtr) tail;
 } RingBuf;

@@ -34,8 +34,6 @@ typedef struct
 static File_Info file_info;
 Exists_check exists_check = {0};
 
-
-
 static FATFS fatfs;
 FATFS *fs = &fatfs;
 
@@ -121,7 +119,12 @@ PUBLIC void file_parsing() {
 }
 
 PUBLIC void file_processing_main( ) { //called file_processing_main because this function goes in the main.c file
+if(!msc_ready){
+   enqueue_events(EVENT_NONE);
+   return;
+}
     FRESULT fr;
+
     exists_check = (Exists_check){0};   // reset both flags on every call
    // Initialise all date and time stuff early 
    // fr = f_getcwd(file_info.date_directory, strlen(file_info.date_directory)); //gets current directory and drive 
@@ -171,13 +174,7 @@ PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to b
 }
 
 PRIVATE FRESULT start() { //This is the kick off function where the pico tries to mount onto the USB stick.
-
-    FRESULT fr;
-    fr = f_mount(fs, "0:", 0);
-    if (fr != FR_OK) {
-        return fr;
-    }
-
+	FRESULT fr;
     if (!check_if_trtest_directory_exists()) {
         fr = f_mkdir("/TRTEST");
         if (fr != FR_OK) {

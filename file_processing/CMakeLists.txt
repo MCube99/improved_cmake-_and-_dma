@@ -9,16 +9,12 @@ target_sources(file_processing
     PUBLIC
         FILE_SET HEADERS 
         BASE_DIRS
-            ${PARENT_DIR}/hardware_processing
-            ${PARENT_DIR}/fatfs
             ${CMAKE_CURRENT_SOURCE_DIR}
         FILES 
-            ${PARENT_DIR}/fatfs/ff.h
             ${CMAKE_CURRENT_SOURCE_DIR}/file_processing.h 
-            ${PARENT_DIR}/hardware_processing/queue.h
             )        
 
 
-target_link_libraries(file_processing PUBLIC hardware_processing)
+target_link_libraries(file_processing PRIVATE hardware_processing pico_stdlib fatfs_lib)
 
 

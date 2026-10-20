@@ -50,20 +50,6 @@ add_compile_options(
 
 
 
-# function(check_pico_tinyusb_paths)
-
-#     list(APPEND path_messages "PICO_TINYUSB_PATH: ${PICO_TINYUSB_PATH}")
-#     message(STATUS "PICO_TINYUSB_PATH: ${PICO_TINYUSB_PATH}")
-#     list(APPEND path_messages "PICO_TOOLCHAIN_DIR: ${PICO_TOOLCHAIN_DIR}")
-#     list(APPEND path_messages "PICO_SDK_PATH: ${PICO_SDK_PATH}")
-
-# endfunction()
-
-# function(check_pico_sdk_paths)
-
-
-# endfunction()
-
 
 include_directories(tusb_config) ##include in all
 ## add_subdirectory(tusb_config)

@@ -34,21 +34,17 @@
 #include "pico/stdlib.h"
 #include "hardware/watchdog.h"
 #include "hid.h"
+#include "CException.h"
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
 //--------------------------------------------------------------------+
-void led_blinking_task(void);
-static uint8_t const keycode2ascii[128][2] =  { HID_KEYCODE_TO_ASCII }; //was uint8_t originally
-static void process_kbd_report(hid_keyboard_report_t const *report);
-volatile bool packet_recieved = false; // This is a signal event for the main loop. If this is false, then the main loop will not run. It is set to true when the SPI ISR triggers, and it is set to false when the event processing main function runs. This is to prevent the main loop from running when there is no event to process.
-volatile bool not_space_check = false; // This is guard condiiton for the kryboard. If the keyboard ISR will trigger, then if that isnt true the event wont happen, and the activity(enqueing it) will be skipped. This is to prevent the keyboard from being processed when the SPI is being processed.
 /*------------- MAIN -------------*/
 
 int main(void) {
 
   stdio_init_all();   // USB CDC (hardware USB → PC)
-  //timer_hw->dbgpause = 0;
+  timer_hw->dbgpause = 0;
   board_init();
   
    // init host stack on configured roothub port
@@ -68,22 +64,25 @@ int main(void) {
   pio_miso_setup();
   pio_mosi_setup();
   dma_channel_init_once();
-
   restore_interrupts_from_disabled(status);
+
   msc_app_init();
+  CEXCEPTION_T e;
     bool watchdog_reboot = watchdog_enable_caused_reboot();
 
     if (watchdog_reboot) {
         // The Pico rebooted because the watchdog expired.
         // Handle/log this if needed.
     }
-    watchdog_enable(600, false);
+    watchdog_enable(600, true); // Set watchdog timeout to 600 ms and enable pause on debug
+
 while (1) {
     tuh_task();
+    dma_timeout_check();
     msc_app_init();
     led_blinking_task();
     event_type_t event;
-    bool keyboard_mode = false;
+    CEXCEPTION_T e;
     watchdog_update();
 
 ////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
@@ -94,25 +93,18 @@ while (1) {
       {
           case EVENT_SIZE_PACKET_RECIEVED: {
               uint32_t status_packet = save_and_disable_interrupts();
-              keyboard_mode = classify_packet(); // This cannot be interrupted as critical
+               classify_packet(); // This cannot be interrupted as critical
               restore_interrupts_from_disabled(status_packet);
-              if(keyboard_mode){
-                  goto keyboard_mode; // go instantly to keyboard processing since on timing 
-              }
               break;
           }
 
-          case EVENT_USB_PROCESSING: 
-                 usb_processing_main(); // the csn should not toggle after this, so it should fall straight down to file processing if its done correctly
-                  break; 
+          case EVENT_FILE_PARSING:
+                file_parsing(); 
+                 break;
 
           case EVENT_FILE_PROCESSING:
                 file_processing_main(); 
                  break; 
-
-          keyboard_mode: // goto is a hackey way, can do an if flag but this is neater.
-                keyboard_processing_main(); 
-                break; 
 
           case EVENT_DONE:
                 event_processing_main();
@@ -127,140 +119,6 @@ while (1) {
   }
 }
 
-
-//--------------------------------------------------------------------+
-// Blinking Task
-//--------------------------------------------------------------------+
-void led_blinking_task(void) {
-  const uint32_t interval_ms = 1000;
-  static uint32_t start_ms = 0;
-
-  static bool led_state = false;
-
-  // Blink every interval ms
-  if (board_millis() - start_ms < interval_ms) return; // not enough time
-  start_ms += interval_ms;
-
-  board_led_write(led_state);
-  led_state = 1 - led_state; // toggle
-}
-
-//--------------------------------------------------------------------+
-// TinyUSB Callbacks
-//--------------------------------------------------------------------+
-
-// called after all tuh_hid_mount_cb
-void tuh_mount_cb(uint8_t dev_addr)
-{
-  // application set-up
-  printf("A device with address %d is mounted\r\n", dev_addr);
-}
-
-// called before all tuh_hid_unmount_cb
-void tuh_umount_cb(uint8_t dev_addr)
-{
-  // application tear-down
-  printf("A device with address %d is unmounted \r\n", dev_addr);
-}
-
-
-uint32_t tusb_time_millis_api(void) {
-    return board_millis(); 
-}
-
-void tusb_time_delay_ms_api(uint32_t ms)
-{
-    // For the RP2040, the Pico SDK provides this:
-    sleep_ms(ms);
-}
-
-// Invoked when device with hid interface is mounted
-// Report descriptor is also available for use. tuh_hid_parse_report_descriptor()
-// can be used to parse common/simple enough descriptor.
-// Note: if report descriptor length > CFG_TUH_ENUMERATION_BUFSIZE, it will be skipped
-// therefore report_desc = NULL, desc_len = 0
-void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_report, uint16_t desc_len) {
-  printf("HID device address = %d, instance = %d is mounted\r\n", dev_addr, instance);
-
-  if(tuh_hid_interface_protocol(dev_addr, instance) == HID_ITF_PROTOCOL_KEYBOARD) {
-    if ( !tuh_hid_receive_report(dev_addr, instance) )
-    {
-      printf("Error: cannot request to receive report\r\n");
-    }
-  }
-}
-
-// Invoked when device with hid interface is un-mounted
-void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
-  printf("HID device address = %d, instance = %d is unmounted\r\n", dev_addr, instance);
-}
-
-
-
-// Invoked when received report from device via interrupt endpoint (key down and key up)
-void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len)
-{
-  printf("received report from HID device address = %d, instance = %d\r\n", dev_addr, instance);
-
-  uint8_t const itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
-
-  switch (itf_protocol)
-  {
-    case HID_ITF_PROTOCOL_KEYBOARD:
-      printf("HID receive boot keyboard report\r\n");
-      process_kbd_report( (hid_keyboard_report_t const*) report );
-    break;
-  }
-
-  // continue to request to receive report
-  if ( !tuh_hid_receive_report(dev_addr, instance) )
-  {
-    printf("Error: cannot request to receive report\r\n");
-  }
-}
-
-
-//--------------------------------------------------------------------+
-// Keyboard
-//--------------------------------------------------------------------+
-
-// look up new key in previous keys
-static inline bool find_key_in_report(hid_keyboard_report_t const *report, uint8_t keycode)
-{
-  for(uint8_t i=0; i<6; i++)
-  {
-    if (report->keycode[i] == keycode){
-      return true;
-    }  
-  }
-
-  return false;
-}
-
-static void process_kbd_report(hid_keyboard_report_t const *report)
-{
-    static hid_keyboard_report_t prev_report = { 0, 0, {0} };
-
-    for (uint8_t i = 0; i < 6; i++)
-    {
-        uint8_t keycode = report->keycode[i];
-        if (!keycode) continue;
-
-        if (find_key_in_report(&prev_report, keycode))
-            continue; //filter out key releases and held keys, only process new key presses
-
-        bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
-
-        if(not_space_check){ // guard condition. Volatile because this is asynchronous
-          uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
-          enqueue_keyboard(ch);
-        }
-    }
-
-        // STOP condition (highest priority)
-
-      prev_report = *report;
-  }
 
 
   

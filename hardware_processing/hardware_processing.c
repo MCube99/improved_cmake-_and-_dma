@@ -7,6 +7,7 @@
 
 #include "queue.h"
 #include "hardware/gpio.h"
+#include "hardware/pio.h"
 #include "hardware/irq.h"
 #include "hardware/dma.h"
 #include "hardware/sync.h"
@@ -15,6 +16,9 @@
 #include "hardware_processing.h"
 #include "clocked_input.pio.h"
 #include "spi_miso.pio.h"
+#include "board_api.h"
+#include "CException.h"
+#include "CExceptionConfig.h"
 
 // -----------------------------------------------------------------------------
 // STRUCTURES
@@ -54,6 +58,7 @@ static pio_collection_t pio_collection;
 #define PICO_MISO_DEBUG_PROBE_PIN  8   // pick any free GPIO. This is for the pio output
 #define PICO_CODE_DEBUG_PROBE_PIN 9 // this is for the main c file type code
 #define PICO_CODE_DEBUG_ERROR_PIN 10 // this is for the main c file type code and is for error programs. 
+#define DMA_TIMEOUT_US  30000u
 // -----------------------------------------------------------------------------
 // GLOBALS
 // -----------------------------------------------------------------------------
@@ -64,9 +69,12 @@ PRIVATE uint return_spi_mosi_sm(void);
 PRIVATE PIO return_spi_miso_pio(void);
 PRIVATE uint return_spi_miso_sm(void);
 PRIVATE uint return_dma_channel(void);
-
+PRIVATE void dma_arm(void);
+static volatile bool dma_armed = false;
+volatile bool packet_recieved = false;
+static uint32_t dma_armed_at;
 // -----------------------------------------------------------------------------
-// GPIO ISR
+// GPIO & DMA ISR
 // -----------------------------------------------------------------------------
 
 PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
@@ -79,6 +87,26 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
 	    enqueue_events(EVENT_SIZE_PACKET_RECIEVED); // only one job, then it gets reenabled only at the end. 
     }
 }
+
+PRIVATE void dma_handler(void) {
+    dma_armed = false;
+
+    uintptr_t base  = (uintptr_t)give_array_address();
+    uintptr_t write = dma_hw->ch[ch].write_addr;
+    TRY{
+        if ((uint32_t)(write - base) == (uint32_t)return_size()) {
+            enqueue_events(EVENT_FILE_PARSING);
+        } else {
+            uint32_t status = save_and_disable_interrupts();
+            throw(DIAG_DMA_SHORT); // this is for the case where the size is less than 31, which is an error.
+            restore_interrupts_from_disabled(status);
+        }
+    }
+// Clear the interrupt request.
+    dma_hw->ints0 = 1u << ch;
+}
+
+
 // -----------------------------------------------------------------------------
 // GPIO SETUP
 // -----------------------------------------------------------------------------
@@ -93,7 +121,6 @@ PUBLIC void set_gpio_pins(void) {
 // inputs are always available to PIO and SIO, regardless of the direction, or function, unless you explicitly disable the input (enabled by default).
 // so RX pin and SCK pin are always available to the PIO, regardless of the direction or function.
 
-    
     gpio_init(PICO_SPI_RX_PIN);
     gpio_set_dir(PICO_SPI_RX_PIN, 0); // sets them as input
 
@@ -104,6 +131,22 @@ PUBLIC void set_gpio_pins(void) {
     irq_set_exclusive_handler(IO_IRQ_BANK0, my_gpio_isr);
     irq_set_enabled(IO_IRQ_BANK0, true);
     gpio_set_irq_enabled(PICO_SPI_CSN_PIN, GPIO_IRQ_EDGE_FALL, true);
+}
+//--------------------------------------------------------------------
+// Blinking Task
+//--------------------------------------------------------------------
+PUBLIC void led_blinking_task(void) {
+  const uint32_t interval_ms = 1000;
+  static uint32_t start_ms = 0;
+
+  static bool led_state = false;
+
+  // Blink every interval ms
+  if (board_millis() - start_ms < interval_ms) return; // not enough time
+  start_ms += interval_ms;
+
+  board_led_write(led_state);
+  led_state = 1 - led_state; // toggle
 }
 // -----------------------------------------------------------------------------
 // PIO SETUP
@@ -178,6 +221,7 @@ PUBLIC void pio_miso_setup(void){
 // -----------------------------------------------------------------------------
 //  DMA SETUP
 // -----------------------------------------------------------------------------
+
 PUBLIC void dma_channel_init_once(void){
     pio_collection.spi_mosi.channel = dma_claim_unused_channel(true);
     pio_collection.spi_mosi.dma_cfg = dma_channel_get_default_config(pio_collection.spi_mosi.channel);
@@ -192,6 +236,11 @@ PUBLIC void dma_channel_init_once(void){
             false
         )
     );
+
+    dma_channel_set_irq0_enabled(pio_collection.spi_mosi.channel, true);
+    // Configure the processor to run dma_handler() when DMA IRQ 0 is asserted
+    irq_set_exclusive_handler(DMA_IRQ_0, dma_handler);
+    irq_set_enabled(DMA_IRQ_0, true);
 }
 
 PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size){
@@ -203,32 +252,52 @@ PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size){
         dma_encode_transfer_count(size), // get this every time when classify packet is run.
         false
     );
+
+}
+
+PUBLIC void dma_timeout_check(void) {            // designed to timeout any packet which havent come after a substantial period of time.
+    //uint32_t status = save_and_disable_interrupts();
+    if (dma_armed && (time_us_32() - dma_armed_at) > DMA_TIMEOUT_US) {
+        dma_armed = false;
+        throw(DIAG_DMA_TIMEOUT); // this is for the case where the size is less than 31, which is an error.
+    }
+   //     uint ch = return_dma_channel();
+   //     dma_channel_abort(ch);
+   //     PIO  pio = pio_collection.spi_mosi.pio;
+   //     uint sm  = pio_collection.spi_mosi.sm;
+   //     pio_sm_clear_fifos(pio, sm);
+   //     pio_sm_restart(pio, sm);
+   //     pio_sm_exec(pio, sm, pio_encode_jmp(pio_collection.spi_mosi.offset));
+   //     dma_channel_acknowledge_irq0(ch);        // discard any IRQ left pending by the abort
+   // }
+ //   restore_interrupts_from_disabled(status);
+}
+
+PRIVATE void dma_arm(void) {
+    dma_armed_at = time_us_32();
+    dma_armed = true;                                  // set before starting, so the IRQ can't clear it first
+    dma_start_channel_mask(1u << return_dma_channel());
 }
 
 // -----------------------------------------------------------------------------
 // PROCESSING PLACE
 // -----------------------------------------------------------------------------
 
-PUBLIC bool __time_critical_func(classify_packet)(void) {
+PUBLIC void __time_critical_func(classify_packet)(void) {
     uint32_t size;
     event_type_t classify_event = 0;
     size = pio_sm_get_blocking(return_spi_mosi_pio(), return_spi_mosi_sm()); // get size byte
     set_size(size);
-    if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
-        not_space_check = true;
-        return(true); // return early since the keyboard is being processed and the next event will be enqueued in the main loop.
-    }
-    else if (size > GARY_CODE) {
-        dma_setup_fast(size);
-        classify_event = EVENT_USB_PROCESSING;
-    }
-    else {
-        classify_event = EVENT_NONE;
-    }
-   uint32_t status = save_and_disable_interrupts();
-    enqueue_events(classify_event);
-    restore_interrupts_from_disabled(status);
-    return(false); // return false since the keyboard is not being processed and the next event will be enqueued in the main loop.
+    packet_recieved = true; // should hit true at gpio isr so it leaves early. 
+
+        if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
+            not_space_check = true;
+            keyboard_processing_main(); // call function from here
+        }
+        else {
+            dma_setup_fast(size);
+            dma_arm();
+        }
 }
 
 // -----------------------------------------------------------------------------
@@ -238,28 +307,8 @@ PUBLIC bool __time_critical_func(classify_packet)(void) {
 // 2) KEYBOARD PROCESSING IS REALLY JUST SPI MASTER SLAVE FULL DUPLEX COMMUNICATION
 // 3) EVENT PROCESSING IS WHEN ITS ALL DONE REALLY
 // -----------------------------------------------------------------------------
-PUBLIC void usb_processing_main(void) {
-    dma_start_channel_mask(1u << return_dma_channel()); // start the DMA transfer
-    dma_channel_wait_for_finish_blocking(return_dma_channel()); // Wait for the DMA transfer to complete
-    uintptr_t base = (uintptr_t)give_array_address();
-    uintptr_t write = dma_hw->ch[return_dma_channel()].write_addr;
-    uint32_t difference = write - base;
 
-    if(difference ==  return_size())
-    {
-        uint32_t status = save_and_disable_interrupts();
-        enqueue_events(EVENT_FILE_PARSING); // enqueue the next event to be processed   
-        restore_interrupts_from_disabled(status);
-        dma_channel_cleanup(return_dma_channel());
-    }
-    else
-    {
-        uint32_t status = save_and_disable_interrupts();
-        enqueue_events(EVENT_NONE);
-        restore_interrupts_from_disabled(status);
-        dma_channel_cleanup(return_dma_channel());
-    }
-}
+
 
 PUBLIC void keyboard_processing_main() {
     uint8_t ch = 0;
@@ -278,7 +327,11 @@ PUBLIC void keyboard_processing_main() {
 
 PUBLIC void event_processing_main() { // will add more functionality to this later, but for now it just resets the packet recieved flag so that the next packet can be processed.
     packet_recieved = false; // reset the packet recieved flag so that the next packet can be processed.
-    }
+    pio_sm_clear_fifos(return_spi_mosi_pio(), return_spi_mosi_sm()); // clear the fifos so that the next packet can be processed.
+    pio_sm_clear_fifos(return_spi_miso_pio(), return_spi_miso_sm()); // clear the fifos so that the next packet can be processed.
+    pio_sm_encode_jmp(return_spi_mosi_pio(), return_spi_mosi_sm(), pio_collection.spi_mosi.offset); // reset the state machine so that the next packet can be processed.
+    pio_sm_encode_jmp(return_spi_miso_pio(), return_spi_miso_sm(), pio_collection.spi_miso.offset); // reset the state machine so that the next packet can be processed.
+}
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 PRIVATE void __time_critical_func(pio_spi_write8_blocking)(const pio_collection_t *pio_collection, const uint8_t *src, size_t len) {
