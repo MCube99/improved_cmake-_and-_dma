@@ -34,7 +34,6 @@
 #include "pico/stdlib.h"
 #include "hardware/watchdog.h"
 #include "hid.h"
-#include "CException.h"
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
@@ -65,10 +64,8 @@ int main(void) {
   pio_mosi_setup();
   dma_channel_init_once();
   restore_interrupts_from_disabled(status);
-
   msc_app_init();
-  CEXCEPTION_T e;
-    bool watchdog_reboot = watchdog_enable_caused_reboot();
+   / bool watchdog_reboot = watchdog_enable_caused_reboot();
 
     if (watchdog_reboot) {
         // The Pico rebooted because the watchdog expired.
@@ -78,13 +75,7 @@ int main(void) {
 
 while (1) {
     tuh_task();
-    Try{
-        dma_timeout_check();
-    }
-    Catch(e){
-        error_processing_main(e); // Handle the exception, e.g., log it, reset the system, etc.
-    }
-    msc_app_init();
+   // dma_timeout_check();
     led_blinking_task();
     event_type_t event;
     watchdog_update();
@@ -102,22 +93,11 @@ while (1) {
               break;
           }
 
-          case EVENT_FILE_PARSING: {
-                Try{
-                    file_parsing(); 
-                }
-                Catch(e){
-                    error_processing_main(e);
-                }
+          case EVENT_FILE_PARSING: 
+                file_parsing(); 
                  break;
-          }
           case EVENT_FILE_PROCESSING: {
-                Try{
-                    file_processing_main(); 
-                }
-                Catch(e){
-                    error_processing_main(e);
-                }
+                file_processing_main(); 
                  break;
             }
           case EVENT_DONE:
@@ -126,21 +106,20 @@ while (1) {
             
           case EVENT_DMA_ERROR: {
               // Handle DMA error
-              error_processing_main(DIAG_DMA_TIMEOUT); // or appropriate error code
+              error_processing(DIAG_DMA_INCOMPLETE);
               break;
           }
 
           default:
               break;
       }
-      watchdog_update(); // update the watchdog timer to prevent it from expiring
+       watchdog_update(); // update the watchdog timer to prevent it from expiring
      break; // break out of the while loop since the event has been processed and the main loop can run again.
   }
   
   }
+
 }
-
-
 
   
 

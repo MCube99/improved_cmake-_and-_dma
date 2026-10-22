@@ -269,41 +269,6 @@ typedef struct {
 
 
 
-/* File function return code (FRESULT) */
-
-typedef enum {
-    /* Special system/hardware errors — custom numbering */
-    FR_DISK_ERR = 80,
-    FR_INT_ERR = 81,
-    FR_NOT_READY = 82,
-    FR_WRITE_PROTECTED = 83,
-    FR_INVALID_DRIVE = 84,
-    FR_NOT_ENOUGH_CORE = 85,
-    FR_INVALID_PARAMETER = 86,
-	FR_ALL_DONE			= 87, //WHEN ITS ALL DONE
-
-    /* Restart normal error sequence */
-    FR_OK = 0,
-    FR_NO_FILE = 1,          /* normal errors 1, 2, 3... */
-    FR_NO_PATH = 2,
-    FR_INVALID_NAME = 3,
-    FR_DENIED = 4,
-    FR_EXIST = 5,
-    FR_INVALID_OBJECT = 6,
-    FR_NOT_ENABLED = 7,
-    FR_NO_FILESYSTEM = 8,
-    FR_MKFS_ABORTED = 9,
-    FR_TIMEOUT = 10,
-    FR_LOCKED = 11,
-    FR_TOO_MANY_OPEN_FILES = 12,
-	FR_START				= 13,
-
-
-	/* These are checK states*/
-	FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS= 14,
-	FR_CHECK_IF_TIME_FILE_ALREADY_EXISTS = 15
-} FRESULT;
-
 
 
 /*--------------------------------------------------------------*/

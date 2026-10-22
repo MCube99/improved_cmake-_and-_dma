@@ -66,10 +66,11 @@ static bool inquiry_complete_cb(uint8_t dev_addr, const tuh_msc_complete_data_t 
 
   // For simplicity: we only mount 1 LUN per device
   const uint8_t drive_num     = dev_addr - 1;
-  char          drive_path[3] = "0:";
+  char          drive_path[3] = "0:"; // this is the 
   drive_path[0] += drive_num;
 
  if (f_mount(&fatfs[drive_num], drive_path, 1) != FR_OK) {
+    msc_ready = false;
     return true;                      // mount failed, msc_ready stays false
   }
 
@@ -99,7 +100,7 @@ void tuh_msc_mount_cb(uint8_t dev_addr) {
 
 void tuh_msc_umount_cb(uint8_t dev_addr) {
   (void) dev_addr;
-  printf("A MassStorage device is unmounted\r\n");
+  msc_ready = false;
 }
 
 

@@ -17,8 +17,6 @@
 #include "clocked_input.pio.h"
 #include "spi_miso.pio.h"
 #include "board_api.h"
-#include "CException.h"
-#include "CExceptionConfig.h"
 
 // -----------------------------------------------------------------------------
 // STRUCTURES
@@ -69,7 +67,6 @@ PRIVATE uint return_spi_mosi_sm(void);
 PRIVATE PIO return_spi_miso_pio(void);
 PRIVATE uint return_spi_miso_sm(void);
 PRIVATE uint return_dma_channel(void);
-PRIVATE void dma_arm(void);
 static volatile bool dma_armed = false;
 volatile bool packet_recieved = false;
 static uint32_t dma_armed_at;
@@ -91,19 +88,20 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
 PRIVATE void dma_handler(void) {
     dma_armed = false;
 
+
     uintptr_t base  = (uintptr_t)give_array_address();
-    uintptr_t write = dma_hw->ch[ch].write_addr;
-    TRY{
-        if ((uint32_t)(write - base) == (uint32_t)return_size()) {
-            enqueue_events(EVENT_FILE_PARSING);
-        } else {
-            uint32_t status = save_and_disable_interrupts();
-            enqueue_events(EVENT_NONE);
-            restore_interrupts_from_disabled(status);
-        }
+    uintptr_t write = (uintptr_t)dma_hw->ch[return_dma_channel()].write_addr;
+    uint32_t size   = (uint32_t)return_size();
+
+    if ((write - base) == (uintptr_t)size) {
+        enqueue_events(EVENT_FILE_PARSING);
+    } else {
+        enqueue_events(EVENT_DMA_ERROR);
     }
-// Clear the interrupt request.
-    dma_hw->ints0 = 1u << ch;
+
+    // Clear the DMA interrupt request.
+    dma_hw->ints0 = 1u << return_dma_channel();
+
 }
 
 
@@ -228,9 +226,7 @@ PUBLIC void dma_channel_init_once(void){
     channel_config_set_transfer_data_size( &pio_collection.spi_mosi.dma_cfg, DMA_SIZE_8);
     channel_config_set_read_increment( &pio_collection.spi_mosi.dma_cfg, false); //dma is not reading from this so false
     channel_config_set_write_increment( &pio_collection.spi_mosi.dma_cfg, true); // dma is writing to this so true
-    channel_config_set_dreq(
-        &pio_collection.spi_mosi.dma_cfg,
-        pio_get_dreq( // get data request
+    channel_config_set_dreq( &pio_collection.spi_mosi.dma_cfg, pio_get_dreq( // get data request
             pio_collection.spi_mosi.pio,
             pio_collection.spi_mosi.sm,
             false
@@ -244,40 +240,35 @@ PUBLIC void dma_channel_init_once(void){
 }
 
 PUBLIC void __time_critical_func(dma_setup_fast)(uint32_t size){
+    dma_armed_at = time_us_32();
+    dma_armed = true;                                  // set before starting, so the IRQ can't clear it first
     dma_channel_configure(
         pio_collection.spi_mosi.channel,
         &pio_collection.spi_mosi.dma_cfg,
         give_array_address(), // buffer to write to 
         &pio_collection.spi_mosi.pio->rxf[pio_collection.spi_mosi.sm],
         dma_encode_transfer_count(size), // get this every time when classify packet is run.
-        false
+        true // start immediately
     );
 
 }
 
 PUBLIC void dma_timeout_check(void) {            // designed to timeout any packet which havent come after a substantial period of time.
-    //uint32_t status = save_and_disable_interrupts();
-    if (dma_armed && (time_us_32() - dma_armed_at) > DMA_TIMEOUT_US) {
-        dma_armed = false;
-        throw(DIAG_DMA_TIMEOUT); // this is for the case where the size is less than 31, which is an error.
+    uint32_t status = save_and_disable_interrupts();
+    if(dma_armed && (time_us_32() - dma_armed_at) > DMA_TIMEOUT_US) {
+      dma_armed = false;
+      uint ch = return_dma_channel();
+      dma_channel_abort(ch);
+      PIO  pio = pio_collection.spi_mosi.pio;
+      uint sm  = pio_collection.spi_mosi.sm;
+      pio_sm_clear_fifos(pio, sm);
+      pio_sm_restart(pio, sm);
+      pio_sm_exec(pio, sm, pio_encode_jmp(pio_collection.spi_mosi.offset));
+        dma_channel_acknowledge_irq0(ch);        // discard any IRQ left pending by the abort
     }
-   //     uint ch = return_dma_channel();
-   //     dma_channel_abort(ch);
-   //     PIO  pio = pio_collection.spi_mosi.pio;
-   //     uint sm  = pio_collection.spi_mosi.sm;
-   //     pio_sm_clear_fifos(pio, sm);
-   //     pio_sm_restart(pio, sm);
-   //     pio_sm_exec(pio, sm, pio_encode_jmp(pio_collection.spi_mosi.offset));
-   //     dma_channel_acknowledge_irq0(ch);        // discard any IRQ left pending by the abort
-   // }
- //   restore_interrupts_from_disabled(status);
+    restore_interrupts_from_disabled(status);
 }
 
-PRIVATE void dma_arm(void) {
-    dma_armed_at = time_us_32();
-    dma_armed = true;                                  // set before starting, so the IRQ can't clear it first
-    dma_start_channel_mask(1u << return_dma_channel());
-}
 
 // -----------------------------------------------------------------------------
 // PROCESSING PLACE
@@ -285,7 +276,6 @@ PRIVATE void dma_arm(void) {
 
 PUBLIC void __time_critical_func(classify_packet)(void) {
     uint32_t size;
-    event_type_t classify_event = 0;
     size = pio_sm_get_blocking(return_spi_mosi_pio(), return_spi_mosi_sm()); // get size byte
     set_size(size);
     packet_recieved = true; // should hit true at gpio isr so it leaves early. 
@@ -296,23 +286,19 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
         }
         else {
             dma_setup_fast(size);
-            dma_arm();
         }
 }
 
 // -----------------------------------------------------------------------------
-// PROCESSING FOR MAIN
+// PROCESSING CODE
 //
-// 1) USB PROCESSING FOR USB, AND DOES DMA STUFF
-// 2) KEYBOARD PROCESSING IS REALLY JUST SPI MASTER SLAVE FULL DUPLEX COMMUNICATION
-// 3) EVENT PROCESSING IS WHEN ITS ALL DONE REALLY
+// 1) KEYBOARD PROCESSING IS REALLY JUST SPI MASTER SLAVE FULL DUPLEX COMMUNICATION
+// 2) EVENT PROCESSING IS WHEN ITS ALL DONE REALLY
+// 3) ERROR PROCESSING IS WHEN SOMETHING GOES WRONG AND IT NEEDS TO BE HANDLED
 // -----------------------------------------------------------------------------
-
-
-
 PUBLIC void keyboard_processing_main() {
     uint8_t ch = 0;
-    if(dequeue_keyboard(&ch)){
+    if(dequeue_keyboard(&ch)){ // if keyboard is disconnected, this shouldnt run
  //start transaction only when character is detected
             pio_spi_write8_blocking(&pio_collection, &ch, 1); 
             if(ch == '\r' || ch == '\n'){
@@ -329,22 +315,21 @@ PUBLIC void event_processing_main() { // will add more functionality to this lat
     packet_recieved = false; // reset the packet recieved flag so that the next packet can be processed.
     pio_sm_clear_fifos(return_spi_mosi_pio(), return_spi_mosi_sm()); // clear the fifos so that the next packet can be processed.
     pio_sm_clear_fifos(return_spi_miso_pio(), return_spi_miso_sm()); // clear the fifos so that the next packet can be processed.
-    pio_sm_encode_jmp(return_spi_mosi_pio(), return_spi_mosi_sm(), pio_collection.spi_mosi.offset); // reset the state machine so that the next packet can be processed.
-    pio_sm_encode_jmp(return_spi_miso_pio(), return_spi_miso_sm(), pio_collection.spi_miso.offset); // reset the state machine so that the next packet can be processed.
-}
+    }
 
-PUBLIC void error_processing_main(CEXCEPTION_T e) {
+PUBLIC void error_processing(DIAGNOSTICS_T diagnostics) {
     // Handle the exception, e.g., log it, reset the system, etc.
     // For this example, we'll just print the error code and halt.
-    CEEXCEPTION_T error_code = e;
-    if(error_code == DIAG_DMA_TIMEOUT) {
-        // Handle DMA timeout error
-    } else if(error_code == DIAG_DMA_SHORT) {
-        // Handle DMA short error
-    } else if(error_code == DIAG_USB_NOT_READY) {
-        // Handle USB not ready error
-    } else {
-        // Handle other errors
+    DIAGNOSTICS_T error_code = diagnostics;
+    switch (error_code) {
+        case DIAG_DMA_INCOMPLETE:
+            break;
+        case DIAG_USB_MOUNT_FAIL:
+            break;
+        case DIAG_USB_PARSE_FAIL:
+            break;
+        default:
+            break;
     }
 }
 

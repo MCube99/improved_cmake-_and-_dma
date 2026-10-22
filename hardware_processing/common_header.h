@@ -1,4 +1,5 @@
-#pragma once
+#ifndef COMMON_HEADER_H
+#define COMMON_HEADER_H
 // This is for common use which don' really belong in any other module/header file since its so generic
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,8 +23,16 @@ typedef enum
     EVENT_DONE
 } event_type_t;
 
-
 extern volatile bool msc_ready; // from msc_app
 extern volatile uint8_t device_address;
 extern volatile bool not_space_check;
 extern volatile bool packet_recieved;
+
+typedef enum {
+    DIAG_DMA_INCOMPLETE= 0,
+    DIAG_USB_MOUNT_FAIL,    
+    DIAG_USB_PARSE_FAIL, 
+    DIAG_USB_HARDWARE_ERROR,
+} DIAGNOSTICS_T;
+
+#endif

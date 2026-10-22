@@ -7,7 +7,6 @@ set(SRC_SOURCES
 
 set(SRC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/msc_app.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/embedded_cli.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hid_host.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hid.h
     )

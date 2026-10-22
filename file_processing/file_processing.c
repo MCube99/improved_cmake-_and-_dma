@@ -1,6 +1,7 @@
 
 #include "ff.h"
 #include "file_processing.h"
+#include "hardware_processing.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -12,37 +13,59 @@
 //#################################################################### Another state machine implementation ######################################################################### 
 
 
+/* File function return code (FRESULT) */
 
-typedef struct 
-{
-    unsigned int path_exists:1;
-    unsigned int file_exists:1;
+typedef enum {
+    /* Special system/hardware errors — custom numbering */
+    FR_DISK_ERR = 80,
+    FR_INT_ERR = 81,
+    FR_NOT_READY = 82,
+    FR_WRITE_PROTECTED = 83,
+    FR_INVALID_DRIVE = 84,
+    FR_NOT_ENOUGH_CORE = 85,
+    FR_INVALID_PARAMETER = 86,
+    FR_ALL_DONE		= 87, //WHEN ITS ALL DONE
 
-}Exists_check; //can pack a lot in in one 
+    /* Restart normal error sequence */
+    FR_CHECK_IF_TRTEST_DIRECTORY_EXISTS = 0,
+    FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS= 1,
+    FR_CHECK_IF_TIME_FILE_ALREADY_EXISTS = 2
+    FR_NO_FILE = 3          /* normal errors */ 
+    FR_NO_DATE_FOLDER_PATH = 4,
+    FR_INVALID_NAME = 5,
+    FR_DENIED = 6,
+    FR_EXIST = 7,
+    FR_INVALID_OBJECT = 8,
+    FR_NOT_ENABLED = 9,
+    FR_NO_FILESYSTEM = 10,
+    FR_MKFS_ABORTED = 11,
+    FR_TIMEOUT = 12,
+    FR_LOCKED = 13,
+    FR_TOO_MANY_OPEN_FILES = 14,
+/* These are checK states*/
+} FRESULT;
+
 
 
 typedef struct
 {
-    char dates[15];
+    char dates[15]; // these are storing dates and times
     char times[15];
-    char times_header[15 + 4]; // times + 4
-    char date_directory[20];
-    char *starting_pointer;
+    char times_header[15 + 4]; // times + 4 // this is the csv filr
+    char date_directory[20]; // this is the overall directory including TRTEST an the date folder
+    char *starting_pointer; // this is for parsing thru the commas and getting data for the csv file
 
 }File_Info;
 
 static File_Info file_info;
 Exists_check exists_check = {0};
-
 static FATFS fatfs;
 FATFS *fs = &fatfs;
 
 
 // Forward declarations of state machine functions
-PRIVATE FRESULT start(void);
-PRIVATE FRESULT ok(FRESULT fr);
 PRIVATE FRESULT no_file(FRESULT fr);
-PRIVATE FRESULT no_path(FRESULT fr);
+PRIVATE FRESULT no_date_folder_path(FRESULT fr);
 PRIVATE FRESULT invalid_name(FRESULT fr);
 PRIVATE FRESULT denied(FRESULT fr);
 PRIVATE FRESULT exist(FRESULT fr);
@@ -56,15 +79,14 @@ PRIVATE FRESULT too_many_open_files(FRESULT fr);
 PRIVATE FRESULT start_error(FRESULT fr);
 PRIVATE bool check_if_trtest_directory_exists(void);
 PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr);
-PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr);
-
-
-
+PRIVATE FRESULT check_if_time_csv_already_exists(FRESULT fr);
 
 FRESULT (*handle_error[])(FRESULT fr) = {
-    ok,       // FR_OK = 0 → no error handler
+    check_if_trtest_directory_exists, // logical beginning, check if the trtest directory even exists at all 
+    check_if_date_folder_already_exists,  // FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS== 14
+    check_if_time_csv_already_exists
     no_file,    // FR_NO_FILE = 1
-    no_path,    // FR_NO_PATH = 2
+    no_date_folder_path,    // FR_NO_DATE_FOLDER_PATH = 2. This is idk what to do with this
     invalid_name, // FR_INVALID_NAME = 3
     denied,     // FR_DENIED = 4
     exist,      // FR_EXIST = 5
@@ -76,8 +98,6 @@ FRESULT (*handle_error[])(FRESULT fr) = {
     locked,     // FR_LOCKED = 11
     too_many_open_files, // FR_TOO_MANY_OPEN_FILES = 12
     start_error, // FR_START = 13
-    check_if_date_folder_already_exists,  // FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS== 14
-    check_if_time_folder_already_exists
 };
 
 // Create folder and date directory
@@ -96,192 +116,130 @@ PRIVATE bool check_if_folder_exists_in_date_directory(const File_Info *file_info
 
 
 PUBLIC void file_parsing() {
-
     memset(file_info.dates, 0, sizeof(file_info.dates));
     memset(file_info.times, 0, sizeof(file_info.times));
     memset(file_info.date_directory, 0, sizeof(file_info.date_directory));
-
+    memset(file_info.times_title, 0, sizeof(file_info.times_title)); // will hv to have a 0: at the beginning
+    if(!msc_ready){
+        error_processing(DIAG_USB_MOUNT_FAIL);
+        enqueue_events(EVENT_FILE_PARSING); // re-enqueue the event to try again later
+        return;
+    }
     uint8_t *buffer = give_array_address(); //give_array_address();
-    // int n = sizeof(file_info.dates)/sizeof(file_info.dates[0]);
+    buffer[return_size()] = '\0';
 
-    extract_date_directory(buffer, file_info.date_directory,sizeof(file_info.date_directory));   // dates used as folder/directory name
+
     extract_date(buffer, file_info.dates,sizeof(file_info.dates)); // extract time file name
     file_info.starting_pointer = extract_time(buffer, file_info.times,sizeof(file_info.times)); // extract the time par
-												//
+	    snprintf(file_info.times_title,sizeof(file_info.times_title),"%s:%s","0",file_info.date_directory)											//
 	if (file_info.starting_pointer == NULL) {
 		// malformed input — nothing to parse further, bail out safely
-		event_type_t current_event = EVENT_NONE;
-		enqueue_events(current_event);
+		error_processing(DIAG_USB_PARSE_FAIL);
+		return;
 	    }
-    snprintf(file_info.times_header, sizeof(file_info.times_header), "%s.csv", file_info.times);
     event_type_t current_event = EVENT_FILE_PROCESSING;
     enqueue_events(current_event);
 }
 
-PUBLIC void file_processing_main( ) { //called file_processing_main because this function goes in the main.c file
-if(!msc_ready){
-    throw(DIAG_USB_NOT_READY); // this is for the case where the USB is not ready, so that the system can wait until it is ready.
-   //enqueue_events(EVENT_NONE);
-   return;
-}
-    FRESULT fr;
+PUBLIC void file_processing_main() { //called file_processing_main because this function goes in the main.c file
+ static FRESULT fr = FR_CHECK_IF_TRTEST_DIRECTORY_EXISTS; // first run through
+ static bool first_run = false; // this is when we first hit it. Main purpose is to hit the main.c as much as possible
+ if( !first_run ){
+   first_run=true;
+   exists_check = (Exists_check){0};   // reset both flags on every call
+ }
+ else {
+  if(fr == FR_ALL_DONE){
+    first_run = false;
+    enqueue_events(EVENT_DONE);
+    return;
+  }
 
-    exists_check = (Exists_check){0};   // reset both flags on every call
-   // Initialise all date and time stuff early 
-   // fr = f_getcwd(file_info.date_directory, strlen(file_info.date_directory)); //gets current directory and drive 
-    // this is drive 0 and root directory
-
-  
-     // Check for hardware/system errors
-    fr = start();
-// This state machine is mainly for error handling. The ones in the if statement (apart from FR_ALL_DONE) are all hardware errors, so if any of those happen, then the system will break out of the loop and not continue and I have no clue what to do + dont get paid enough to care
-    while(1){
-        if( fr == FR_ALL_DONE || fr == FR_DISK_ERR || fr == FR_NOT_READY ||fr == FR_WRITE_PROTECTED || fr == FR_INT_ERR) {
-             break; //idk what to do if there is an hardware issue
-        }
-         fr = handle_error[fr](fr); // kick start it off.
-    }
-
-    if(fr == FR_ALL_DONE){
-        event_type_t current_event = EVENT_DONE;
-        enqueue_events(current_event);
-    }
-    else{
-        event_type_t current_event = EVENT_NONE;
-        enqueue_events(current_event);
-    }
-    
-    
+  if( fr == FR_ALL_DONE || fr == FR_DISK_ERR || fr == FR_NOT_READY ||fr == FR_WRITE_PROTECTED || fr == FR_INT_ERR) {
+    first_run = false;
+     error_processing(DIAG_USB_HARDWARE_ERROR);
+     break; //idk what to do if there is an hardware issue
+      }
+  fr = handle_error[fr](fr); // kick start it off.
+ }
+ enqueue_events(EVENT_FILE_PROCESSING); // must hit tuh_task() as much as possible.
 }
 
 /////////////////////////////////////////FRESULT functions/////////////////////////////////////////
-PRIVATE FRESULT ok(FRESULT fr) {// This is the function to check what needs to be done. 
-    if(!exists_check.path_exists)
-    {
-         fr = FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS;
-         return(fr);
-    }
-    else if(!exists_check.file_exists)
-    {
-         fr = FR_CHECK_IF_TIME_FILE_ALREADY_EXISTS;
-         return(fr);
-    }
-    else
-    {
-        fr = FR_ALL_DONE;
-        return(fr);
 
-    }
-}
 
-PRIVATE FRESULT start() { //This is the kick off function where the pico tries to mount onto the USB stick.
-	FRESULT fr;
-    if (!check_if_trtest_directory_exists()) {
-        fr = f_mkdir("/TRTEST");
-        if (fr != FR_OK) {
-            return fr;
-        }
-    }
-    return(fr); //sets off whole reaction
-}
-
-PRIVATE FRESULT no_path(FRESULT fr) {
+PRIVATE FRESULT no_date_folder_path(FRESULT fr) {
 
     const char *fname = file_info.date_directory;
     fr = f_mkdir(fname);
     return fr;
 }
 
-PRIVATE bool check_if_trtest_directory_exists(void) {
+PRIVATE FRESULT check_if_trtest_directory_exists(void) {
     DIR dir;
     FILINFO fno;
     FRESULT fr;
 
-    fr = f_opendir(&dir, "/");
-    if (fr != FR_OK) {
-        return false;
-    }
+    fr = f_findfirst(&dir, &fno, "/", "TRTEST"); // looks for TRTEST file in the root directory
 
-    while (1)
-    {
-        fr = f_readdir(&dir, &fno);
+	while (fr == FR_OK && fno.fname[0]!=0)
+	    {
+		if ((fno.fattrib & AM_DIR) && (strcmp(fno.fname, "TRTEST") == 0)) // AM_DIR is a flag for it being a directory, and strncmp just checks if the name matches the name of the directory!!
+		{
+		    f_closedir(&dir);
+		    fr = FR_CHECK_IF_DATE_FOLDER_ALREADY_EXISTS;
+		    return(fr); 
+		}
 
-        if (fr != FR_OK || fno.fname[0] == 0) {
-            break;
-        }
+		fr = f_findnext(&dir, &fno);
+	    }
 
-        if (strcmp(fno.fname, ".") == 0 || strcmp(fno.fname, "..") == 0)
-            continue;
+	    f_closedir(&dir);
 
-        if (fno.fattrib & (AM_HID | AM_SYS))
-            continue;
-
-        if (fno.fattrib & AM_DIR)
-        {
-            if (strcmp(fno.fname, "TRTEST") == 0)
-            {
-                f_closedir(&dir);
-                return true;
-            }
-        }
-    }
-
-    f_closedir(&dir);
-    return false;
+	    if (fr != FR_OK) {
+		    return(fr);
+	    }
 }
 
 PRIVATE FRESULT check_if_date_folder_already_exists(FRESULT fr) {
     DIR dir;
     FILINFO fno = {0};
-
-    exists_check.path_exists = false;
-
-    fr = f_opendir(&dir, "/TRTEST/");
-    if (fr != FR_OK)
-        return fr;
-
-    while (1)
-    {
-        fr = f_readdir(&dir, &fno);
-
-        if (fr != FR_OK)
-            break;
-
-        if (fno.fname[0] == 0)
-            break;  // end of directory
-
-        // skip . and ..
-        if (strcmp(fno.fname, ".") == 0 || strcmp(fno.fname, "..") == 0)
-            continue;
-
-        // skip hidden/system
-        if (fno.fattrib & (AM_HID | AM_SYS))
-            continue;
-
-        // only directories
-        if (fno.fattrib & AM_DIR)
-        {
-            if (strcmp(fno.fname, file_info.dates) == 0)
-            {
-                exists_check.path_exists = true;
-                break;  
-            }
-        }
+    fr = f_findfirst(&dir,&fno,"/TRTEST/",file_info.dates);
+    while(fr == FR_OK && fno.fname[0]!=0){
+	    if((fno.fattrib & AM_DIR) && (strncmp(fno.fname, file_info.dates))){
+		 f_closedir(&dir);   
+                 fr = FR_OK;
+		 return(fr);
+	    }
+	     fr = f_findnext(&dir,&fno);
     }
+ //   if (fno.fname[0] == 0)
 
-    if (fno.fname[0] == 0)
-    {
-        fr = FR_NO_PATH;
-    }
-
+    fr = f_mkdir(file_info.date_directory);
     f_closedir(&dir);
-
+    fr = FR_NO_DATE_FOLDER_PATH;
     return fr;
 }
 
-PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
+PRIVATE FRESULT check_if_time_csv_already_exists(FRESULT fr) {
+   DIR dir;
+   FILINFO fno;
+   fr = f_findfirst(&dir,&fno,file_info.date_directory, "*.csv"); //may amend this regex expression to more accurately match the csv expected
+   while(fr == FR_OK && fno.fname[0]!=0){
+	   if(strcmp(fno.fname, file_info.dates)){
+	    f_closedir(&dir);
+            fr = FR_ALL_DONE; //if csv already exists 
+	    return(fr);
+	   }
+	   fr = f_findnext(&dir,&fno);
+   }
+   fr = FR_NO_FILE;
+   return(FR_NO_FILE);
+}
+
+PRIVATE FRESULT append_data_to_file(FRESULT fr) { // no time csv
+    DIR dir;
     FIL fp;
-   
     TCHAR temp[64];
     TCHAR fullpath[64];
   // Declaring local values so that they get destroyed once function is done
@@ -291,12 +249,9 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
     char test_time[5];
     char comment[30];
     char state[6];
-   
-
       // sets value for arrays to all 0
     memset(fullpath, 0, sizeof(fullpath));
     memset(temp, 0, sizeof(temp));
-
     memset(ohms,0,sizeof(ohms));
     memset(voltage, 0, sizeof(voltage));
     memset(current, 0, sizeof(current));
@@ -304,11 +259,8 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
     memset(comment, 0, sizeof(comment));
     memset(state, 0, sizeof(state));
 
-
-
-
     char *buffer = file_info.starting_pointer;
-    buffer = extract_comma_field(buffer, ohms, sizeof(ohms)); //want to pass pointer and then modify pointer to pooubt ti bextl
+    buffer = extract_comma_field(buffer, ohms, sizeof(ohms)); 
 	if (!buffer) return FR_INVALID_NAME;
     buffer = extract_comma_field(buffer, voltage, sizeof(voltage));
 	if (!buffer) return FR_INVALID_NAME;
@@ -319,7 +271,7 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
     buffer = extract_comma_field(buffer, comment, sizeof(comment));
 	if (!buffer) return FR_INVALID_NAME;
 
-    buffer = extract_state(buffer, state, sizeof(state));
+    buffer = extract_comma_field(buffer, state, sizeof(state));
 	if (!buffer) return FR_INVALID_NAME;
     
     //extract_voltage(buffer, voltage, size_t size); // this is for the next value, and so on and so fort
@@ -329,17 +281,8 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
     if (fr != FR_OK) {
         return fr;
     }
-
-    // Implement a function here to check for files in the directory and se
-
-    if (check_if_folder_exists_in_date_directory(&file_info)) { //this is for if the folder just created exists
-        fr = f_getcwd(fullpath, sizeof(fullpath));
-
-        if (fr != FR_OK) {
-            return fr;
-        }
-
-	snprintf(temp, sizeof(temp), "%s/%s", fullpath, file_info.times_header);
+	snprintf(temp, sizeof(temp), "%s/%s", fullpath, file_info.times_title);
+    snprintf(file_info.times_title, sizeof(file_info.times_title), "%s.csv", file_info.times);
 	snprintf(fullpath, sizeof(fullpath), "%s", temp);
 
         fr = f_open(&fp, fullpath, FA_WRITE | FA_OPEN_APPEND);
@@ -370,13 +313,6 @@ PRIVATE FRESULT check_if_time_folder_already_exists(FRESULT fr) {
 
         return fr;
     }
-    else
-    {
-        fr = FR_NO_FILE;
-        return(fr);
-    }
-
-    return FR_NO_PATH;
 }
 
 PRIVATE FRESULT no_file(FRESULT fr) {
@@ -390,13 +326,14 @@ PRIVATE FRESULT no_file(FRESULT fr) {
         return fr; // can't open directory
     }
 
-	snprintf(fullpath, sizeof(fullpath), "%s", file_info.times_header);
+	snprintf(fullpath, sizeof(fullpath), "%s", file_info.times_title);
 
         fr = f_open(&fp,fullpath, FA_WRITE | FA_CREATE_ALWAYS);
         if (fr == FR_OK) {
             f_puts("Date,\tTime,\tOhms(ohm)),\tVoltage(V),\tCurrent(A),\tTestTime,\tComment,\tState\n", &fp); //adds a tab in the middle
             f_close(&fp);
         }
+	fr = FR_APPEND_DATA_TO_FILE;
         return(fr); //this is to create a new file
 
 
@@ -537,83 +474,6 @@ PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, si
         dates_directory[i++] = c;
    }
 // Result, e.g. "/TRTEST/20-7-25", always null-terminated thanks to the memset.
-}
-
-PRIVATE void extract_date(const uint8_t *in, char *dates, size_t size) {
-    memset(dates,0,size);
-    dates[size-1]='\0';
-    const char *end = strchr((const char *)in,'/');
-    if(!end) return;
-    const char *p = (const char *)in;
-
-    int i = 0;
-    for(; p<end && i<size-1;p++){
-        char c = *p;
-        if (c == '/') { c = '-'; }
-        dates[i++] = c;
-    }
-
-    const char *end_final = strchr(end+1,',');
-    if(!end_final) return;
-    for(; p<end_final && i<size-1; p++)
-    {
-        char c = *p;
-        if (c == '/') { c = '-'; }
-        dates[i++] = c;
-    }
-}
-
-PRIVATE char* extract_time(const uint8_t *in, char *time, size_t size) {
-    memset(time,0,size);
-    time[size-1] = '\0';
-    char *start = strchr((const char*)in, ',');
-    if(!start) return NULL;
-    char *end   = strchr((const char*)start + 1, ',');
-    if(!end) return NULL;
-    int i = 0;
-    const char *p = start + 1;
-
-    for(; p < end && i < size-1; p++)
-    {
-        char c = *p;
-        if(isspace((unsigned char)c))
-            continue;
-
-         if(c== ':'){
-            c = '-';
-        } 
-
-        time[i++] = c;
-    }
-
-    return(p);
-}
-
-PRIVATE char* extract_state(char *in, char *state, size_t size) {
-    memset(state, 0, size);
-
-    char *ptr = strchr(in, ',');    //1st comma
-    if (!ptr) return NULL;
-
-    char *ptr_end = strchr(ptr + 1, '\n');
-    if (!ptr_end) return NULL;
-
-     ptr++;   // move past comma
-
-    size_t j = 0;
-
-    while (ptr < ptr_end && j < size - 1)
-    {
-        if (!isspace((unsigned char)*ptr))
-        {
-           state[j++] = *ptr;
-        }
-        ptr++;
-    }
-
-    state[j] = '\0';
-
-    return ptr;
 }
 
 

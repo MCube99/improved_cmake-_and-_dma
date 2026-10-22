@@ -4,15 +4,13 @@ set(hardware_processing_Sources
   ${CMAKE_CURRENT_SOURCE_DIR}/hardware_processing.c
   ${CMAKE_CURRENT_SOURCE_DIR}/queue.c
   ${CMAKE_CURRENT_SOURCE_DIR}/ring_buf.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/CException.c)
+  )
 
 set(hardware_processing_Headers 
   ${CMAKE_CURRENT_SOURCE_DIR}/hardware_processing.h 
   ${CMAKE_CURRENT_SOURCE_DIR}/queue.h 
   ${CMAKE_CURRENT_SOURCE_DIR}/ring_buf.h 
-  ${CMAKE_CURRENT_SOURCE_DIR}/CException.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/CExceptionConfig.h) 
-
+)
 
 add_library(hardware_processing STATIC ${hardware_processing_Sources})
 add_library(common_headers INTERFACE )

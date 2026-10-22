@@ -1,4 +1,5 @@
-#pragma once
+#ifndef QUEUE_H
+#define QUEUE_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -21,3 +22,4 @@ PUBLIC uint32_t const return_size(void);
 PUBLIC void set_size(uint32_t size); 
 PUBLIC int get_buffer_size(void);
 //PUBLIC* RingBuf return_interrupt_queue();
+#endif
