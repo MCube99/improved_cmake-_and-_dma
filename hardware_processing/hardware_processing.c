@@ -86,8 +86,6 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
 }
 
 PRIVATE void dma_handler(void) {
-    dma_armed = false;
-
 
     uintptr_t base  = (uintptr_t)give_array_address();
     uintptr_t write = (uintptr_t)dma_hw->ch[return_dma_channel()].write_addr;
@@ -278,13 +276,20 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
     uint32_t size;
     size = pio_sm_get_blocking(return_spi_mosi_pio(), return_spi_mosi_sm()); // get size byte
     set_size(size);
+
+    if(size < USB_MIN_PACKET_SIZE) { // this is for the keyboard packet
+        if(packet_recieved) {
+            packet_recieved = false; // reset the packet recieved flag so that the next packet can be processed.
+        }
+       return;  // if below a certain minimum size, it is an error packet and should be discarded instantly. Liable in keyboard transmissions
+    }
     packet_recieved = true; // should hit true at gpio isr so it leaves early. 
 
         if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
             not_space_check = true;
             keyboard_processing_main(); // call function from here
         }
-        else {
+        else { // this is for the usb packet
             dma_setup_fast(size);
         }
 }
@@ -315,19 +320,37 @@ PUBLIC void event_processing_main() { // will add more functionality to this lat
     packet_recieved = false; // reset the packet recieved flag so that the next packet can be processed.
     pio_sm_clear_fifos(return_spi_mosi_pio(), return_spi_mosi_sm()); // clear the fifos so that the next packet can be processed.
     pio_sm_clear_fifos(return_spi_miso_pio(), return_spi_miso_sm()); // clear the fifos so that the next packet can be processed.
+    pio_sm_exec_wait_blocking(return_spi_mosi_pio(), return_spi_mosi_sm(),pio_encode_jmp(pio_collection.spi_mosi.offset));
+    pio_sm_exec_wait_blocking(return_spi_miso_pio(), return_spi_miso_sm(),pio_encode_jmp(pio_collection.spi_miso.offset));
+    if(dma_armed) {
+        dma_armed = false;
+        memset(give_array_address(), 0, BUF_LEN); // clear the buffer so that the next packet can be processed.
+        dma_channel_set_write_addr(return_dma_channel(), give_array_address(), false);
     }
+}
 
 PUBLIC void error_processing(DIAGNOSTICS_T diagnostics) {
     // Handle the exception, e.g., log it, reset the system, etc.
     // For this example, we'll just print the error code and halt.
+    uint8_t ch = 0;
     DIAGNOSTICS_T error_code = diagnostics;
     switch (error_code) {
         case DIAG_DMA_INCOMPLETE:
+            ch = 0xAB;
+	    pio_spi_write8_blocking(&pio_collection, &ch, 1);
             break;
         case DIAG_USB_MOUNT_FAIL:
+            ch = 0xAB;
+	    pio_spi_write8_blocking(&pio_collection, &ch, 1);
             break;
         case DIAG_USB_PARSE_FAIL:
+            ch = 0xAB;
+	    pio_spi_write8_blocking(&pio_collection, &ch, 1);
             break;
+	case DIAG_ALL_OK:
+            ch = 0xAA;
+	    pio_spi_write8_blocking(&pio_collection, &ch, 1);
+	    break;
         default:
             break;
     }

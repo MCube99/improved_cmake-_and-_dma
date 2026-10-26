@@ -65,20 +65,21 @@ int main(void) {
   dma_channel_init_once();
   restore_interrupts_from_disabled(status);
   msc_app_init();
-   / bool watchdog_reboot = watchdog_enable_caused_reboot();
+  /* bool watchdog_reboot = watchdog_enable_caused_reboot(); */
 
-    if (watchdog_reboot) {
+    /* if (watchdog_reboot) {  */
         // The Pico rebooted because the watchdog expired.
         // Handle/log this if needed.
-    }
-    watchdog_enable(600, true); // Set watchdog timeout to 600 ms and enable pause on debug
+   // }
+    /* watchdog_enable(600, false); // Set watchdog timeout to 600 ms and enable pause on debug */
 
 while (1) {
+    /* watchdog_update(); */
     tuh_task();
    // dma_timeout_check();
     led_blinking_task();
     event_type_t event;
-    watchdog_update();
+    /* watchdog_update(); */
 
 ////////////////////////////////////////////////////////// STATE MACHINE LOOP /////////////////////////////////////////////////////////////////////////////////////
 
@@ -96,6 +97,7 @@ while (1) {
           case EVENT_FILE_PARSING: 
                 file_parsing(); 
                  break;
+
           case EVENT_FILE_PROCESSING: {
                 file_processing_main(); 
                  break;
@@ -103,17 +105,19 @@ while (1) {
           case EVENT_DONE:
                 event_processing_main();
                 break;
-            
+
           case EVENT_DMA_ERROR: {
               // Handle DMA error
+              uint32_t status_packet = save_and_disable_interrupts();
               error_processing(DIAG_DMA_INCOMPLETE);
+              restore_interrupts_from_disabled(status_packet);
               break;
           }
 
           default:
               break;
       }
-       watchdog_update(); // update the watchdog timer to prevent it from expiring
+     /* watchdog_update(); // update the watchdog timer to prevent it from expiring */
      break; // break out of the while loop since the event has been processed and the main loop can run again.
   }
   

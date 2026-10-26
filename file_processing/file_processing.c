@@ -5,14 +5,13 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
-
+#include "hardware_processing.h"
 #include "pico/stdlib.h"
 #include "hardware/sync.h"
 
 #include "ff.h"
 #include "file_processing.h"
 #include "queue.h"
-#include "diagnostics.h"
 
 // -----------------------------------------------------------------------------
 // SETTINGS
@@ -178,8 +177,8 @@ PUBLIC void file_parsing(void) {
     if (parse_message(buffer)) {
         post_event(EVENT_FILE_PROCESSING);      // start writing
     } else {
-        diag_set(DIAG_BAD_DATA);                // bad message: drop it, release the guard
-        post_event(EVENT_NONE);
+        error_processing(DIAG_USB_PARSE_FAIL);                // bad message: drop it, release the guard
+        post_event(EVENT_DONE);
     }
 }
 
@@ -211,7 +210,7 @@ PUBLIC void file_processing_main(void) {      // called from main.c
 
     case FP_ENSURE_ROOT:
         fr = ensure_dir(FP_ROOT_DIR);
-        fp_state = (fr == FR_OK) ? FP_ENSURE_DATE_DIR : fail_or_format(fr, DIAG_MOUNT_FAIL);
+        fp_state = (fr == FR_OK) ? FP_ENSURE_DATE_DIR : fail_or_format(fr, DIAG_USB_MOUNT_FAIL);
         break;
 
     case FP_ENSURE_DATE_DIR:
@@ -226,8 +225,7 @@ PUBLIC void file_processing_main(void) {      // called from main.c
             if (f_size(&s_fil) == 0) {                              // brand new file: header first
                 w = f_puts(FP_CSV_HEADER, &s_fil);
             }
-            if (w >= 0) {
-                w = f_printf(&s_fil, "%s,%s,%s,%s,%s,%s,%s,%s\n",
+            if (w >= 0) { w = f_printf(&s_fil, "%s,%s,%s,%s,%s,%s,%s,%s\n",
                              file_info.dates, file_info.times,
                              row.ohms, row.voltage, row.current,
                              row.test_time, row.comment, row.state);
@@ -246,23 +244,23 @@ PUBLIC void file_processing_main(void) {      // called from main.c
         if (fr == FR_OK) {
             fp_state = FP_ENSURE_ROOT;                               // FatFs re-mounts on next access
         } else {
-            fp_fail_flag = DIAG_MOUNT_FAIL;
+            fp_fail_flag = DIAG_USB_MOUNT_FAIL;
             fp_state     = FP_FAILED;
         }
         break;
 #endif
 
-    case FP_DONE:
+	case FP_DONE:
         fp_state = FP_IDLE;
         post_event(EVENT_DONE);                                      // releases the packet guard
+	error_processing(DIAG_ALL_OK);
         return;
 
     case FP_FAILED:
     default:
-        diag_set(fp_fail_flag ? fp_fail_flag : DIAG_WRITE_FAIL);
         fp_state = FP_IDLE;
-        post_event(EVENT_NONE);                                      // releases the packet guard
-        return;
+        post_event(EVENT_DONE);                                      // releases the packet guard return;
+        error_processing(fp_fail_flag ? fp_fail_flag : DIAG_WRITE_FAIL);
     }
 
     post_event(EVENT_FILE_PROCESSING);                               // come back for the next step
@@ -285,6 +283,8 @@ PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, si
    strncpy(dates_directory, prefix, size - 1);// bounded copy, can't overflow
    dates_directory[size-1]='\0';// make sure it's always terminated
     // Find the two '/' separators in the date (day/month/year).
+  const char *first_dot_ = strchr((const char *)in,'.');   // first '.'
+
    const char *start = strchr((const char *)in,'/');   // first '/'
    if(!start) return;
    char *end = strchr(start+1,'/');
@@ -334,7 +334,7 @@ PRIVATE void extract_date(const uint8_t *in, char *dates, size_t size) {
         dates[i++] = c;
     }
 
-    const char *end_final = strchr(end+1,',');
+    const char *end_final = strchr(end+1,'/');
     if(!end_final) return;
     for(; p<end_final && i<size-1; p++)
     {
@@ -347,9 +347,9 @@ PRIVATE void extract_date(const uint8_t *in, char *dates, size_t size) {
 PRIVATE char* extract_time(const uint8_t *in, char *time, size_t size) {
     memset(time,0,size);
     time[size-1] = '\0';
-    char *start = strchr((const char*)in, ',');
+    char *start = strchr((const char*)in, ':');
     if(!start) return NULL;
-    char *end   = strchr((const char*)start + 1, ',');
+    char *end   = strchr((const char*)start + 1, ':');
     if(!end) return NULL;
     size_t i = 0;
     const char *p = start + 1;

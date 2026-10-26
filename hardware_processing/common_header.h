@@ -14,6 +14,7 @@ typedef uint32_t DWORD;
 #define BUF_LEN                               256
 #define NUMBER_OF_BYTES                       BUF_LEN 
 #define GARY_CODE                             31                                                 
+#define USB_MIN_PACKET_SIZE                    20
 typedef enum
 {
     EVENT_DMA_ERROR = 0,
@@ -33,6 +34,9 @@ typedef enum {
     DIAG_USB_MOUNT_FAIL,    
     DIAG_USB_PARSE_FAIL, 
     DIAG_USB_HARDWARE_ERROR,
+    DIAG_WRITE_FAIL,
+    DIAG_NO_STICK,
+    DIAG_ALL_OK
 } DIAGNOSTICS_T;
 
 #endif
