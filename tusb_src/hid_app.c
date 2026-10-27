@@ -113,9 +113,15 @@ static void process_kbd_report(hid_keyboard_report_t const *report)
             continue; //filter out key releases and held keys, only process new key presses
 
         bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
-
-        if(not_space_check){ // guard condition. Volatile because this is asynchronous
-          uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
+	
+        if(not_space_check){ // guard condition.
+	        uint8_t ch = keycode2ascii[keycode][is_shift ? 1 : 0];
+          if(keycode == 80){
+            ch = 0x3E; // this is the left arrow
+          }
+          if(keycode == 79){
+            ch = 0x3C; // this is the right arrow
+          }
           enqueue_keyboard(ch);
         }
     }

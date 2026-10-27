@@ -21,5 +21,6 @@ PUBLIC uint8_t* const give_array_address_for_file_writing(void);
 PUBLIC uint32_t const return_size(void);
 PUBLIC void set_size(uint32_t size); 
 PUBLIC int get_buffer_size(void);
+PUBLIC void clear_event_queue(void);
 //PUBLIC* RingBuf return_interrupt_queue();
 #endif

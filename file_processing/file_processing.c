@@ -5,13 +5,14 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
-#include "hardware_processing.h"
+
 #include "pico/stdlib.h"
 #include "hardware/sync.h"
 
 #include "ff.h"
 #include "file_processing.h"
 #include "queue.h"
+#include "hardware_processing.h"     // error_processing() and DIAGNOSTICS_T
 
 // -----------------------------------------------------------------------------
 // SETTINGS
@@ -43,7 +44,7 @@ typedef struct {                    // the fields of one message, copied out of 
     char voltage[12];
     char current[12];
     char test_time[12];
-    char comment[32];
+    char comment[40];
     char state[12];
 } Row_Info;
 
@@ -64,7 +65,7 @@ static char      csv_path[64];
 // state of the machine, kept between calls
 static fp_state_t fp_state     = FP_IDLE;
 static uint32_t   fp_started   = 0;
-static uint32_t   fp_fail_flag = 0;
+static DIAGNOSTICS_T fp_fail_code = DIAG_USB_HARDWARE_ERROR;   // what to tell Gary if this packet fails
 static bool       fp_formatted = false;
 
 // big FatFs objects are static so they are not on the (small) stack.
@@ -82,7 +83,7 @@ static uint8_t s_mkfs_work[FF_MAX_SS];
 PRIVATE void       post_event(event_type_t e);
 PRIVATE bool       parse_message(uint8_t *buffer);
 PRIVATE FRESULT    ensure_dir(const char *path);
-PRIVATE fp_state_t fail_or_format(FRESULT fr, uint32_t flag);
+PRIVATE fp_state_t fail_or_format(FRESULT fr, DIAGNOSTICS_T code);
 
 PRIVATE void  extract_date_directory(const uint8_t *in, char *dates_directory, size_t size);
 PRIVATE void  extract_date(const uint8_t *in, char *dates, size_t size);
@@ -116,7 +117,7 @@ PRIVATE FRESULT ensure_dir(const char *path) {
 }
 
 // A FatFs call failed: either format the stick (once), or give up and remember why.
-PRIVATE fp_state_t fail_or_format(FRESULT fr, uint32_t flag) {
+PRIVATE fp_state_t fail_or_format(FRESULT fr, DIAGNOSTICS_T code) {
 #if FP_AUTO_FORMAT
     if (fr == FR_NO_FILESYSTEM && !fp_formatted) {
         return FP_FORMAT;
@@ -124,7 +125,7 @@ PRIVATE fp_state_t fail_or_format(FRESULT fr, uint32_t flag) {
 #else
     (void)fr;
 #endif
-    fp_fail_flag = flag;
+    fp_fail_code = code;
     return FP_FAILED;
 }
 
@@ -177,7 +178,7 @@ PUBLIC void file_parsing(void) {
     if (parse_message(buffer)) {
         post_event(EVENT_FILE_PROCESSING);      // start writing
     } else {
-        error_processing(DIAG_USB_PARSE_FAIL);                // bad message: drop it, release the guard
+        error_processing(DIAG_USB_PARSE_FAIL);  // bad message: tell Gary, then release the guard
         post_event(EVENT_DONE);
     }
 }
@@ -190,20 +191,31 @@ PUBLIC void file_processing_main(void) {      // called from main.c
     uint32_t now = time_us_32();
     FRESULT  fr;
 
+    static bool first_run = false;
     if (fp_state == FP_IDLE) {                 // first call for this packet
         fp_started   = now;
         fp_formatted = false;
-        fp_fail_flag = 0;
         fp_state     = FP_ENSURE_ROOT;
     }
 
     if ((now - fp_started) > FP_TIMEOUT_US) {  // took too long: give up
-        fp_fail_flag = msc_ready ? DIAG_WRITE_FAIL : DIAG_NO_STICK;
+        fp_fail_code = msc_ready ? DIAG_USB_HARDWARE_ERROR : DIAG_USB_MOUNT_FAIL;
         fp_state     = FP_FAILED;
     }
     else if (!msc_ready) {                     // no stick yet: keep the packet, try again next pass
         post_event(EVENT_FILE_PROCESSING);
         return;
+    }
+
+    if(msc_ready && first_run){
+        fp_state = FP_APPEND_ROW; // no point since usb stick isnt pulled out and just add data in.
+    }
+
+    if(!msc_ready && first_run){
+        first_run = false; // reset the first run so that it can be checked again
+        if(fp_state == FP_APPEND_ROW){
+            fp_state = FP_ENSURE_ROOT; // if the usb stick is pulled out, then it needs to be checked again.
+        }
     }
 
     switch (fp_state) {
@@ -215,7 +227,7 @@ PUBLIC void file_processing_main(void) {      // called from main.c
 
     case FP_ENSURE_DATE_DIR:
         fr = ensure_dir(file_info.date_directory);
-        fp_state = (fr == FR_OK) ? FP_APPEND_ROW : fail_or_format(fr, DIAG_WRITE_FAIL);
+        fp_state = (fr == FR_OK) ? FP_APPEND_ROW : fail_or_format(fr, DIAG_USB_HARDWARE_ERROR);
         break;
 
     case FP_APPEND_ROW:
@@ -225,7 +237,8 @@ PUBLIC void file_processing_main(void) {      // called from main.c
             if (f_size(&s_fil) == 0) {                              // brand new file: header first
                 w = f_puts(FP_CSV_HEADER, &s_fil);
             }
-            if (w >= 0) { w = f_printf(&s_fil, "%s,%s,%s,%s,%s,%s,%s,%s\n",
+            if (w >= 0) {
+                w = f_printf(&s_fil, "%s,%s,%s,%s,%s,%s,%s,%s\n",
                              file_info.dates, file_info.times,
                              row.ohms, row.voltage, row.current,
                              row.test_time, row.comment, row.state);
@@ -234,7 +247,7 @@ PUBLIC void file_processing_main(void) {      // called from main.c
             FRESULT fc = f_close(&s_fil);
             if (fr == FR_OK) fr = fc;
         }
-        fp_state = (fr == FR_OK) ? FP_DONE : fail_or_format(fr, DIAG_WRITE_FAIL);
+        fp_state = (fr == FR_OK) ? FP_DONE : fail_or_format(fr, DIAG_USB_HARDWARE_ERROR);
         break;
 
 #if FP_AUTO_FORMAT
@@ -244,23 +257,25 @@ PUBLIC void file_processing_main(void) {      // called from main.c
         if (fr == FR_OK) {
             fp_state = FP_ENSURE_ROOT;                               // FatFs re-mounts on next access
         } else {
-            fp_fail_flag = DIAG_USB_MOUNT_FAIL;
+            fp_fail_code = DIAG_USB_MOUNT_FAIL;
             fp_state     = FP_FAILED;
         }
         break;
 #endif
 
-	case FP_DONE:
+    case FP_DONE:
+	first_run = true;
         fp_state = FP_IDLE;
+        error_processing(DIAG_ALL_OK);                               // Gary gets 0xAA (blocks until he clocks it)
         post_event(EVENT_DONE);                                      // releases the packet guard
-	error_processing(DIAG_ALL_OK);
         return;
 
     case FP_FAILED:
     default:
         fp_state = FP_IDLE;
-        post_event(EVENT_DONE);                                      // releases the packet guard return;
-        error_processing(fp_fail_flag ? fp_fail_flag : DIAG_WRITE_FAIL);
+        error_processing(fp_fail_code);                              // tell Gary why; he resends
+        post_event(EVENT_DONE);                                      // releases the packet guard
+        return;
     }
 
     post_event(EVENT_FILE_PROCESSING);                               // come back for the next step
@@ -283,8 +298,6 @@ PRIVATE void extract_date_directory(const uint8_t *in, char *dates_directory, si
    strncpy(dates_directory, prefix, size - 1);// bounded copy, can't overflow
    dates_directory[size-1]='\0';// make sure it's always terminated
     // Find the two '/' separators in the date (day/month/year).
-  const char *first_dot_ = strchr((const char *)in,'.');   // first '.'
-
    const char *start = strchr((const char *)in,'/');   // first '/'
    if(!start) return;
    char *end = strchr(start+1,'/');
@@ -334,7 +347,7 @@ PRIVATE void extract_date(const uint8_t *in, char *dates, size_t size) {
         dates[i++] = c;
     }
 
-    const char *end_final = strchr(end+1,'/');
+    const char *end_final = strchr(end+1,',');
     if(!end_final) return;
     for(; p<end_final && i<size-1; p++)
     {
@@ -347,9 +360,9 @@ PRIVATE void extract_date(const uint8_t *in, char *dates, size_t size) {
 PRIVATE char* extract_time(const uint8_t *in, char *time, size_t size) {
     memset(time,0,size);
     time[size-1] = '\0';
-    char *start = strchr((const char*)in, ':');
+    char *start = strchr((const char*)in, ',');
     if(!start) return NULL;
-    char *end   = strchr((const char*)start + 1, ':');
+    char *end   = strchr((const char*)start + 1, ',');
     if(!end) return NULL;
     size_t i = 0;
     const char *p = start + 1;

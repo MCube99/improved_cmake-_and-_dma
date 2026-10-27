@@ -1946,7 +1946,6 @@ enum {
     {1, HID_KEY_BRACKET_RIGHT }, /* 0x7D }         */ \
     {1, HID_KEY_GRAVE         }, /* 0x7E ~         */ \
     {0, HID_KEY_DELETE        }  /* 0x7F Delete    */ \
-
 /*--------------------------------------------------------------------
  * KEYCODE to Ascii Conversion
  *  Expand to array of [128][2] (ascii without shift, ascii with shift)
