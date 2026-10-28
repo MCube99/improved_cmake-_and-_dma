@@ -56,6 +56,10 @@ PUBLIC bool dequeue_keyboard(uint8_t *letter) {
     return(check); 
 }
 
+PUBLIC void clear_event_queue() {
+	RingBuf_flush(&event_queue); 
+}
+
 // -----------------------------------------------------------------------------
 // BUFFER ACCESSORS
 // -----------------------------------------------------------------------------

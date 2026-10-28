@@ -82,6 +82,7 @@ RingBufCtr RingBuf_num_free(RingBuf * const me);
 bool RingBuf_put(RingBuf * const me, RingBufElement const el);
 bool RingBuf_get(RingBuf * const me, RingBufElement *pel);
 bool RingBuf_is_empty(RingBuf * const me);
+void RingBuf_flush(RingBuf *const me);
 //! Ring buffer callback function for RingBuf_process_all()
 //
 // @details

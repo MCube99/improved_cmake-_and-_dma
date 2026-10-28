@@ -57,6 +57,7 @@ bool RingBuf_put(RingBuf * const me, RingBufElement const el) {
         return false; // buffer full
     }
 }
+
 //............................................................................
 bool RingBuf_get(RingBuf * const me, RingBufElement *pel) {
     RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_relaxed);
@@ -103,6 +104,11 @@ void RingBuf_process_all(RingBuf * const me, RingBufHandler handler) {
     }
 }
 
+//............................................................................
+void RingBuf_flush(RingBuf *const me) {
+    RingBufCtr head = atomic_load_explicit(&me->head, memory_order_acquire); 
+    atomic_store_explicit(&me->tail, head, memory_order_release); // tail jumps to head
+}
 //............................................................................
 bool RingBuf_is_empty(RingBuf * const me) {
     RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_relaxed);

@@ -8,11 +8,11 @@
 
 #include "pico/stdlib.h"
 #include "hardware/sync.h"
-
+#include "hardware/gpio.h"
 #include "ff.h"
 #include "file_processing.h"
 #include "queue.h"
-#include "diagnostics.h"
+#include "hardware_processing.h"     // error_processing() and DIAGNOSTICS_T
 
 // -----------------------------------------------------------------------------
 // SETTINGS
@@ -55,7 +55,8 @@ typedef enum {
     FP_APPEND_ROW,                  // open <time>.csv (made if new), header if new, write the row
     FP_FORMAT,                      // stick has no file system: make one
     FP_DONE,                        // finished OK
-    FP_FAILED                       // gave up
+    FP_FAILED,                       // gave up
+    FT_COUNT
 } fp_state_t;
 
 static File_Info file_info;
@@ -63,10 +64,21 @@ static Row_Info  row;
 static char      csv_path[64];
 
 // state of the machine, kept between calls
-static fp_state_t fp_state     = FP_IDLE;
-static uint32_t   fp_started   = 0;
-static uint32_t   fp_fail_flag = 0;
-static bool       fp_formatted = false;
+static fp_state_t fp_state     = FP_IDLE; // initial state is idle
+static uint32_t   fp_started   = 0;  // intiial state of started is 0
+static DIAGNOSTICS_T fp_fail_code = DIAG_USB_HARDWARE_ERROR;   // what to tell Gary if this packet fails
+static bool       fp_formatted = false; // fp is not formatted(initial stage)
+
+// A "session" is one continuous stay of the same stick. The first packet of a session
+// creates <time>.csv; every later packet appends to that same file until the stick is
+// pulled (msc_app.c bumps msc_mount_count on every successful mount).
+volatile uint32_t msc_mount_count = 0;
+static bool       session_valid = false;
+static uint32_t   session_mount;                    // mount count the session belongs to
+static uint32_t   pkt_mount;                        // mount count when this packet started
+static char       session_dir[sizeof(file_info.date_directory)];
+static char       session_path[sizeof(csv_path)];
+static char       csv_dir[sizeof(file_info.date_directory)];   // folder for this packet's file
 
 // big FatFs objects are static so they are not on the (small) stack.
 // Safe because only one step runs at a time.
@@ -83,7 +95,7 @@ static uint8_t s_mkfs_work[FF_MAX_SS];
 PRIVATE void       post_event(event_type_t e);
 PRIVATE bool       parse_message(uint8_t *buffer);
 PRIVATE FRESULT    ensure_dir(const char *path);
-PRIVATE fp_state_t fail_or_format(FRESULT fr, uint32_t flag);
+PRIVATE fp_state_t fail_or_format(FRESULT fr, DIAGNOSTICS_T code);
 
 PRIVATE void  extract_date_directory(const uint8_t *in, char *dates_directory, size_t size);
 PRIVATE void  extract_date(const uint8_t *in, char *dates, size_t size);
@@ -117,7 +129,7 @@ PRIVATE FRESULT ensure_dir(const char *path) {
 }
 
 // A FatFs call failed: either format the stick (once), or give up and remember why.
-PRIVATE fp_state_t fail_or_format(FRESULT fr, uint32_t flag) {
+PRIVATE fp_state_t fail_or_format(FRESULT fr, DIAGNOSTICS_T code) {
 #if FP_AUTO_FORMAT
     if (fr == FR_NO_FILESYSTEM && !fp_formatted) {
         return FP_FORMAT;
@@ -125,7 +137,7 @@ PRIVATE fp_state_t fail_or_format(FRESULT fr, uint32_t flag) {
 #else
     (void)fr;
 #endif
-    fp_fail_flag = flag;
+    fp_fail_code = code;
     return FP_FAILED;
 }
 
@@ -163,6 +175,8 @@ PRIVATE bool parse_message(uint8_t *buffer) {
                      file_info.date_directory, file_info.times);
     if (n < 0 || (size_t)n >= sizeof(csv_path)) return false;
 
+    snprintf(csv_dir, sizeof(csv_dir), "%s", file_info.date_directory);
+
     return true;
 }
 
@@ -176,10 +190,11 @@ PUBLIC void file_parsing(void) {
     buffer[n] = '\0';
 
     if (parse_message(buffer)) {
+	    error_processing(DIAG_ALL_OK);
         post_event(EVENT_FILE_PROCESSING);      // start writing
     } else {
-        diag_set(DIAG_BAD_DATA);                // bad message: drop it, release the guard
-        post_event(EVENT_NONE);
+        error_processing(DIAG_USB_PARSE_FAIL);  // bad message: tell Gary, then release the guard
+        post_event(EVENT_DONE);
     }
 }
 
@@ -194,12 +209,20 @@ PUBLIC void file_processing_main(void) {      // called from main.c
     if (fp_state == FP_IDLE) {                 // first call for this packet
         fp_started   = now;
         fp_formatted = false;
-        fp_fail_flag = 0;
-        fp_state     = FP_ENSURE_ROOT;
+        pkt_mount    = msc_mount_count; // stick just got put in.
+
+        if (session_valid && session_mount == msc_mount_count && (strcmp(csv_dir,session_dir)==0)) { // stick hasnt moved. So not incremented
+            snprintf(csv_path, sizeof(csv_path), "%s", session_path);
+            snprintf(csv_dir,  sizeof(csv_dir),  "%s", session_dir);
+            fp_state = FP_APPEND_ROW;
+        } else {
+            session_valid = false;             // new stick (or first packet): start a session
+            fp_state      = FP_ENSURE_ROOT;
+        }
     }
 
     if ((now - fp_started) > FP_TIMEOUT_US) {  // took too long: give up
-        fp_fail_flag = msc_ready ? DIAG_WRITE_FAIL : DIAG_NO_STICK;
+        fp_fail_code = msc_ready ? DIAG_USB_HARDWARE_ERROR : DIAG_USB_MOUNT_FAIL;
         fp_state     = FP_FAILED;
     }
     else if (!msc_ready) {                     // no stick yet: keep the packet, try again next pass
@@ -211,12 +234,12 @@ PUBLIC void file_processing_main(void) {      // called from main.c
 
     case FP_ENSURE_ROOT:
         fr = ensure_dir(FP_ROOT_DIR);
-        fp_state = (fr == FR_OK) ? FP_ENSURE_DATE_DIR : fail_or_format(fr, DIAG_MOUNT_FAIL);
+        fp_state = (fr == FR_OK) ? FP_ENSURE_DATE_DIR : fail_or_format(fr, DIAG_USB_MOUNT_FAIL);
         break;
 
     case FP_ENSURE_DATE_DIR:
-        fr = ensure_dir(file_info.date_directory);
-        fp_state = (fr == FR_OK) ? FP_APPEND_ROW : fail_or_format(fr, DIAG_WRITE_FAIL);
+        fr = ensure_dir(csv_dir);
+        fp_state = (fr == FR_OK) ? FP_APPEND_ROW : fail_or_format(fr, DIAG_USB_HARDWARE_ERROR);
         break;
 
     case FP_APPEND_ROW:
@@ -236,7 +259,7 @@ PUBLIC void file_processing_main(void) {      // called from main.c
             FRESULT fc = f_close(&s_fil);
             if (fr == FR_OK) fr = fc;
         }
-        fp_state = (fr == FR_OK) ? FP_DONE : fail_or_format(fr, DIAG_WRITE_FAIL);
+        fp_state = (fr == FR_OK) ? FP_DONE : fail_or_format(fr, DIAG_USB_HARDWARE_ERROR);
         break;
 
 #if FP_AUTO_FORMAT
@@ -246,22 +269,30 @@ PUBLIC void file_processing_main(void) {      // called from main.c
         if (fr == FR_OK) {
             fp_state = FP_ENSURE_ROOT;                               // FatFs re-mounts on next access
         } else {
-            fp_fail_flag = DIAG_MOUNT_FAIL;
+            fp_fail_code = DIAG_USB_MOUNT_FAIL;
             fp_state     = FP_FAILED;
         }
         break;
 #endif
 
     case FP_DONE:
+        if (!session_valid && msc_mount_count == pkt_mount) {        // first good write of this stick
+            snprintf(session_path, sizeof(session_path), "%s", csv_path);
+            snprintf(session_dir,  sizeof(session_dir),  "%s", csv_dir);
+            session_mount = pkt_mount;
+            session_valid = true;
+        }
         fp_state = FP_IDLE;
+	gpio_put(PICO_CODE_DEBUG_PROBE_PIN ,1);
         post_event(EVENT_DONE);                                      // releases the packet guard
         return;
 
     case FP_FAILED:
     default:
-        diag_set(fp_fail_flag ? fp_fail_flag : DIAG_WRITE_FAIL);
+        session_valid = false;                                       // next packet starts a fresh session
         fp_state = FP_IDLE;
-        post_event(EVENT_NONE);                                      // releases the packet guard
+        error_processing(fp_fail_code);                              // tell Gary why; he resends
+        post_event(EVENT_DONE);                                      // releases the packet guard
         return;
     }
 

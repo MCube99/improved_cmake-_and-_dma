@@ -6,6 +6,7 @@
 
 #define PRIVATE static
 #define PUBLIC  extern  
+#define PICO_CODE_DEBUG_PROBE_PIN 8 
 
 typedef uint8_t  BYTE;
 typedef uint16_t WORD;
@@ -14,6 +15,7 @@ typedef uint32_t DWORD;
 #define BUF_LEN                               256
 #define NUMBER_OF_BYTES                       BUF_LEN 
 #define GARY_CODE                             31                                                 
+#define USB_MIN_PACKET_SIZE                    20
 typedef enum
 {
     EVENT_DMA_ERROR = 0,
@@ -24,6 +26,7 @@ typedef enum
 } event_type_t;
 
 extern volatile bool msc_ready; // from msc_app
+extern volatile uint32_t msc_mount_count;
 extern volatile uint8_t device_address;
 extern volatile bool not_space_check;
 extern volatile bool packet_recieved;
@@ -33,6 +36,9 @@ typedef enum {
     DIAG_USB_MOUNT_FAIL,    
     DIAG_USB_PARSE_FAIL, 
     DIAG_USB_HARDWARE_ERROR,
+    DIAG_WRITE_FAIL,
+    DIAG_NO_STICK,
+    DIAG_ALL_OK
 } DIAGNOSTICS_T;
 
 #endif

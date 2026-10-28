@@ -52,11 +52,8 @@ static pio_collection_t pio_collection;
 #define PICO_SPI_SCK_PIN  ((PICO_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
 #define PICO_SPI_CSN_PIN   ((PICO_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
 #define PICO_SPI_TX_PIN  ((PICO_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → slave
-#define PICO_MOSI_DEBUG_PROBE_PIN  7   // pick any free GPIO. This is for the pio input
-#define PICO_MISO_DEBUG_PROBE_PIN  8   // pick any free GPIO. This is for the pio output
-#define PICO_CODE_DEBUG_PROBE_PIN 9 // this is for the main c file type code
-#define PICO_CODE_DEBUG_ERROR_PIN 10 // this is for the main c file type code and is for error programs. 
-#define DMA_TIMEOUT_US  30000u
+#define DMA_TIMEOUT_US  300000u
+#define USB_MIN_PACKET_SIZE 20
 // -----------------------------------------------------------------------------
 // GLOBALS
 // -----------------------------------------------------------------------------
@@ -86,9 +83,8 @@ PRIVATE void __not_in_flash_func(my_gpio_isr)(void) {
 }
 
 PRIVATE void dma_handler(void) {
+
     dma_armed = false;
-
-
     uintptr_t base  = (uintptr_t)give_array_address();
     uintptr_t write = (uintptr_t)dma_hw->ch[return_dma_channel()].write_addr;
     uint32_t size   = (uint32_t)return_size();
@@ -124,6 +120,9 @@ PUBLIC void set_gpio_pins(void) {
 
     gpio_init(PICO_SPI_SCK_PIN);
     gpio_set_dir(PICO_SPI_SCK_PIN, 0);
+
+    gpio_init(PICO_CODE_DEBUG_PROBE_PIN);
+    gpio_set_dir(PICO_CODE_DEBUG_PROBE_PIN, 0);
    // Direct, exclusive IRQ registration — no generic dispatch/callback overhead,
     // correct for time-critical CSN edge detection.
     irq_set_exclusive_handler(IO_IRQ_BANK0, my_gpio_isr);
@@ -278,13 +277,20 @@ PUBLIC void __time_critical_func(classify_packet)(void) {
     uint32_t size;
     size = pio_sm_get_blocking(return_spi_mosi_pio(), return_spi_mosi_sm()); // get size byte
     set_size(size);
+
+    if(size < USB_MIN_PACKET_SIZE) { // this is for the keyboard packet
+        if(packet_recieved) {
+            packet_recieved = false; // reset the packet recieved flag so that the next packet can be processed.
+        }
+       return;  // if below a certain minimum size, it is an error packet and should be discarded instantly. Liable in keyboard transmissions
+    }
     packet_recieved = true; // should hit true at gpio isr so it leaves early. 
 
         if (size == GARY_CODE ) { // edge cases where due to data transmission there could be wrong things
             not_space_check = true;
             keyboard_processing_main(); // call function from here
         }
-        else {
+        else { // this is for the usb packet
             dma_setup_fast(size);
         }
 }
@@ -312,22 +318,46 @@ PUBLIC void keyboard_processing_main() {
 }
 
 PUBLIC void event_processing_main() { // will add more functionality to this later, but for now it just resets the packet recieved flag so that the next packet can be processed.
+			     //
+     clear_event_queue(); // event queue has to be cleared since this should be the end for events.
+    uint ch = return_dma_channel();
+    dma_channel_abort(ch);
+    dma_channel_acknowledge_irq0(ch);
+    PIO  mp = return_spi_mosi_pio();  uint ms = return_spi_mosi_sm(); // get individual mosis and miso sm data
+    PIO  sp = return_spi_miso_pio();  uint ss = return_spi_miso_sm();
+
+    pio_sm_clear_fifos(mp, ms);
+    pio_sm_clear_fifos(sp, ss);
+    pio_sm_restart(mp, ms);
+    pio_sm_exec(mp, ms, pio_encode_jmp(pio_collection.spi_mosi.offset));
+    pio_sm_restart(sp, ss);
+    pio_sm_exec(sp, ss, pio_encode_jmp(pio_collection.spi_miso.offset));
+
     packet_recieved = false; // reset the packet recieved flag so that the next packet can be processed.
-    pio_sm_clear_fifos(return_spi_mosi_pio(), return_spi_mosi_sm()); // clear the fifos so that the next packet can be processed.
-    pio_sm_clear_fifos(return_spi_miso_pio(), return_spi_miso_sm()); // clear the fifos so that the next packet can be processed.
-    }
+}
 
 PUBLIC void error_processing(DIAGNOSTICS_T diagnostics) {
     // Handle the exception, e.g., log it, reset the system, etc.
     // For this example, we'll just print the error code and halt.
+    uint8_t ch = 0;
     DIAGNOSTICS_T error_code = diagnostics;
     switch (error_code) {
         case DIAG_DMA_INCOMPLETE:
+            ch = 0xAB;
+	    pio_spi_write8_blocking(&pio_collection, &ch, 1);
             break;
         case DIAG_USB_MOUNT_FAIL:
+            ch = 0xAB;
+	    pio_spi_write8_blocking(&pio_collection, &ch, 1);
             break;
         case DIAG_USB_PARSE_FAIL:
+            ch = 0xAB;
+	    pio_spi_write8_blocking(&pio_collection, &ch, 1);
             break;
+	case DIAG_ALL_OK:
+            ch = 0xAA;
+	    pio_spi_write8_blocking(&pio_collection, &ch, 1);
+	    break;
         default:
             break;
     }
@@ -382,3 +412,9 @@ PRIVATE PIO return_spi_mosi_pio(void)
 {
     return pio_collection.spi_mosi.pio;
 }
+// Date is the first field, up to the first ','. Spaces are dropped and '/' becomes '-'
+// (a folder or file name can't contain '/'), so "20/7/25," gives "20-7-25".
+// Time is the second field, between the first and second ','. Spaces are dropped and
+// ':' becomes '-' (not allowed in a FAT file name), so ", 3:27:4," gives "3-27-4".
+// Returns a pointer to the ',' that ends the time (the start of the data fields),
+// or NULL if the packet has no time field.

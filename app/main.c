@@ -65,17 +65,17 @@ int main(void) {
   dma_channel_init_once();
   restore_interrupts_from_disabled(status);
   msc_app_init();
-   / bool watchdog_reboot = watchdog_enable_caused_reboot();
+    bool watchdog_reboot = watchdog_enable_caused_reboot();
 
     if (watchdog_reboot) {
         // The Pico rebooted because the watchdog expired.
         // Handle/log this if needed.
     }
-    watchdog_enable(600, true); // Set watchdog timeout to 600 ms and enable pause on debug
+    watchdog_enable(600, false); // Set watchdog timeout to 600 ms and enable pause on debug
 
 while (1) {
     tuh_task();
-   // dma_timeout_check();
+    dma_timeout_check();
     led_blinking_task();
     event_type_t event;
     watchdog_update();

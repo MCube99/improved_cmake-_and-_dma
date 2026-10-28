@@ -32,6 +32,7 @@
 //------------- Elm Chan FatFS -------------//
 static CFG_TUH_MEM_SECTION FATFS fatfs[CFG_TUH_DEVICE_MAX]; // for simplicity only support 1 LUN per device
 volatile bool msc_ready = false;
+volatile uint32_t msc_count = 0; // add this
 volatile uint8_t device_address;
 
 static volatile bool              _disk_busy[CFG_TUH_DEVICE_MAX];
@@ -78,6 +79,7 @@ static bool inquiry_complete_cb(uint8_t dev_addr, const tuh_msc_complete_data_t 
   f_chdir("/");
 
   device_address   = dev_addr;
+  msc_mount_count++;
   msc_ready = true;                   // only now is the stick usable
   return true;
 

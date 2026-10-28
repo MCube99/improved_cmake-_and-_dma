@@ -16,6 +16,7 @@ PUBLIC bool enqueue_events(event_type_t event);
 PUBLIC bool enqueue_keyboard(uint8_t letter);
 PUBLIC bool dequeue_events(event_type_t *event);
 PUBLIC bool dequeue_keyboard(uint8_t *letter);
+PUBLIC void clear_event_queue();
 PUBLIC uint8_t* const give_array_address(void);
 PUBLIC uint8_t* const give_array_address_for_file_writing(void);
 PUBLIC uint32_t const return_size(void);
