@@ -44,7 +44,7 @@ typedef struct {                    // the fields of one message, copied out of 
     char voltage[12];
     char current[12];
     char test_time[12];
-    char comment[32];
+    char comment[40];
     char state[12];
 } Row_Info;
 
@@ -64,6 +64,7 @@ static Row_Info  row;
 static char      csv_path[64];
 
 // state of the machine, kept between calls
+<<<<<<< HEAD
 static fp_state_t fp_state     = FP_IDLE; // initial state is idle
 static uint32_t   fp_started   = 0;  // intiial state of started is 0
 static DIAGNOSTICS_T fp_fail_code = DIAG_USB_HARDWARE_ERROR;   // what to tell Gary if this packet fails
@@ -79,6 +80,10 @@ static uint32_t   pkt_mount;                        // mount count when this pac
 static char       session_dir[sizeof(file_info.date_directory)];
 static char       session_path[sizeof(csv_path)];
 static char       csv_dir[sizeof(file_info.date_directory)];   // folder for this packet's file
+static fp_state_t fp_state     = FP_IDLE;
+static uint32_t   fp_started   = 0;
+static DIAGNOSTICS_T fp_fail_code = DIAG_USB_HARDWARE_ERROR;   // what to tell Gary if this packet fails
+static bool       fp_formatted = false;
 
 // big FatFs objects are static so they are not on the (small) stack.
 // Safe because only one step runs at a time.
@@ -206,6 +211,7 @@ PUBLIC void file_processing_main(void) {      // called from main.c
     uint32_t now = time_us_32();
     FRESULT  fr;
 
+    static bool first_run = false;
     if (fp_state == FP_IDLE) {                 // first call for this packet
         fp_started   = now;
         fp_formatted = false;
@@ -219,6 +225,7 @@ PUBLIC void file_processing_main(void) {      // called from main.c
             session_valid = false;             // new stick (or first packet): start a session
             fp_state      = FP_ENSURE_ROOT;
         }
+        fp_state     = FP_ENSURE_ROOT;
     }
 
     if ((now - fp_started) > FP_TIMEOUT_US) {  // took too long: give up
@@ -228,6 +235,17 @@ PUBLIC void file_processing_main(void) {      // called from main.c
     else if (!msc_ready) {                     // no stick yet: keep the packet, try again next pass
         post_event(EVENT_FILE_PROCESSING);
         return;
+    }
+
+    if(msc_ready && first_run){
+        fp_state = FP_APPEND_ROW; // no point since usb stick isnt pulled out and just add data in.
+    }
+
+    if(!msc_ready && first_run){
+        first_run = false; // reset the first run so that it can be checked again
+        if(fp_state == FP_APPEND_ROW){
+            fp_state = FP_ENSURE_ROOT; // if the usb stick is pulled out, then it needs to be checked again.
+        }
     }
 
     switch (fp_state) {
@@ -283,7 +301,6 @@ PUBLIC void file_processing_main(void) {      // called from main.c
             session_valid = true;
         }
         fp_state = FP_IDLE;
-	gpio_put(PICO_CODE_DEBUG_PROBE_PIN ,1);
         post_event(EVENT_DONE);                                      // releases the packet guard
         return;
 

@@ -52,8 +52,16 @@ static pio_collection_t pio_collection;
 #define PICO_SPI_SCK_PIN  ((PICO_SPI_RX_PIN) + 1)   //3            // GPIO pin for SPI clock, same as master
 #define PICO_SPI_CSN_PIN   ((PICO_SPI_RX_PIN) + 2)   //4             // GPIO pin for SPI chip select
 #define PICO_SPI_TX_PIN  ((PICO_SPI_RX_PIN) + 3)   //5             // GPIO pin for SPI data to master → slave
+<<<<<<< HEAD
 #define DMA_TIMEOUT_US  300000u
 #define USB_MIN_PACKET_SIZE 20
+=======
+#define PICO_MOSI_DEBUG_PROBE_PIN  7   // pick any free GPIO. This is for the pio input
+#define PICO_MISO_DEBUG_PROBE_PIN  8   // pick any free GPIO. This is for the pio output
+#define PICO_CODE_DEBUG_PROBE_PIN 9 // this is for the main c file type code
+#define PICO_CODE_DEBUG_ERROR_PIN 10 // this is for the main c file type code and is for error programs. 
+#define DMA_TIMEOUT_US  300000u
+>>>>>>> 7d35286f33e2409f03dd86305f9b3f624dee5585
 // -----------------------------------------------------------------------------
 // GLOBALS
 // -----------------------------------------------------------------------------
