@@ -52,7 +52,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
 
 // Invoked when device with hid interface is un-mounted
 void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
-
+  keyboard_queue_flush();
   if(not_space_check){ // if the keyboard is being processed, then dont enqueue the event since it will be processed in the main loop.
     not_space_check = false; // reset the not space check so that the next character can be processed.
   }

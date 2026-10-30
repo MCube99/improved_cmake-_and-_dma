@@ -57,6 +57,7 @@ int main(void) {
   board_init_after_tusb();
   queue_init();
 
+  keyboard_queue_flush();
   uint32_t status = save_and_disable_interrupts();
 
   set_gpio_pins();

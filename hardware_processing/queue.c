@@ -60,6 +60,10 @@ PUBLIC void clear_event_queue() {
 	RingBuf_flush(&event_queue); 
 }
 
+PUBLIC void keyboard_queue_flush() {
+	RingBuf_flush(&keyboard_queue); 
+}
+
 // -----------------------------------------------------------------------------
 // BUFFER ACCESSORS
 // -----------------------------------------------------------------------------

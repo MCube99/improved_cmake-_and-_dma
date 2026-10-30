@@ -309,6 +309,9 @@ PUBLIC void keyboard_processing_main() {
             pio_spi_write8_blocking(&pio_collection, &ch, 1); 
             if(ch == '\r' || ch == '\n'){
                 not_space_check = false; // reset the not space check so that the next character can be processed.
+		 uint32_t irq = save_and_disable_interrupts();
+		    keyboard_queue_flush();          // your flush function
+		    restore_interrupts_from_disabled(irq);
             }
     }
 
